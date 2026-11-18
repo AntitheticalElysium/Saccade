@@ -145,3 +145,18 @@ Against F6.1 (and test 2 / 3 for the record):
 - G1 (monitor), TSP, generated-vs-real classifier, danger and the standard S1 readout.
 The evaluation stack must feed the record to every sampling path (the denoiser's conditioning and Mamba's input);
 that adapter is written during the run, before any reading.
+
+## Dissection (11-19; the readings above that the queue does not hold, rerun with committed code)
+
+Gemini ran checks 15 and 17 on 11-17 (`readings/check15_catalogue.json`, `readings/check17_schedule.json`) without
+saving its code; check 15's inventory rows measured cells that do not change on their own events (true change 0.000
+for stone / coal / iron +1 and sapling +/-1, while P1.5's tokens change there by 12-21: `inventory_tokens.py`). Both
+are rerun from `dissect.py` (one arm, F6.1's on file with the same rows and seeds):
+- `catalogue` (check 15): the natural catalogue, the record in the belief's input and the denoiser's conditioning.
+  Read: drawn at the event and on quiet frames per class against F6.1's arm; the clock rows answer the plain question.
+- `schedule` (check 17): old and on-schedule pair banks, 2 x 2 swap of the belief stream (m) and the record the
+  denoiser reads (c). Read: due / delayed rates; the record and memory effects.
+- `drift`: late token drift and token variance (the loss-share measure and frames), F6.1 reproduced beside P1.5.
+  Read against the loss-share table (F6.1 late drift 0.0067, variance 0.26; F4 0.0030, 0.38).
+Gemini's zeroed-record arm is not rerun: a zero record lies outside what the world was trained on (it draws changes
+on 0.5-0.97 of quiet frames), so it cannot separate memory from the record; check 17's swap does.

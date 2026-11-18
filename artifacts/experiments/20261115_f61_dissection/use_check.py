@@ -119,7 +119,8 @@ def physical(den, shapes, prev_action, memory, fix, cache, cfg, gen):
     """model.sample's physical stage with its noise (the glimpse stage after it never changes p or v); also returns
     the prediction of p at each of the K evaluations."""
     ladder, e, d = M.shortcut_ladder(cfg)
-    k, dev, B = den.k_max, memory.device, memory.shape[0]
+    m0 = memory[0] if isinstance(memory, tuple) else memory             # P1.5: (memory tokens, spatial history)
+    k, dev, B = den.k_max, m0.device, m0.shape[0]
     clamp = cfg["perception"]["periphery"]["tanh_clamp"]
     randn = lambda shp: torch.randn(shp, device=dev, generator=gen)
     code = lambda s_, e_: torch.full((B, 1), M.shortcut_code(s_, e_, k), device=dev)

@@ -1,0 +1,90 @@
+{
+  "phase": "complete",
+  "started_at": "2026-11-16T10:41:05.654031+00:00",
+  "source_pins_sha256": "c945f3b9a31a60953e69711bc7b4f5dd246557cf187634bddf9ae4dfce4fcc8c",
+  "training_completed_at": "2026-11-17T02:01:16.597335+00:00",
+  "selection": {
+    "checkpoint": 10,
+    "monitor_loss": 0.0017525036819279194,
+    "three_increases_triggered": false,
+    "rule": "final unless any three successive strict increases; then global minimum, earliest tie",
+    "monitor_history": [
+      {
+        "checkpoint": 1,
+        "frames": 2560000,
+        "loss": 0.004562757443636656
+      },
+      {
+        "checkpoint": 2,
+        "frames": 5120000,
+        "loss": 0.002885461086407304
+      },
+      {
+        "checkpoint": 3,
+        "frames": 7680000,
+        "loss": 0.0023258000146597624
+      },
+      {
+        "checkpoint": 4,
+        "frames": 10240000,
+        "loss": 0.002174285938963294
+      },
+      {
+        "checkpoint": 5,
+        "frames": 12800000,
+        "loss": 0.002063797554001212
+      },
+      {
+        "checkpoint": 6,
+        "frames": 15360000,
+        "loss": 0.001826142892241478
+      },
+      {
+        "checkpoint": 7,
+        "frames": 17920000,
+        "loss": 0.0018018860137090087
+      },
+      {
+        "checkpoint": 8,
+        "frames": 20480000,
+        "loss": 0.0017740573966875672
+      },
+      {
+        "checkpoint": 9,
+        "frames": 23040000,
+        "loss": 0.0017634585965424776
+      },
+      {
+        "checkpoint": 10,
+        "frames": 25600000,
+        "loss": 0.0017525036819279194
+      }
+    ],
+    "checkpoint_path": "/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/artifacts/experiments/20261116_p15/run/ckpt_10.pt",
+    "checkpoint_sha256": "5b849b2a01036d868e685553fdcf6744f030129a30f373ef1719ff6e914d1702",
+    "selected_at": "2026-11-17T02:01:18.560818+00:00"
+  },
+  "previous_evaluation_failures": [
+    {
+      "evaluation_started_at": "2026-11-17T02:01:18.577407+00:00",
+      "failed_phase": "evaluation",
+      "failed_at": "2026-11-17T02:02:28.498686+00:00",
+      "error": "CalledProcessError(1, ['/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/.venv/bin/python', '-u', '-m', 'artifacts.experiments.20261116_p15.evaluation', '/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/artifacts/experiments/20261116_p15/run/ckpt_10.pt'])"
+    },
+    {
+      "evaluation_started_at": "2026-11-17T02:05:30.216947+00:00",
+      "failed_phase": "evaluation",
+      "failed_at": "2026-11-17T02:05:44.071406+00:00",
+      "error": "CalledProcessError(1, ['/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/.venv/bin/python', '-u', '-m', 'artifacts.experiments.20261116_p15.evaluation', '/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/artifacts/experiments/20261116_p15/run/ckpt_10.pt'])"
+    },
+    {
+      "evaluation_started_at": "2026-11-17T02:06:34.044816+00:00",
+      "failed_phase": "evaluation",
+      "failed_at": "2026-11-17T02:24:50+00:00",
+      "error": "Host kernel OOM killed the full S1 process (systemd result: oom-kill)"
+    }
+  ],
+  "evaluation_unit": "saccade-p15-eval",
+  "evaluation_started_at": "2026-11-17T02:43:33.427364+00:00",
+  "evaluation_completed_at": "2026-11-17T05:32:06.788208+00:00"
+}

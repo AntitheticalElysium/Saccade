@@ -32,7 +32,7 @@ checkpoint (`eval_checks.json`). Gemini ran checks 15 and 17 on 11-17 without sa
    - Reward calibration NLL 0.0064 (0.0121; below the pair-memory reference 0.0068).
    - TSP 2.011 (2.242).
    - Coal 0->1 0.725 (0.351) and iron 0->1 0.363 (0.144).
-   - Free recursion at step 16: 0.795 (0.643; truth 1.27).
+   - Free recursion at step 16: 0.795 (0.643; F4 0.861; truth 1.27).
    - Entities persisting 0.837 (0.806; F4 0.840).
    - Fewer belief-driven increments: wood under NOOP with a DO belief 0.22 (0.69).
 4. **The encoder under route by role.**
@@ -47,6 +47,8 @@ checkpoint (`eval_checks.json`). Gemini ran checks 15 and 17 on 11-17 without sa
      Beside a cooling one, false waking 0.089 (0.029), damage 0.077 (0.063), death 0.050 (0.022; true 0.008 /
      0.005 / 0.000).
    - Stone 2->3 0.683 (0.835).
+   - The first achievement is drawn less: COLLECT_WOOD unlock 0.880 (0.954; F4 0.997). Coal and iron are up on F6.1 but
+     still far below F4 (0.752 / 0.396 against 0.981 / 0.896).
 
 ## 2. Clocks
 
@@ -88,7 +90,8 @@ asleep rise 0.622 against 0.471, need damage 0.441 against 0.256) and the awake 
 - **Interface (generated unlock against recorded 1.0):**
   - Higher: EAT_COW 0.61 (0.36), DEFEAT_ZOMBIE 0.71 (0.61), COLLECT_COAL 0.75 (0.63), COLLECT_IRON 0.40 (0.29),
     COLLECT_DRINK 0.94 (0.87).
-  - Lower: COLLECT_DIAMOND 0.001 (0.025).
+  - Lower: COLLECT_WOOD 0.880 (0.954; F4 0.997), MAKE_IRON_PICKAXE 0.893 (0.941), COLLECT_DIAMOND 0.001 (0.025).
+  - Still far below F4: COLLECT_COAL 0.752 (F4 0.981), COLLECT_IRON 0.396 (F4 0.896).
   - Risky class: P(termination) 0.115 (0.105; recorded 0.128).
 - **Mining pairs:** coal DO/DO 0.104 (0.067); wood DO/DO 0.916 (0.954), NOOP/DO 0.22 (0.69). Movement 64 / 64.
 - **Budget, checkpoint 10 (weighted gradient norms):**

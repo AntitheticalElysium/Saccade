@@ -40,12 +40,14 @@ def inputs(model, cfg, chunk, dev):
     with TR.autocast(dev, cfg):
         parts = [model.perception(c["frames"][:, a:a + 64], c["fixation"][:, a:a + 64]) for a in range(0, c["frames"].shape[1], 64)]
         P = M.Percept(*(torch.cat(z, 1) for z in zip(*[p.parts() for p in parts])), c["fixation"])
-        B = P.p.shape[0]
-        rin, rst = model.record.scan(P.p, c["first"], model.record.zero(B, dev))
-        y, _ = model.belief(model.belief.tokens(model.belief.percept_embed(P, rst), c["reward"], c["terminated"], c["action"]),
-                            model.belief.initial(B, dev))
-        bp = torch.cat([torch.zeros_like(y[:, :1]), y[:, 1::2][:, :-1]], 1)
-    return c, P, rin.to(torch.bfloat16), bp
+        rins, bps = [], []
+        for r in torch.arange(P.p.shape[0], device=dev).split(2):           # two streams at a time, as the trainer's
+            Pr = M.Percept(P.p[r], P.g[r], P.v[r], P.fix[r])                  # 256-step microbatches (memory)
+            rin, rst = model.record.scan(Pr.p, c["first"][r], model.record.zero(len(r), dev))
+            y, _ = model.belief(model.belief.tokens(model.belief.percept_embed(Pr, rst), c["reward"][r], c["terminated"][r], c["action"][r]),
+                                model.belief.initial(len(r), dev))
+            rins.append(rin.to(torch.bfloat16)); bps.append(torch.cat([torch.zeros_like(y[:, :1]), y[:, 1::2][:, :-1]], 1)); del rst, rin
+    return c, P, torch.cat(rins), torch.cat(bps)
 
 
 @torch.no_grad()
@@ -95,15 +97,15 @@ def main(scratch):
         res[f"eye_{Sx}"] = {"sec_per_update": float(np.mean(times)), "runs": times, "peak_gib": torch.cuda.max_memory_allocated() / 2 ** 30,
                             "fraction_of_update": float(np.mean(times)) / BASE[Sx][0]}
         print(Sx, res[f"eye_{Sx}"], flush=True)
-    # offline fill: 64 streams (the 256-step chunk repeated 4 times along the batch)
-    chunk = streams.next(256)
+    # offline fill: 64 streams (a 64-step chunk repeated 4 times along the batch; 256-step rows at 64 streams exceed 6 GB)
+    chunk = streams.next(64)
     c, P, rin, bp = inputs(model, cfg, chunk, dev)
     rep4 = lambda x: x.repeat(4, *([1] * (x.dim() - 1)))
     c4 = {"prev_action": rep4(c["prev_action"])}
     P4 = M.Percept(*(rep4(x) for x in P.parts()), rep4(P.fix))
     eye_pass(model, cfg, c4, P4, rep4(rin), rep4(bp), prefix, dev)          # warm-up at this shape
     t0 = sync(); eye_pass(model, cfg, c4, P4, rep4(rin), rep4(bp), prefix, dev); t1 = sync()
-    res["fill_64_streams"] = {"sec_per_frame": (t1 - t0) / (64 * 256), "in_loop_sec_per_frame_256": res["eye_256"]["sec_per_update"] / (16 * 256),
+    res["fill_64_streams"] = {"sec_per_frame": (t1 - t0) / (64 * 64), "in_loop_sec_per_frame_256": res["eye_256"]["sec_per_update"] / (16 * 256),
                               "in_loop_sec_per_frame_64": res["eye_64"]["sec_per_update"] / (16 * 64)}
     print("fill", res["fill_64_streams"], flush=True)
     # cache read: a memmap of fp16 periphery estimates, one contiguous run of S frames per stream

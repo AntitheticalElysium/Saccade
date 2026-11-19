@@ -148,10 +148,12 @@ def prefix_terrain(model, cfg, R, enc, rows, sub, grids, back=64):
     return out
 
 
-def rollout(model, cfg, R, head, pol, enc, sub, grids, rows, plans, mode="free", mf=MF, seed=0):
+def rollout(model, cfg, R, head, pol, enc, sub, grids, rows, plans, mode="free", mf=MF, seed=0, gaze="chooser"):
     """s2.model_futures' loop for one bank. mode (recorded banks only): which routes read the recorded frame instead of
-    the generated one while the recording lives: ctx_real (the denoiser's cache), mem_real (Mamba and the record, with
-    the recorded reward and termination), teacher (both)."""
+    the generated one while the recording lives: ctx_real (the denoiser's cache), mem_real (Mamba and the record),
+    teacher (both); every arm feeds the belief the world's own sampled reward and termination, so the arms differ in
+    frames only (Codex's review). gaze: "chooser" (S2's contract) or "recorded" (the recording's own fixation schedule,
+    so a recorded glimpse and a generated one sit at the same crop: the route arms)."""
     win, centres, Hh = C.WIN.to(DEV), C.CENTRES.to(DEV), pol["history"]
     dims = [tuple(enc[0][k].shape[1:]) for k in ("p", "g", "v")]
     P = cfg["data"]["context_prefix"]
@@ -214,8 +216,13 @@ def rollout(model, cfg, R, head, pol, enc, sub, grids, rows, plans, mode="free",
                 return centres[torch.searchsorted(prob.double().cumsum(-1), u).squeeze(-1).clamp(max=48)][:, None]
             with TR.autocast(DEV, cfg):
                 mem = S.cond(model.belief.memory(bp)[:, None], rs[:, None])
-                parts, fx = M.sample(model.denoiser, dims, pa[:, None], mem, fix[:, None], cache, cfg, g, choose=choose)
-                parts = tuple(x[:, 0].float() for x in parts); fix = fx[:, 0]
+                if gaze == "chooser":
+                    parts, fx = M.sample(model.denoiser, dims, pa[:, None], mem, fix[:, None], cache, cfg, g, choose=choose)
+                    fix = fx[:, 0]
+                else:
+                    fix = rep(at("fix", j))
+                    parts = M.sample(model.denoiser, dims, pa[:, None], mem, fix[:, None], cache, cfg, g)
+                parts = tuple(x[:, 0].float() for x in parts)
                 real = lives[:, j] if mode != "free" else torch.zeros(Bn, dtype=torch.bool, device=DEV)
                 actual = tuple(rep(at(k, j)).float() for k in ("p", "g", "v")) if mode != "free" else parts
                 mix = lambda use: tuple(torch.where(use.view(-1, *([1] * (a.dim() - 1))), a, b) for a, b in zip(actual, parts))
@@ -225,9 +232,7 @@ def rollout(model, cfg, R, head, pol, enc, sub, grids, rows, plans, mode="free",
                 h = model.outcome.features(bp, S.embed(model, M.Percept(*parts, fix), reads0)).float()
                 r = model.outcome.sample_reward(h, g)
                 done = torch.rand(Bn, device=DEV, generator=g) > torch.sigmoid(model.outcome.cont_logit(h, r).float())
-                use_mem = real & torch.tensor(mode in ("mem_real", "teacher"), device=DEV)
-                r_in = torch.where(use_mem, rep(at("reward", j)).float() if mode != "free" else r, r)
-                d_in = torch.where(use_mem, rep(at("terminated", j)) if mode != "free" else done, done)
+                r_in, d_in = r, done
                 reads, _, next_rs = S.history(model, ev[0], state=rs)
                 emb = S.embed(model, M.Percept(*ev, fix), reads)
                 nxt = plan[:, j] if j < H else torch.zeros_like(pa)
@@ -288,7 +293,7 @@ def routes(n=None):
     grids = G.episode_grids(L)
     res = {}
     for mode in ("free", "ctx_real", "mem_real", "teacher"):
-        o = S2.stack(rollout(model, cfg, R, head, pol, enc, sub, grids, rows, plans, mode=mode, mf=4, seed=500), len(rows))
+        o = S2.stack(rollout(model, cfg, R, head, pol, enc, sub, grids, rows, plans, mode=mode, mf=4, seed=500, gaze="recorded"), len(rows))
         res.update({f"{mode}_{k}": v for k, v in o.items() if k in ("m_grid", "m_done")})
     np.savez_compressed(HERE / (f"routes{S2.TAG}.npz" if n is None else f"routes{S2.TAG}_smoke.npz"), **res)
 
@@ -373,12 +378,24 @@ def gates(n=None):
     zr = dict(np.load(HERE / f"routes{S2.TAG}{tag}.npz"))
     oz = dict(np.load(HERE / "oracle.npz"))
     k = len(zr["free_m_grid"])
+    rows1, _ = S2.bank(k)
     res["routes_counts_by_step"] = {"simulator_B": counts_by_step(oz["rd_grid"][:k, 8:], oz["lab_done"][:k, 8:]),
                                     **{m: counts_by_step(zr[f"{m}_m_grid"], zr[f"{m}_m_done"]) for m in ("free", "ctx_real", "mem_real", "teacher")}}
+    alive = lambda dn: np.concatenate([np.ones(dn.shape[:-1] + (1,), bool), ~np.maximum.accumulate(dn.astype(bool), -1)], -1)
+    per = lambda m: (((zr[f"{m}_m_grid"] > 0).sum((-1, -2)) * alive(zr[f"{m}_m_done"])).sum(1), alive(zr[f"{m}_m_done"]).sum(1).astype(float))
+    nf, df = per("free")
+    res["routes_paired_vs_free"] = {}
+    for m in ("ctx_real", "mem_real", "teacher"):
+        nm, dm = per(m)
+        d, se = O.paired_diff(nm, dm, nf, df, rows1[:, 0], rng)
+        res["routes_paired_vs_free"][m] = {"mobs_diff_by_step": np.round(d, 4)[[1, 4, 8, 16]].tolist(), "se": np.round(se, 4)[[1, 4, 8, 16]].tolist(),
+                                           "alive_by_step": (dm.sum(0) / (4 * k)).round(4)[[1, 4, 8, 16]].tolist()}
+    res["routes_paired_vs_free"]["free_alive_by_step"] = (df.sum(0) / (4 * k)).round(4)[[1, 4, 8, 16]].tolist()
     # 2. competent starts
     z = dict(np.load(HERE / f"oracle_competent{tag}.npz")); z.update(np.load(HERE / f"model_competent{S2.TAG}{tag}.npz"))
     pz = np.load(HERE / f"prefix_competent{tag}.npz")
-    rows, plans, meta = competent(len(z["rd_grid"]))
+    rows, plans, meta = competent(n)
+    assert len(rows) == len(z["rd_grid"]) == len(z["m_grid"]), "bank and rollouts differ"
     prefix = [(pz[f"terr_{w}"], pz[f"pos_{w}"]) for w in range(len(rows))]
     light = z["lab_light"][:, 0]
     A, B = attach(S2.trajs(z, "rd", light, slice(0, 8)), z, "rd", slice(0, 8)), attach(S2.trajs(z, "rd", light, slice(8, 16)), z, "rd", slice(8, 16))

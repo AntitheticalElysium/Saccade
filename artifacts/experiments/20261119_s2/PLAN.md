@@ -91,3 +91,11 @@ The readings stage 1 lacked, on P1.5 (frozen), with stage 1's readers and readin
   fed to the context, to Mamba and the record, to both, or to neither.
 - **Reader caveat** found in the smoke: on competent simulator frames the HUD reader is less exact (0.92-0.97 per
   quantity in 24 starts) than on random play (about 1.0); the label effect is reported beside the read one for that reason.
+- **Codex's review (11-19), adopted before any stage 1b reading:**
+  - The scorer passed the full bank's length to the bank selector, which reads any length as a smoke slice (264 rows
+    duplicated, 264 omitted, 1,084 material labels wrong); full mode now loads the full bank and asserts row identity.
+    The rollouts were unaffected.
+  - The route arms now share the recording's fixation schedule (a recorded glimpse and a generated one at the same
+    crop, no chooser), feed the belief the world's own sampled reward and termination in every arm (frames differ only),
+    and report count changes paired against free running, with survival beside them. The route stage had not started
+    when this was changed.

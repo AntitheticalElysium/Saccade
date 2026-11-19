@@ -56,6 +56,14 @@ free-running step-16 deficit (teacher minus free); both if each does, or if only
 **mem only** (`--routes mem`): Mamba and the record read the substitute, the denoiser's context keeps the recorded
 frames. Mamba (frozen here) and the record (no parameters; read by the denoiser's record_read) were one arm.
 
+**Codex's review of the split and the arm (11-19):** adopted. On the mem route alone a switched frame changes the
+conditioning from the next frame on, so every G1 target is kept (the exclusion applies to the ctx route only); the
+control arm (`--substitute 0`) is then the same fine-tune without substitution, with identical draws. Reading rule:
+success is less decline from step 1 to step 16 and better 4-step persistence (a higher final count alone could come
+from drawing extra mobs at step 1), with clocks, danger and first-step action effects (the holds) as guards; a flat
+result bounds this fine-tune (one-step substitutes from recorded history may miss errors correlated along a rollout).
+The exact `--routes mem` command is smoked before launch.
+
 **The split (`20261119_s2/RESULTS.md` 5, user: run before the review):** the record carries 94% of the loss (+0.43 of
 +0.46 at step 16), Mamba's percept input about 2% (+0.010, SE 0.008). The arm keeps the mem route as declared: it
 mirrors free running on the memory side, and the part that matters, the record's read, is denoiser parameters that

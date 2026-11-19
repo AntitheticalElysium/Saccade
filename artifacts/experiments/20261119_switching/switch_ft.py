@@ -4,10 +4,11 @@ checkpoint 10 with its streams, carry, cache and record state; the denoiser alon
 G1 (shortcut forcing, bootstrap rows included) alone; AdamW 1e-4, 100 warm-up updates, clip 1.0; 64-step chunks,
 16 streams in 2 microbatches; the checkpoint's chooser picks the fixations (frozen), as in P1.5's training.
 
-Switching: every chunk frame (never a prefix frame) is drawn into the switch mask with probability p independently;
-masked frames serve as history only (their own G1 terms are excluded: JEDI switches the next prediction's conditioning,
-Codex's review) and, with substitution on, are replaced by the denoiser's own one-step estimate of them on the routes
-chosen: pass 1 (no gradient) denoises every frame from an independent noise
+Switching: every chunk frame (never a prefix frame) is drawn into the switch mask with probability p independently and,
+with substitution on, is replaced by the denoiser's own one-step estimate of it on the routes chosen. On the ctx route
+a masked frame serves as history only (its own G1 terms are excluded: JEDI switches the next prediction's conditioning;
+Codex's review); on the mem route alone a switched frame changes the conditioning from the next frame on, so every G1
+target is kept (Codex verified frame t's flow and bootstrap terms bitwise unchanged): pass 1 (no gradient) denoises every frame from an independent noise
 draw at an independent flow level (signal uniform on the finest grid), conditioned on the recorded past and memory,
 and clamps it to the token range. Routes:
 - ctx: the frame's clean signal under its own noise in the G1 pass becomes the estimate, so later frames attend to it;
@@ -99,7 +100,7 @@ def g1(model, chunk, carry, cache, record, cfg, boot, update, gens, p, substitut
                 assert float((built.float() - want.float()).abs().max()) < 1e-3, "switching input identity"
         loss = M.shortcut_loss(den, x0, t["prev_action"], memory, fix, t["episode"], t["valid"], sc,
                                torch.as_tensor(boot, device=dev), update >= sc["bootstrap_start"], levels=levels, noise=noise)
-    keep = ~m[:, P:]                                                     # switched frames: history only
+    keep = ~m[:, P:] if "ctx" in routes else torch.ones_like(m[:, P:])   # ctx: switched frames are history only
     return loss[:, P:][keep].mean().float(), carry_out, new_cache, new_record, stats
 
 

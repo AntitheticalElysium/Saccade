@@ -1,7 +1,8 @@
 """Random switching (JEDI, 2605.13013 section 3.4 and Algorithm 1; CURRICULUM 2(b)'s first ablation) as a fine-tune of
 P1.5's denoiser (PLAN.md). The protocol of the earlier denoiser fine-tunes (traces_ft, swax_ft, record_ft): from P1.5
 checkpoint 10 with its streams, carry, cache and record state; the denoiser alone trains (every other module frozen);
-G1 (shortcut forcing, bootstrap rows included) alone; AdamW 1e-4, 100 warm-up updates, clip 1.0; 64-step chunks,
+G1 (shortcut forcing, bootstrap rows included) alone; P1.5's own AdamW continued (rerun, 11-19: its groups, the rates
+its schedule ended at, 1e-5, and its moments; the first arm re-warmed a fresh AdamW to 1e-4), clip 1.0; 64-step chunks,
 16 streams in 2 microbatches; the checkpoint's chooser picks the fixations (frozen), as in P1.5's training.
 
 Switching: every chunk frame (never a prefix frame) is drawn into the switch mask with probability p independently and,
@@ -132,7 +133,7 @@ def main():
         q.requires_grad_(True)
     split = D.load_split(cfg)
     res = {"recipe": {"from": str(P15.relative_to(ROOT)), "checkpoint_sha256": TR.file_sha256(P15), "updates": args.updates,
-                      "p": args.p, "substitute": bool(args.substitute), "routes": routes, "lr": 1e-4, "warmup": 100, "clip": 1.0, "chunk": 64, "seed": SEED,
+                      "p": args.p, "substitute": bool(args.substitute), "routes": routes, "optimizer": "P1.5 checkpoint 10's groups, final rates and moments", "warmup": 0, "clip": 1.0, "chunk": 64, "seed": SEED,
                       "script_sha256": TR.file_sha256(__file__)}, "log": [], "monitor": {}}
     if args.resume is None:
         model.eval()
@@ -140,7 +141,24 @@ def main():
         print("monitor 0", json.dumps(res["monitor"][0]), flush=True)
         model.train()
     den.checkpoint = cfg["p1"]["activation_checkpointing"]
-    opt = torch.optim.AdamW(params, lr=1e-4, betas=tuple(cfg["optimizer"]["betas"]), eps=cfg["optimizer"]["eps"], weight_decay=0.01)
+    decayed = {id(x.weight) for x in model.modules() if isinstance(x, (torch.nn.Linear, torch.nn.Conv1d, torch.nn.Conv2d))}
+    order = {}                                                           # model.param_groups' grouping and order, by name
+    for name, q in model.named_parameters():
+        order.setdefault((name.startswith("perception."), id(q) in decayed), []).append((name, q))
+    groups, moments = [], {}
+    for members, g in zip(order.values(), ck["opt"]["param_groups"], strict=True):
+        assert len(members) == len(g["params"])
+        mine = [(q, i) for (name, q), i in zip(members, g["params"]) if name.startswith("denoiser.")]
+        if mine:
+            groups.append({"params": [q for q, _ in mine], "lr": g["lr"], "weight_decay": g["weight_decay"]})
+            moments.update({q: ck["opt"]["state"][i] for q, i in mine})
+    assert sum(len(g["params"]) for g in groups) == len(params) == len(moments)
+    opt = torch.optim.AdamW(groups, betas=tuple(cfg["optimizer"]["betas"]), eps=cfg["optimizer"]["eps"])
+    for q, s_ in moments.items():
+        assert s_["exp_avg"].shape == q.shape
+        opt.state[q] = {"step": s_["step"].clone(), "exp_avg": s_["exp_avg"].to(dev).clone(), "exp_avg_sq": s_["exp_avg_sq"].to(dev).clone()}
+    res["recipe"]["rates"] = [(g["lr"], g["weight_decay"], len(g["params"])) for g in groups]
+    print("optimizer", res["recipe"]["rates"], "step", float(next(iter(moments.values()))["step"]), flush=True)
     streams = D.Streams(split["train"], d["streams"], P, seed=WORLD_SEED, targets_offsets=D.frame_offsets(split["train"]))
     streams.load_state(ck["streams"])
     carry = tuple(type(c)(*(getattr(c, f.name).to(dev) for f in dataclasses.fields(c))) for c in ck["carry"])
@@ -166,8 +184,6 @@ def main():
         chunk = streams.next(64)
         ctl.prepare(chunk, streams)
         boot = TR.bootstrap_rows(cfg, WORLD_SEED, base + u)
-        for g in opt.param_groups:
-            g["lr"] = 1e-4 * min(1.0, u / 100)
         opt.zero_grad(set_to_none=True)
         for rows in np.array_split(np.arange(d["streams"]), 2):
             loss, c_new, cache_new, rec_new, sx = g1(model, D.select(chunk, rows), M.carry_rows(carry, rows), cache[rows],

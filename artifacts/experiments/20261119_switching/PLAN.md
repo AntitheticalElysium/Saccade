@@ -143,3 +143,24 @@ One seed; a fine-tune, not a from-scratch run; the readers read generated frames
   control (`--substitute 0`) comes after, if the arm passes.
 - **Not run:** the grounding replay of the F4 regression (user: not worth the compute for that diagnostic).
 - **Parked for after the arm:** the epoch-stale cache (STALENESS.md), if switching carries over to a from-scratch run.
+
+## Rerun (11-19 night; user: rerun, then call the shots)
+
+- **Why:** the first arm (`RESULTS.md`) re-warmed a fresh AdamW to 1e-4, P1.5's peak and ten times the rate its cosine
+  schedule ended at (1e-5 for the denoiser), with weight decay on every denoiser tensor (P1.5 decays Linear / Conv
+  weights only). Its smoke already showed the jolt: the held-out one-step monitor rose 3.5% in 20 warm-up updates
+  (mean rate about 1e-5, fresh moments). Re-warming a converged model costs upstream loss over a short horizon (Gupta et
+  al. 2023, arXiv 2308.04014).
+- **The readers (S2 `RESULTS.md`, `routes_readers.json`):** the denoiser's own read of the record carries the whole
+  self-feeding loss (+0.433 of record_real's +0.432 at step 16), Mamba's `record_in` none, so the denoiser alone trains,
+  as before.
+- **The change:** P1.5's optimizer continued: its two denoiser groups (51 Linear / Conv weights at decay 0.01, 48
+  others at 0), the rates its schedule ended at (1e-5), its moments and step counts (15,625), no warm-up. Everything
+  else as the first arm (record route, p = 0.5, fresh substitutes, every G1 target kept, the same seeds and draws).
+- **Smoke (`smoke_lr.log`):** the groups and step load as above; peak 3.2 GiB; the monitor moves +0.46% in 20 updates.
+- **Readings and rule:** as the first arm (`run_arm.sh sw_rec2 4000`). Pass: less step-1-to-16 decline and better
+  4-step persistence than P1.5, without interior spawns above P1.5's, with the clocks (energy curves, overdue
+  food / drink), N5 and return no worse than P1.5's.
+- **Then:** a pass runs the matched control (`--substitute 0`, the same optimizer and draws) to separate switching
+  from extra G1 training; persistence still improving at 4,000 with the guards intact extends to 6,000 first. A fail
+  with the first arm's direction (spawns, record distrust) at the right rate bounds one-step switching on the record.

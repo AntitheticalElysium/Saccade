@@ -99,3 +99,11 @@ The readings stage 1 lacked, on P1.5 (frozen), with stage 1's readers and readin
     crop, no chooser), feed the belief the world's own sampled reward and termination in every arm (frames differ only),
     and report count changes paired against free running, with survival beside them. The route stage had not started
     when this was changed.
+- **Mamba against the record (11-19, user: run before the switching review).** The route test's memory arm fed recorded
+  frames to Mamba and the record together. Two more arms on the same 1,000 starts, seeds and fixation schedule, paired
+  against its free arm (the first generated frame must agree exactly):
+  - record_real: the record alone reads the recorded frames (the denoiser's per-cell read of it, and Mamba's read of it);
+  - mamba_real: Mamba's percept input alone reads them.
+  Read: mobs per frame at steps 1 / 4 / 8 / 16 per arm and kind, paired changes against free running, survival. No
+  threshold: it chooses between the denoiser-only fine-tune (the record's read is denoiser parameters) and training
+  Mamba too (switching plan, variant 5).

@@ -151,7 +151,8 @@ def prefix_terrain(model, cfg, R, enc, rows, sub, grids, back=64):
 def rollout(model, cfg, R, head, pol, enc, sub, grids, rows, plans, mode="free", mf=MF, seed=0, gaze="chooser"):
     """s2.model_futures' loop for one bank. mode (recorded banks only): which routes read the recorded frame instead of
     the generated one while the recording lives: ctx_real (the denoiser's cache), mem_real (Mamba and the record),
-    teacher (both); every arm feeds the belief the world's own sampled reward and termination, so the arms differ in
+    teacher (both); the split (11-19): record_real (the record alone: the denoiser's per-cell read and Mamba's read of
+    it), mamba_real (Mamba's percept input alone); every arm feeds the belief the world's own sampled reward and termination, so the arms differ in
     frames only (Codex's review). gaze: "chooser" (S2's contract) or "recorded" (the recording's own fixation schedule,
     so a recorded glimpse and a generated one sit at the same crop: the route arms)."""
     win, centres, Hh = C.WIN.to(DEV), C.CENTRES.to(DEV), pol["history"]
@@ -226,15 +227,16 @@ def rollout(model, cfg, R, head, pol, enc, sub, grids, rows, plans, mode="free",
                 real = lives[:, j] if mode != "free" else torch.zeros(Bn, dtype=torch.bool, device=DEV)
                 actual = tuple(rep(at(k, j)).float() for k in ("p", "g", "v")) if mode != "free" else parts
                 mix = lambda use: tuple(torch.where(use.view(-1, *([1] * (a.dim() - 1))), a, b) for a, b in zip(actual, parts))
-                ev = mix(real & torch.tensor(mode in ("mem_real", "teacher"), device=DEV))
+                rec_ev = mix(real & torch.tensor(mode in ("mem_real", "teacher", "record_real"), device=DEV))
+                mam_ev = mix(real & torch.tensor(mode in ("mem_real", "teacher", "mamba_real"), device=DEV))
                 cx = mix(real & torch.tensor(mode in ("ctx_real", "teacher"), device=DEV))
                 reads0, _, _ = S.history(model, parts[0], state=rs)
                 h = model.outcome.features(bp, S.embed(model, M.Percept(*parts, fix), reads0)).float()
                 r = model.outcome.sample_reward(h, g)
                 done = torch.rand(Bn, device=DEV, generator=g) > torch.sigmoid(model.outcome.cont_logit(h, r).float())
                 r_in, d_in = r, done
-                reads, _, next_rs = S.history(model, ev[0], state=rs)
-                emb = S.embed(model, M.Percept(*ev, fix), reads)
+                reads, _, next_rs = S.history(model, rec_ev[0], state=rs)
+                emb = S.embed(model, M.Percept(*mam_ev, fix), reads)
                 nxt = plan[:, j] if j < H else torch.zeros_like(pa)
                 yy, carry = model.belief(model.belief.tokens(emb[:, None], r_in[:, None], d_in[:, None], nxt[:, None]), carry)
                 cache = M.context_pass(model.denoiser, tuple(a[:, None] for a in cx), pa[:, None], mem, fix[:, None], cache, cfg, g)
@@ -284,7 +286,7 @@ def model_competent(n=None):
                         **{f"terr_{w}": te for w, (te, _) in enumerate(pt)}, **{f"pos_{w}": po for w, (_, po) in enumerate(pt)})
 
 
-def routes(n=None):
+def routes(n=None, modes=("free", "ctx_real", "mem_real", "teacher"), name="routes"):
     model, cfg, R, head, pol = setup()
     L = dict(np.load(S.LABELS / "s0_dev_labels.npz"))
     rows, plans = S2.bank(1000 if n is None else n)
@@ -292,10 +294,10 @@ def routes(n=None):
     enc = S.encode(model, S2.sublabels(L, eps), cfg)
     grids = G.episode_grids(L)
     res = {}
-    for mode in ("free", "ctx_real", "mem_real", "teacher"):
+    for mode in modes:
         o = S2.stack(rollout(model, cfg, R, head, pol, enc, sub, grids, rows, plans, mode=mode, mf=4, seed=500, gaze="recorded"), len(rows))
         res.update({f"{mode}_{k}": v for k, v in o.items() if k in ("m_grid", "m_done")})
-    np.savez_compressed(HERE / (f"routes{S2.TAG}.npz" if n is None else f"routes{S2.TAG}_smoke.npz"), **res)
+    np.savez_compressed(HERE / (f"{name}{S2.TAG}.npz" if n is None else f"{name}{S2.TAG}_smoke.npz"), **res)
 
 
 # ---------------------------------------------------------------- gates (CPU)
@@ -478,7 +480,35 @@ def gates(n=None):
     print(json.dumps({k: res[k] for k in ("routes_counts_by_step", "holds_effect_of_DO")}, indent=1), flush=True)
 
 
+def split_gates():
+    """Mamba against the record (11-19): the two split arms paired against stage 1b's free arm (the same starts, seeds and
+    fixation schedule: the first generated frame must agree exactly), beside mem_real and teacher."""
+    rng = np.random.default_rng(20261121)
+    zr, zs = dict(np.load(HERE / "routes.npz")), dict(np.load(HERE / "routes_split.npz"))
+    k = len(zr["free_m_grid"])
+    rows1, _ = S2.bank(k)
+    for m in ("record_real", "mamba_real"):
+        assert np.array_equal(zs[f"{m}_m_grid"][:, :, :2], zr["free_m_grid"][:, :, :2]), "the first frame differs from free running"
+    z = {**zr, **zs}
+    alive = lambda dn: np.concatenate([np.ones(dn.shape[:-1] + (1,), bool), ~np.maximum.accumulate(dn.astype(bool), -1)], -1)
+    per = lambda m, kind=None: ((((z[f"{m}_m_grid"] > 0) if kind is None else (z[f"{m}_m_grid"] == kind)).sum((-1, -2))
+                                 * alive(z[f"{m}_m_done"])).sum(1), alive(z[f"{m}_m_done"]).sum(1).astype(float))
+    res = {}
+    for kind, kn in ((None, "all"), *enumerate(G.KINDS, 1)):
+        nf, df = per("free", kind)
+        res[kn] = {"free": (nf.sum(0) / df.sum(0)).round(4)[[1, 4, 8, 16]].tolist()}
+        for m in ("record_real", "mamba_real", "mem_real", "teacher"):
+            nm, dm = per(m, kind)
+            d, se = O.paired_diff(nm, dm, nf, df, rows1[:, 0], rng)
+            res[kn][m] = {"level": (nm.sum(0) / dm.sum(0)).round(4)[[1, 4, 8, 16]].tolist(),
+                          "diff": np.round(d, 4)[[1, 4, 8, 16]].tolist(), "se": np.round(se, 4)[[1, 4, 8, 16]].tolist()}
+    res["alive_at_16"] = {m: float(alive(z[f"{m}_m_done"])[..., 16].mean()) for m in ("free", "record_real", "mamba_real", "mem_real", "teacher")}
+    (HERE / "routes_split.json").write_text(json.dumps(res, indent=1) + "\n")
+    print(json.dumps(res["all"], indent=1), json.dumps(res["alive_at_16"]), flush=True)
+
+
 if __name__ == "__main__":
     stage, n = sys.argv[1], (int(sys.argv[2]) if len(sys.argv) > 2 else None)
     {"bank": build_bank, "oracle": lambda: oracle(n), "model": lambda: model_competent(n), "routes": lambda: routes(n),
+     "routes_split": lambda: routes(n, ("record_real", "mamba_real"), "routes_split"), "split_gates": split_gates,
      "gates": lambda: gates(n)}[stage]()

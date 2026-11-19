@@ -168,3 +168,18 @@ From a perfect history, P1.5 loses 9.5% of the start's cows at step 1 (simulator
   - R4k's reliance falls against P1.5's at mob, near-mob and vacated cells and at food drops, and less at static cells.
   - R4k's switching penalty is smaller (it learned its task).
   - Energy drops: the penalty is small at both, if switching's estimates are accurate on the energy cell.
+
+## Stage A4: are mobs under the glimpse deleted less? (`fovea.py`, CPU; user 11-20: "could fixation help?")
+
+- **Step 1, a natural experiment.**
+  - The real history's frames in S2 were encoded at a seeded uniform fixation (`S.encode`: `D.fixation_prior` seeded by
+    the episode's shard and slot), rebuilt exactly here.
+  - Whether a start mob lay in the last real frame's 3x3 glimpse window is therefore random with respect to the mob.
+  - Its step-1 deletion rate, glimpsed or not, is split by day and night and by ring.
+- **Deeper steps, observational.**
+  - The chooser picks generated frame s's fixation after drawing that frame's periphery, so a glimpse can only act on
+    frame s + 1, through the context and the belief.
+  - Reading: the hazard of a tracked mob at s + 1 when it lay in frame s's window, against not.
+  - The chooser selects where it looks, so this comparison is confounded by what it chose.
+- **What separates:** glimpsed mobs deleted much less at step 1 means fine detail in the context protects the mob
+  (fixation as a lever). Equal rates mean the glimpse does not reach the next frame's periphery.

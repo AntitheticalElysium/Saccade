@@ -166,7 +166,7 @@ One seed; a fine-tune, not a from-scratch run; the readers read generated frames
   from extra G1 training; persistence still improving at 4,000 with the guards intact extends to 6,000 first. A fail
   with the first arm's direction (spawns, record distrust) at the right rate bounds one-step switching on the record.
 
-## Control after the fail (11-20 early morning; user: call the shots)
+## Control after the fail (11-20 early morning; NOT RUN: only a 2-update smoke ran, `run/smoke_ctl`; the user stopped it: dissect first, `20261120_switching_dissection`)
 
 - **Why now, although the plan ran it only after a pass:** the rule judged the package against P1.5. The package is
   switching plus 4,000 extra denoiser-only G1 updates at 1e-5. Its changes could belong to either part:

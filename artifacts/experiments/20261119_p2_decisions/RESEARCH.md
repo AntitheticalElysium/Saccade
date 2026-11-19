@@ -140,6 +140,45 @@ futures give an unconfounded target (0.04 s per start for 16 futures, CPU).
 - D. Recorded expert plans replayed open loop: valid for evaluation, but in training the world would learn to read the
   expert's plans (chosen from the clean symbolic view, night included) as evidence about hidden state, which misleads
   it under the actor's plans. Evaluation only.
-- Recommendation: A + C as a declared mixture, starts admitted by position only, terminal-inclusive, no event
-  rebalancing (LOSSES 2); audit before training (exogeneity by construction, counts per primary family, terminal
-  positions, replay exactness). B and C are new simulator collections, as on 11-04.
+- WITHDRAWN as training data (user, 11-19): B, C and D make the world simulator-supervised. That breaks TEST_SPEC's
+  rule ("simulator state for EVALUATION only") and the generality the world is for (a real environment cannot be
+  reset to a logged state and resampled). They stay as evaluation (S2 on competent starts, Codex's precommitted
+  holds such as mine against wait). C also answers a different question from P2's contract: futures under a
+  feedback policy, where P2 scores futures under the same imposed actions, and P3 will try actions BC avoids (Codex).
+- P2 training data: A (recorded futures on exogenous windows, original or union corpus). Whether mining needs
+  multi-step coverage at all is read first by S2 on competent starts; one-step mining stays trained by G1 / G3 on
+  the whole corpus during P2. If it does, the offline answer is a collection designed exogenous and competent
+  (plans committed before the future unfolds, chosen only from what the model can see), not simulator targets.
+
+## 6. Why world models trained for imagination rarely train on their own rollouts (11-19, user)
+
+- **Deterministic-latent models do**, against recorded targets: SPR (K-step latent predictions from the transition
+  model, `2007.05929`), V-JEPA 2-AC ("a two-step rollout loss ... we only differentiate the predictor through one
+  recurrent step", `2506.09985` section 3), MuZero, TD-MPC2. Valid because they regress the expected latent; for a
+  sampled world it averages stochastic outcomes away.
+- **Sampling world models do not:** Dreamer 1-4 (Dreamer 4 keeps the transformer frozen in imagination; shortcut
+  forcing with x-prediction "to ... prevent accumulating errors over time"), DIAMOND, IRIS, DRAMA (`2410.08893`),
+  Horizon Imagination (diffusion forcing, `2602.08032`), LeWM (teacher forcing, `2603.19312`). JEDI (`2605.13013`)
+  conditions on its own one-step denoised output in a random half of batches ("random switching"); its ablation:
+  without it, worse. That is a one-step proxy with a valid target.
+- **The reasons, as far as the sources and our history show:**
+  1. A sampled branch has no valid pointwise target once it diverges; regressing it onto the recording is
+     inconsistent (Huszar 2015), and our own E8 (10-01, pre-saccade) found paired self-fed L1 installed a scroll bias.
+  2. A valid target is distributional: several rollouts and backpropagation through the sampler, which is expensive
+     and noisy. Weather (FGN, NeuralGCM, AIFS-CRPS) and Self Forcing video (a teacher's distribution matching) pay for
+     it because their horizons are days or minutes.
+  3. The simulation lemma bounds return error by one-step errors times a factor that grows with the learned model's
+     Lipschitz constants (On Training in Imagination, `2605.06732` Lemma 1; Asadi et al. 2018); RL imagination
+     horizons are short (15-16). If the one-step model is accurate on the inputs its own rollouts visit, rollouts
+     stay accurate: hence context corruption, noise augmentation and switching, which train exactly that, cheaply.
+- **For us:** the one-step model is not accurate enough on its own outputs. P1.5's recursion (`readings/recursion_4`,
+  128 windows): mobs at step 16, 1.17 under real history against truth 1.27 (one-step error, -8%) and 0.795 free
+  running (-37%); self-feeding adds most of the deficit, but far less than a constant per-step loss would compound to
+  (0.9^16 = 0.19 of truth), so the world settles at too few mobs rather than collapsing. Two remedies aim at it:
+  JEDI's switching (CURRICULUM 2(b): kept as "the FIRST ablation if the curriculum proves to need more self-feeding";
+  one-step, valid targets, cheap) and P2's distributional rollout score (multi-step, expensive). Neither is chosen.
+- **Credit:** a distributional score never labels a transition wrong; it moves the distribution of the world's
+  futures toward the real ones (fewer cows than real on average at step k). Its gradient reaches each frame directly
+  and, through the 2-step truncation, the drawing of the 2 frames before; a mob lost at step 3 is penalised at steps
+  3-16 but only steps 3-4 can blame the drawing that lost it. Nothing stops the later frames being pushed to add mobs
+  back (phantoms) instead: the power check must also read which correction the gradient favours.

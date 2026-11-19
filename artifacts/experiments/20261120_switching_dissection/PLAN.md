@@ -258,3 +258,12 @@ From a perfect history, P1.5 loses 9.5% of the start's cows at step 1 (simulator
     tokens: total-variation distance, argmax agreement and mob coverage, against the fresh checkpoint-10 eye.
 - **In imagination the expectation is free:** the sampler's first evaluation is the zero-signal estimate. The cost is
   training-only.
+
+### C3, decisive version (user 11-20: "yes")
+
+1. **Readability probe (`c3_probe.py`).** A linear logistic read of the record through t - 1 at the food / drink /
+   energy cells against the chooser's own view (the last 8 coarse tokens at that cell), and both. Held-out AP for a
+   flip of that digit at t, on C3's split.
+2. **If the record beats the 8-frame view clearly:** C3 rerun with the new read at the chooser's peak 1e-3 (fresh
+   parameters), the trained head at 1e-4, about 6,000 updates. Otherwise the record does not carry what the eye would
+   need, and C3 stops there.

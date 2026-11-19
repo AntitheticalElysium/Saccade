@@ -89,3 +89,57 @@ can blame step t's drawing through the record, as it can through the belief.
   construction, untested; a new collection.
 - **Loader:** P2_DATA's admission contract is ready (terminal-inclusive, the whole horizon's precommitted actions,
   absorbing per branch). Open: original corpus only (P1.5's) or the union's exogenous windows too.
+
+## 5. Follow-up (11-19 afternoon; user: is m = 2 enough, what do imagination-trained models do, coverage)
+
+**Two members, verified.**
+- FGN ([Alet et al. 2025](https://arxiv.org/html/2506.10772v1), section 2.2.3, 2.4, table A.2; beats GenCast and ENS):
+  "during training we use N=2", the fair CRPS, rollout fine-tuning up to 8 steps "with gradients propagated back
+  through the rollout" (8,000 updates at 1 step, 4,000 at 2, 1,000 at each of 3-8).
+- NeuralGCM: two samples; compute "better spent on greater variety of initial times". AIFS-CRPS: 4 members at O96, 2 at
+  N320 "to mitigate costs". Engression (Shen & Meinshausen 2024): two draws per data point.
+- Why it works: the fair score is unbiased for any m >= 2, so its gradient is; more members only reduce variance,
+  which more starts reduce too. Two caveats for us: the m = 2 degeneracy (section 1: almost-fair), and comparability:
+  weather errors are dense and its losses are per-location marginals (FGN, AIFS), while our failure is sparse (one
+  mob token among 81 cells x 16 steps) inside a global joint score; the energy score is weaker on dependence than on
+  means and weakens with dimension ([Pinson & Tastu 2013](https://core.ac.uk/download/13805333.pdf); contested by
+  [arXiv 1910.07325](https://arxiv.org/pdf/1910.07325)). So m is decided by the objective's power check, at m = 2,
+  4, 8, not by precedent alone.
+
+**What imagination-trained RL world models do.** None trains on its own sampled rollouts with a proper score:
+- Dreamer 4 ([2509.24527](https://arxiv.org/html/2509.24527), 3.2-3.3): shortcut forcing on real sequences, context
+  corrupted to tau = 0.1; in imagination "we only update the policy and value heads and keep the transformer frozen".
+- DIAMOND, IRIS, STORM: one-step, teacher forced. SimPLe ([1903.00374](https://arxiv.org/html/1903.00374v5), 4):
+  scheduled sampling to 100% with pointwise recorded targets (invalid for independent stochastic branches).
+- MuZero, TD-MPC2: deterministic latent unrolls scored against recorded targets (m = 1 works because they predict
+  expectations). Self Forcing video models: own rollouts scored by a teacher's distribution matching, context detached.
+- So P2's objective comes from the weather lineage. It is justified here by S2's measurement (mobs lost at depth
+  despite context corruption and shortcut forcing), not by RL practice.
+
+**The objective's power check (Codex's point, before any P2 run).** On simulator futures, rendered and encoded:
+corrupt them in the simulator state (a mob removed at step s, arrivals suppressed), and measure how often one batch's
+P2 loss (almost-fair patched + global energy score, the declared scaling) ranks the corrupted world worse than the
+true one, at m = 2, 4, 8 and the planned 16 windows per update.
+
+**Survival coupling (Codex).** Rewards and continuation are coupled (`cont_logit(h, r)`). A branch kept alive for the
+hazard score must be fed rewards sampled given survival, p(r | alive) proportional to p(r) sigmoid(cont(h, r)), or its
+belief carries a reward that implied death. Unit test: Codex's two-step toy (true death 50%, 75% if unconditioned).
+STEP_SPEC 3's imagined step (P3) has the same coupling: its return may use the unconditional reward, but the belief
+update of a survival-conditioned branch needs the conditioned one.
+
+**Coverage.** Two conditions for P2 data: actions fixed independently of the future being scored (P2_DATA; Ortega et
+al.), and starts covering the states the actor will visit (the model error that matters is under the policy's own
+state distribution: [Ross & Bagnell 2012](https://arxiv.org/abs/1203.1007)). The simulator replays any corpus start
+exactly, so a target need not be a recorded future: a start, an action rule fixed in advance and fresh simulator
+futures give an unconfounded target (0.04 s per start for 16 futures, CPU).
+- A. The union's exogenous windows (existing): danger covered, mining not.
+- B. Competent starts with fresh random plans: advanced states, tools, night danger; mining still rare.
+- C. Competent starts under an observation-only BC rule acting on its own frames in each world (S2's "same feedback
+  rule"): covers what BC does, mining included, and matches P3's starting policy; BC must read frozen inputs only
+  (percepts), so the rule stays the same function while P2 changes Mamba. One round, not iterated with the actor.
+- D. Recorded expert plans replayed open loop: valid for evaluation, but in training the world would learn to read the
+  expert's plans (chosen from the clean symbolic view, night included) as evidence about hidden state, which misleads
+  it under the actor's plans. Evaluation only.
+- Recommendation: A + C as a declared mixture, starts admitted by position only, terminal-inclusive, no event
+  rebalancing (LOSSES 2); audit before training (exogeneity by construction, counts per primary family, terminal
+  positions, replay exactness). B and C are new simulator collections, as on 11-04.

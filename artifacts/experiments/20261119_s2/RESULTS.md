@@ -64,8 +64,13 @@ from real histories, so this also starts in P1.
 
 ## 4. What this says for P2 (the user's rule: P2's objective is chosen from where S2 fails)
 
-- Failure 1 is P2's designed target: compounding loss under self-feeding. The trajectory score's summary vector holds
-  per-kind counts and centroids, so it scores exactly this; the event gates and the blocker are the reading after P2.
+- Failure 1 is P2's designed target: compounding loss under self-feeding. P2's score (LOSSES G4) is an energy score on
+  the latent tokens (patched + global), not on these reader counts (Codex): whether it penalises a disappearing mob
+  has to be shown on simulated futures before a run (RESEARCH.md, the objective's power check). The event gates and
+  the blocker are the reading after P2.
+- Coverage of this reading: every start comes from a pure-random episode (epsilon 1.0; median 1 achievement at the
+  start, none holding stone, coal or iron; the simulator's own futures contain no coal or iron increment). The states
+  a competent actor visits are not measured here.
 - Failures 2 and 3 start one step from real histories (P1). P2's outcome credit (RESEARCH.md 1) could calibrate the
   death probability at depth; it cannot give the world the cooldown or the overdue clock.
 - Not yet measured: whether imagined decisions go the right way (L3, stage 2).

@@ -92,3 +92,19 @@ So the shrinkage reading below is last night's prediction. Stage A tests it; it 
   - Start mobs die faster than P1.5's: (1).
   - Persistence falls only through newborn flicker: the record's mobs are kept as well as before, and the fall comes
     from short-lived new mobs.
+
+## Stage A2: does a deleted mob come back? (`resurrect.py`, CPU, the same saved grids)
+
+- **Why:** switching was meant to teach recovery. When a frame drops a mob that the target still has, the denoiser
+  should redraw it from the record's history. Shrinkage teaches distrust instead. The two predict opposite changes in
+  the rate at which deleted mobs come back.
+- **Reading:**
+  - Track every mob as in stage A until its death step s: no same-kind mob within 1 cell of its last position, still
+    in view.
+  - Recovery = a same-kind mob within 1 cell of that position at step s + 1 or s + 2, before the neighbourhood leaves
+    the view.
+  - Split deaths at step 1 (from a real history) from deeper ones. In the simulator, deaths are mostly reader misses,
+    so its rate is the instrument's floor.
+- **What separates:**
+  - Recovery rises in R2k / R4k against P1.5: switching taught the lesson, and attenuation outweighed it.
+  - Equal or lower: the lesson did not land.

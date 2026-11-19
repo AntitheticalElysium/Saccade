@@ -318,3 +318,40 @@ target mob or on the farthest map window from it.
   context.
 - **In imagination the same expectation is free:** it is the sampler's first evaluation.
 - **The page-cache read was measured on a file that fits in RAM.** A full pass of periphery estimates is about 6.6 GB.
+
+## C2's location part: the world-eye does not look at mobs more than the chooser (`c2_eye.py`, `c2_eye.json`)
+
+The data are 3,000 DEV target frames from 150 episodes. Both eyes see the same frames: P1.5's zero-signal error under
+the chooser's policy with contingency off, against P1.5's chooser.
+
+| Covered when present | World-eye | Chooser | Uniform |
+| :--- | ---: | ---: | ---: |
+| Any entity | 0.484 | 0.484 | 0.204 |
+| Any entity, night | 0.359 | 0.369 | 0.234 |
+| Cows | 0.448 | 0.418 | 0.149 |
+| Zombies | 0.296 | 0.352 | 0.166 |
+| Changed HUD | 0.224 | 0.409 | 0.109 |
+| Entering terrain | 0.511 | 0.457 | 0.216 |
+
+- **Correction.** Earlier I compared B2's monitor-window read (mobs 57%) with the chooser's training-trace coverage
+  (42%). Those were different frames. On the same frames the two eyes cover entities equally.
+- **The world-eye shifts from HUD flips to newly revealed terrain,** and from zombies to cows.
+- **The world's surprise by region:** mobs 30%, entering terrain 31%, static map 32%, HUD 6.5%. At night the static
+  map is 60%: the night static, irreducible. The noisy-TV risk is real.
+- **Its surprise does not mark the cows the world deletes.** Over 2,079 S2 start mobs, the zero-signal surprise around
+  the mob in the recorded next frame against P1.5's step-1 deletion rate:
+  - by surprise quartile, deletion is 0.13 / 0.20 / 0.17 / 0.09 (correlation -0.12);
+  - deleted mobs show surprise 4.13, never-deleted mobs 4.40.
+
+  So the world's mean prediction keeps the cow, and the deletion happens in sampling from noise to a sample. This
+  refines the stage-B reading ("in the denoiser's prediction"): the conditional mean is right, and the flow to a
+  sample drops the cow.
+- **Staleness (cache quality)** against the fresh eye, whose distance to the chooser is a TV of 0.237:
+
+  | Cache age | TV to fresh | Argmax agreement | Entity coverage (fresh 0.484) |
+  | :--- | ---: | ---: | ---: |
+  | 1 pass stale | 0.038 | 0.76 | 0.472 |
+  | 2 passes stale | 0.065 | 0.65 | 0.452 |
+  | 5 passes stale | 0.250 | 0.43 | 0.302 |
+
+  A cache refreshed every 1-2 passes is close to fresh; 5 passes is not. All of these are late-training checkpoints.

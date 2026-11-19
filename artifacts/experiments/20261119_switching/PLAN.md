@@ -56,6 +56,11 @@ free-running step-16 deficit (teacher minus free); both if each does, or if only
 **mem only** (`--routes mem`): Mamba and the record read the substitute, the denoiser's context keeps the recorded
 frames. Mamba (frozen here) and the record (no parameters; read by the denoiser's record_read) were one arm.
 
+**The split (`20261119_s2/RESULTS.md` 5, user: run before the review):** the record carries 94% of the loss (+0.43 of
++0.46 at step 16), Mamba's percept input about 2% (+0.010, SE 0.008). The arm keeps the mem route as declared: it
+mirrors free running on the memory side, and the part that matters, the record's read, is denoiser parameters that
+this fine-tune trains.
+
 ## The first arm (`switch_ft.py`)
 
 - **Protocol:** that of the earlier denoiser fine-tunes (traces, SWAX, record).
@@ -103,6 +108,9 @@ frames. Mamba (frozen here) and the record (no parameters; read by the denoiser'
 5. Training Mamba too, in the full recipe (route by role kept), so the belief update itself learns to read generated
    frames.
 6. Hidden-state matching (professor forcing) or a sleep phase on dreamed frames (wake-sleep), only if the above fail.
+7. (After the split) Corrupt the record's input as the context is corrupted: in P1 the record reads clean recorded
+   tokens while the denoiser's context frames are noised; building it from the noised (or context-level) tokens would
+   give the record the robustness the context already has. A recipe change for a from-scratch run, not a fine-tune.
 
 ## Limits
 

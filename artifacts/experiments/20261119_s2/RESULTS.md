@@ -127,3 +127,18 @@ redraws terrain it has seen. (The camera-shift reader is shared; stage 1's self-
 
 **Readers on competent simulator frames:** HUD 0.92-0.99 per quantity, entity recall 0.92-0.94 (random play: about 1.0
 and 0.95-0.97); the hold table's label column shows the attenuation.
+
+**Mamba against the record (`routes_split.json`; the same starts, seeds and fixation schedule, the first generated
+frame identical in every arm).** Paired change in mobs per frame against free running, at steps 4 / 8 / 16:
+
+| Arm | All mobs | Cows | Zombies | Skeletons | Alive at 16 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| The record reads the recorded frames | +0.11 / +0.23 / +0.43 | +0.29 at 16 | +0.09 | +0.045 | 0.880 |
+| Mamba's percept input reads them | +0.003 / +0.014 / +0.010 (SE 0.008) | +0.004 | +0.004 | +0.0005 | 0.893 |
+| Both | +0.11 / +0.23 / +0.44 | +0.29 | +0.10 | +0.047 | 0.884 |
+| Teacher (all routes) | +0.12 / +0.24 / +0.46 | +0.30 | +0.10 | +0.049 | 0.884 |
+
+The spatial record carries 94% of the self-feeding mob loss; Mamba's own input carries about 2%. In P1 the record is
+built from clean recorded tokens, while every frame the denoiser conditions on is noised (diffusion forcing): it is the
+only conditioning route never trained on anything but perfect inputs, and in free running it integrates the world's
+own frames. Its read (`record_read`) is denoiser parameters, so a denoiser-only fine-tune can change it.

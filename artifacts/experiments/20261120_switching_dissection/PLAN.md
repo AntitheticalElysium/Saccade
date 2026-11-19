@@ -183,3 +183,24 @@ From a perfect history, P1.5 loses 9.5% of the start's cows at step 1 (simulator
   - The chooser selects where it looks, so this comparison is confounded by what it chose.
 - **What separates:** glimpsed mobs deleted much less at step 1 means fine detail in the context protects the mob
   (fixation as a lever). Equal rates mean the glimpse does not reach the next frame's periphery.
+
+## Stage A5 and A6 (user 11-20: "let's get it a run and dissection as well")
+
+- **A5 (`a5.py`, GPU, after stage B): the paired fixation intervention.**
+  - Built on S2's world loop, copied for step 1 only, with the same batches and seeds.
+  - Each start's last real frame is re-encoded in that start's own history copy. Only the glimpse and the fixation
+    change; the periphery and lighting do not depend on the fixation, which an assertion checks.
+  - Arms:
+    - orig: the seeded draw; must reproduce S2's saved step-1 frames;
+    - on: the window centred on one isolated inner start mob per start;
+    - away: the farthest map window that excludes it.
+  - Reading: the target's step-1 deletion, on against away, paired per future. Split by kind, day or night, and ring,
+    with episode-bootstrap SEs.
+  - Separates: on lower than away at the night edge means the glimpse protects where the periphery token is corrupted
+    (the 11-20 hint: -9 points at 1.4 SE). Equal means it does not.
+- **A6 (`gaze_dev.py`, CPU): the learned fixation across the ten learned-gaze worlds (F2 → P1.5).**
+  - The F2 review's `trace.py` runs unchanged on each world's executed training trace, on the same labelled training
+    subset.
+  - Reading: crop coverage of entities by kind, HUD changes, terrain edits, entering map and the counters' attempts,
+    against paired uniform draws, by day and night. Also dwell and the logged C / S / entropy.
+  - Check: the F2 rerun reproduces the archived `20261104_p1f2_review/TRACE.json`.

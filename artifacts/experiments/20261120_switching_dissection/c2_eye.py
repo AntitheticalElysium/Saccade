@@ -112,7 +112,7 @@ def main(n=150):
         todo = sorted(set(picks) | (set(unit_eps) if k == 10 else set()))
         for e in todo:
             st = episode(model, cfg, dl, e)
-            ts = sorted(set(picks.get(e, []).tolist()) | ({x[2] for x in units if x[1] == e} if k == 10 else set()))
+            ts = sorted({int(t) for t in picks.get(e, [])} | ({x[2] for x in units if x[1] == e} if k == 10 else set()))
             if not ts:
                 continue
             x = estimates(model, cfg, st, e, ts).cpu().numpy()

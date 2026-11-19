@@ -15,6 +15,28 @@ one-step estimates on half the frames, p = 0.5; 4,000 denoiser-only G1 updates):
   low-signal levels rise (level 0 +2.5%, level 1 +1.6%, monotone at both reads) and the high-signal levels fall
   (level 7 -1.8%).
 
+## What was predicted before the rerun (transcript, 11-19)
+
+- **The user:** switching "might make the record less reliable for the denoiser".
+- **Me, after the first arm** (11:12): one-step estimates at low signal under-report mobs that the target shows. The
+  denoiser would learn to add mobs the record does not back up and to trust the record less. Discounting the record
+  removes the clocks' source at any learning rate. A 1e-5 rerun would show "the same direction, only weaker".
+  The rerun did.
+- **The same message split "94% in the record" three ways:**
+  - (a) the denoiser's one-step errors are biased toward deleting mobs;
+  - (b) the denoiser over-trusts the record;
+  - (c) Mamba over-trusts it.
+
+  The readers split has since ruled out (c). Switching acts on (b) only.
+- **Codex, plan review:** one-step substitutes made from recorded history "may miss the correlated errors that build up
+  in a real rollout".
+- **Codex, clocks:**
+  - After the 100-update memory-route smoke, due hunger drops fell 42/48 → 35/48.
+  - On frozen P1.5, Gaussian noise on the record's input (signal 0.875) cut energy 48 → 23 and hunger 42 → 23. That is
+    variant 7 in its extreme, untrained form.
+
+So the shrinkage reading below is last night's prediction. Stage A tests it; it is not a new idea.
+
 ## Candidate explanations, and what separates them
 
 1. **Shrinkage.**

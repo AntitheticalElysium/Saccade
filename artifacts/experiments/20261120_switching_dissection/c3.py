@@ -5,8 +5,8 @@ P1.5's final chooser head is fine-tuned offline on DEV frames (P1.5's frozen coa
   zero-initialised, added to each cell's embedding, as Mamba's `record_in` reads it);
 - **plain:** the head alone.
 
-Both arms share the seed, batches and schedule (the chooser's own recipe: AdamW 1e-3 cosine to 1e-4, batch 256, clip
-1). Reading, on held-out DEV episodes: next-token error and surprise by region, and policy coverage. Regions are C1's
+Both arms share the seed and batches, and continue the chooser's own AdamW at its final rate 1e-4 (its schedule had
+ended; batch 256, clip 1). The record read gets its own parameter group. Reading, on held-out DEV episodes: next-token error and surprise by region, and policy coverage. Regions are C1's
 groups and cover masks.
 
     MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_switching_dissection.c3 [UPDATES]
@@ -59,12 +59,18 @@ def episode_data(model, cfg, dl, e):
         p, v = C.coarse(model.perception, fr.flatten(0, 1))
     p, v = p.reshape(1, T + 1, 81, 16).float(), v.reshape(1, T + 1, 8).float()
     xx, y = C.inputs(p, v, chunk, 8, 8)
-    first = torch.zeros(1, T + 1, dtype=torch.bool, device=DEV); first[:, 0] = True
-    rin, _ = model.record.scan(p, first, model.record.zero(1, DEV))              # the record built from coarse tokens
-    return xx, y, rin[0, 8:].to(torch.bfloat16)
+    keep = np.sort(np.random.default_rng(int(e)).choice(len(y), min(120, len(y)), replace=False))   # 120 frames per episode
+    state, rins = model.record.zero(1, DEV), []                             # the record built from coarse tokens, in
+    for a in range(0, T + 1, 512):                                          # 512-frame segments (whole episodes at 1,024
+        first = torch.zeros(1, min(T + 1, a + 512) - a, dtype=torch.bool, device=DEV); first[:, 0] = a == 0   # dims per
+        ri, si = model.record.scan(p[:, a:a + 512], first, state); state = si[:, -1]                          # cell OOM)
+        rins.append(ri[0].to(torch.bfloat16).cpu()); del ri, si
+    rin = torch.cat(rins)[8:][keep]                                         # host memory: 400 episodes x 120 frames
+    ix = torch.as_tensor(keep, device=DEV)
+    return tuple(z[ix].cpu() for z in xx), y[ix].cpu(), rin, keep
 
 
-def main(updates=3000):
+def main(updates=1500):
     model, cfg = AI.load(CK)
     model.requires_grad_(False).eval()
     pol = dict(cfg["fixation"]["chooser"])
@@ -76,29 +82,36 @@ def main(updates=3000):
     fit, held = eps[:320], eps[320:]
     data = {e: episode_data(model, cfg, dl, e) for e in eps}
     print("episodes", len(fit), "fit /", len(held), "held out", flush=True)
-    state = torch.load(CK, weights_only=False, map_location="cpu")["fixation_controller"]["head"]
+    fc = torch.load(CK, weights_only=False, map_location="cpu")["fixation_controller"]
+    state = fc["head"]
+    final_lr = pol["minimum_learning_rate"]                                 # the head's schedule ended (25,000 updates)
+    assert fc["updates"] == cfg["p1"]["frames"] // pol["world_frames_per_head_update"]
     arms = {}
     for name, rd in (("plain", None), ("record", model.record.dim)):
         torch.manual_seed(611601)
         base = C.Head(pol["history"]); base.load_state_dict(state)
         arms[name] = RecordHead(base, rd).to(DEV)
-    opts = {n: torch.optim.AdamW(h.parameters(), lr=pol["learning_rate"], weight_decay=pol["weight_decay"]) for n, h in arms.items()}
+    opts = {}                                                               # the chooser's own AdamW continued at its
+    for n, h in arms.items():                                               # final rate; the record read: own group
+        opts[n] = torch.optim.AdamW(h.base.parameters(), lr=final_lr, weight_decay=pol["weight_decay"])
+        opts[n].load_state_dict(fc["optimizer"])
+        for gr in opts[n].param_groups:
+            gr["lr"] = final_lr
+        if h.record is not None:
+            opts[n].add_param_group({"params": list(h.record.parameters()), "lr": final_lr, "weight_decay": pol["weight_decay"]})
     sizes = np.array([len(data[e][1]) for e in fit]); prob_e = sizes / sizes.sum()
     g = np.random.default_rng(611602)
     log = []
     for u in range(updates):
-        lr = pol["minimum_learning_rate"] + 0.5 * (pol["learning_rate"] - pol["minimum_learning_rate"]) * (1 + math.cos(math.pi * u / updates))
         es = g.choice(len(fit), 8, p=prob_e)
         batch = []
         for ei in es:
-            xx, y, rin = data[fit[ei]]
-            ix = torch.as_tensor(g.integers(0, len(y), 32), device=DEV)
-            batch.append((tuple(z[ix] for z in xx), y[ix], rin[ix]))
+            xx, y, rin, _ = data[fit[ei]]
+            ix = torch.as_tensor(g.integers(0, len(y), 32))
+            batch.append((tuple(z[ix].to(DEV) for z in xx), y[ix].to(DEV), rin[ix].to(DEV)))
         xx = tuple(torch.cat([b[0][i] for b in batch]) for i in range(3)); y = torch.cat([b[1] for b in batch]); rin = torch.cat([b[2] for b in batch])
         row = {"update": u}
         for n, h in arms.items():
-            for gr in opts[n].param_groups:
-                gr["lr"] = lr
             loss = (h(xx, rin) - y).square().mean()
             opts[n].zero_grad(set_to_none=True); loss.backward(); torch.nn.utils.clip_grad_norm_(h.parameters(), pol["grad_clip"]); opts[n].step()
             row[n] = float(loss)
@@ -113,12 +126,13 @@ def main(updates=3000):
         tot = 0.
         with torch.no_grad():
             for e in held:
-                xx, y, rin = data[e]
+                xx, y, rin, keep = data[e]
+                xx, y, rin = tuple(z.to(DEV) for z in xx), y.to(DEV), rin.to(DEV)
                 taken = h(xx, rin); noop = h((xx[0], xx[1], torch.zeros_like(xx[2])), rin)
                 s = (y - taken).square().sum(-1)
                 prob = C.policy((taken - noop).square().sum(-1)[:, C.WIN.to(DEV)].sum(-1), s[:, C.WIN.to(DEV)].sum(-1), pol).cpu().numpy()
                 s = s.cpu().numpy(); tot += float(s.sum())
-                rows = lookup[loff[e] + np.arange(8, len(y) + 8)]
+                rows = lookup[loff[e] + 8 + keep]
                 for gname in C1.GROUPS:
                     mk = groups[gname][rows]; acc[gname][0] += float((s * mk).sum()); acc[gname][2] += float(mk.sum())
                 night = light[rows] < 0.5
@@ -140,4 +154,4 @@ def main(updates=3000):
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else 3000)
+    main(int(sys.argv[1]) if len(sys.argv) > 1 else 1500)

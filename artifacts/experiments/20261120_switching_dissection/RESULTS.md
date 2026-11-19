@@ -245,3 +245,30 @@ exactly. F2.1 is excluded (another corpus).
   surprise carried most of the entity attraction, which is consistent with P1.5's gaze leaving the mobs.
 - **For precision-weighting the loss by gaze,** P1.5's gaze would now put that weight more on the HUD and less on mobs
   than any earlier world.
+
+## A5: a glimpse on the mob does not protect it at the next step (`a5.py`, `a5.json`, `a5.log`)
+
+The design is paired: the same starts and the same noise, with the last real frame's glimpse re-encoded either on the
+target mob or on the farthest map window from it.
+- **Instruments:** the orig arm reproduces S2's saved step-1 frames in 99.57% of futures (cross-process drift). The
+  state-0 glimpse tokens change by 0.37 on average between arms.
+- **The drawn step-1 periphery barely moves:** by 0.0011 over all cells and 0.0017 around the target (periphery token
+  rms about 0.017).
+
+| Step-1 deletion of the target | On | Away | On - away (SE) | Units |
+| :--- | ---: | ---: | ---: | ---: |
+| Cows, day, inner | 0.050 | 0.050 | +0.000 (0.001) | 334 |
+| Cows, day, ring | 0.062 | 0.063 | -0.001 (0.001) | 438 |
+| Cows, night, inner | 0.121 | 0.121 | +0.000 (0.003) | 89 |
+| Cows, night, ring | 0.289 | 0.290 | -0.001 (0.001) | 107 |
+| Zombies, day, inner | 0.017 | 0.020 | -0.003 (0.002) | 228 |
+| Zombies, night, ring | 0.304 | 0.307 | -0.003 (0.003) | 47 |
+| Skeletons, night, ring | 0.533 | 0.517 | +0.017 (0.009) | 16 |
+
+- **The glimpse has no causal effect on next-step deletion,** night edge included (-0.1 ± 0.1 points). A4's -9 points
+  for night-edge cows was noise.
+- **The previous frame's glimpse barely reaches the next frame's periphery.** This fits 10-29 ("the belief keeps nothing
+  of glimpses") and F1.6 (half retained, the global projection loses access).
+- **For a gaze-precision-weighted loss,** the route it would act through is unused today. Such a loss would first have
+  to create that route (as the brain's transsaccadic learning does), and the deletion it would target happens with full
+  information in daylight.

@@ -1,1 +1,3 @@
 gaze/*/trace_subset.npz
+_c2cache/
+_*.txt

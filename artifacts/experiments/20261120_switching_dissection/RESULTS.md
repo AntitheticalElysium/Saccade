@@ -93,3 +93,28 @@ frames cannot.
   This is a description so far, not a measured mechanism. Stage B measures how much the denoiser relies on the record
   directly.
 - **(3) Dose** and **(4) Recipe:** not addressed by these data.
+
+## Stage A2: deleted mobs coming back (`resurrect.py`, `resurrect.json`, `resurrect.log`)
+
+The table gives the share of the start's own mobs that, after the tracker loses them, have a same-kind mob within 1
+cell of their last position at the next 1-2 steps. R4k's change against P1.5 is in brackets (SE).
+
+| Recovery rate | Simulator | P1.5 | R2k | R4k |
+| :--- | ---: | ---: | ---: | ---: |
+| Cows, lost at step 1 | 0.358 | 0.118 | 0.162 | 0.166 (+0.048 ± 0.009) |
+| Cows, lost at steps 2-14 | 0.442 | 0.150 | 0.210 | 0.207 (+0.056 ± 0.007) |
+| Zombies, lost at step 1 | 0.429 | 0.097 | 0.121 | 0.123 (+0.025 ± 0.020) |
+| Zombies, lost at steps 2-14 | 0.500 | 0.162 | 0.183 | 0.180 (+0.017 ± 0.015) |
+| Skeletons, lost at steps 2-14 | 0.500 | 0.182 | 0.265 | 0.232 (+0.050 ± 0.028) |
+
+- **The simulator's rate (0.36-0.50) is the instrument's.** Its "losses" are mostly reader misses of a mob that is
+  still there.
+- **The lesson landed partly, for cows.** Deleted cows come back about 40% more often (+5 to +6 points, 5-8 SE).
+  - Limit: this cannot tell a redrawn cow from a spawn at a plausible nearby cell.
+  - Spawns doubled, so part of the gain may be spawns.
+- **For zombies it did not land measurably:** +2 points at about 1 SE, while zombie deaths rose 50-75%.
+- **Net:**
+  - Cows: more deletions, somewhat more recovery, and twice the spawns.
+  - Zombies: more deletions, the same recovery.
+
+  Switching taught a little of the intended recovery. The distrust it taught as well outweighs it.

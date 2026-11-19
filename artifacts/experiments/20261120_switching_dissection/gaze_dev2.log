@@ -1,0 +1,19 @@
+== F3
+training occurrences 1296145 unique frames 123494 physical episodes 383
+temporal {'learned': {'same_screen_window': 0.0424544867115187, 'mean_screen_center_L1': 4.288456500076216, 'run_length_median': 1.0, 'run_length_p95': 1.0, 'run_length_max': 14, 'runs_ge_5': 5155}, 'paired_uniform': {'same_screen_window': 0.020405752940793834, 'mean_screen_center_L1': 4.571824532406041, 'run_length_median': 1.0, 'run_length_p95': 1.0, 'run_length_max': 5, 'runs_ge_5': 2}}
+any_entity learned 0.48060421361940947 uniform 0.2072876072611474 delta {'mean': 0.2733166063582621, 'low': 0.2680072016584652, 'high': 0.2797817657895361, 'n': 861682, 'episodes': 383, 'denominator': 861682.0, 'valid_bootstraps': 2000}
+near_entity learned 0.41978415453057066 uniform 0.21319267223113125 delta {'mean': 0.20659148229943938, 'low': 0.2020522873555761, 'high': 0.21210771915384363, 'n': 535661, 'episodes': 383, 'denominator': 535661.0, 'valid_bootstraps': 2000}
+zombies learned 0.34503437212060994 uniform 0.1670784901217086 delta {'mean': 0.1779558819989013, 'low': 0.17194967250727022, 'high': 0.18393067291846615, 'n': 456911, 'episodes': 380, 'denominator': 456911.0, 'valid_bootstraps': 2000}
+cows learned 0.39883985829410995 uniform 0.14640667181839165 delta {'mean': 0.25243318647571833, 'low': 0.24397485877448907, 'high': 0.26170698700970085, 'n': 498215, 'episodes': 376, 'denominator': 498215.0, 'valid_bootstraps': 2000}
+skeletons learned 0.36280761443570103 uniform 0.1252948297814607 delta {'mean': 0.23751278465424033, 'low': 0.2265452008939784, 'high': 0.24931799890409173, 'n': 191636, 'episodes': 278, 'denominator': 191636.0, 'valid_bootstraps': 2000}
+arrows learned 0.29099267396114015 uniform 0.1643064367558819 delta {'mean': 0.1266862372052582, 'low': 0.11972428352964812, 'high': 0.13385333220807327, 'n': 116161, 'episodes': 254, 'denominator': 116161.0, 'valid_bootstraps': 2000}
+entering_map learned 0.35749149086888166 uniform 0.21684462412964978 delta {'mean': 0.14064686673923185, 'low': 0.13425803184872498, 'high': 0.1477630214973006, 'n': 463032, 'episodes': 383, 'denominator': 463032.0, 'valid_bootstraps': 2000}
+terrain_edit learned 0.29501703781096567 uniform 0.1823967658888684 delta {'mean': 0.11262027192209725, 'low': 0.10564825017879502, 'high': 0.11950819704258928, 'n': 146439, 'episodes': 342, 'denominator': 146439.0, 'valid_bootstraps': 2000}
+changed_hud learned 0.31053318685732895 uniform 0.11423606778877024 delta {'mean': 0.19629711906855868, 'low': 0.19154056081351992, 'high': 0.20137096072523436, 'n': 328609, 'episodes': 383, 'denominator': 328609.0, 'valid_bootstraps': 2000}
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/artifacts/experiments/20261120_switching_dissection/gaze_dev.py", line 50, in <module>
+    T.RUN = HERE.parent / WORLDS[name]
+                          ~~~~~~^^^^^^
+KeyError: 'F4'

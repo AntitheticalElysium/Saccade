@@ -216,3 +216,32 @@ history removed minus with the real record, per cell, at low signal (levels 0-3)
   - So the "diluted supervision" explanation for small objects (OC-STORM, ConsisDrive) does not hold here in loss-share
     terms.
   - More loss weight at mobs would mostly add pressure on irreducible motion noise.
+
+## A6: the learned gaze moved from mobs to the HUD across the arms (`gaze_dev.py`; `gaze/*/TRACE.json`, `gaze/summary.json`)
+
+The reading is the executed training gaze on the same labelled training subset: 1.30M occurrences, 383 episodes. It
+gives crop coverage when the target is present, learned (paired uniform). The F2 rerun reproduces the review's archive
+exactly. F2.1 is excluded (another corpus).
+
+| Covered when present | F2 | F4 | HUD-Change | F6.1 | P1.5 | Uniform |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Any entity | 0.487 | 0.485 | 0.461 | 0.464 | 0.418 | 0.207 |
+| Cows | 0.402 | 0.401 | 0.383 | 0.344 | 0.348 | 0.146 |
+| Zombies | 0.353 | 0.350 | 0.328 | 0.381 | 0.308 | 0.167 |
+| Skeletons | 0.368 | 0.365 | 0.354 | 0.351 | 0.285 | 0.125 |
+| Entity, day | 0.550 | 0.547 | 0.518 | 0.518 | 0.472 | 0.197 |
+| Entity, night | 0.383 | 0.383 | 0.366 | 0.375 | 0.328 | 0.223 |
+| Changed HUD | 0.317 | 0.304 | 0.348 | 0.373 | 0.418 | 0.114 |
+| Drink counter at an attempt | 0.500 | 0.452 | 0.527 | 0.539 | 0.610 | 0.121 |
+| Coal counter at an attempt | 0.304 | 0.305 | 0.314 | 0.378 | 0.418 | 0.081 |
+| Entering map | 0.358 | 0.357 | 0.378 | 0.366 | 0.402 | 0.217 |
+
+- **P1.5's gaze covers entities least of all nine worlds**, 6.9 points below F2 and 4.6 below F6.1. The entity gain
+  over uniform is +21.0 [20.5, 21.7] against F2's +28.0 [27.5, 28.6]. Zombies and skeletons lose most.
+- **It covers HUD changes and counters most:** HUD gain +30.4 [29.9, 30.9] against F2's +20.3.
+- **Within P1.5's training,** entity coverage rose from 0.33 (first tenth) to 0.45 (last), still below F6.1's 0.49.
+- **The logged surprise score at the end** is 2.0 in P1.5 against 3.7-4.3 in every other world, with contingency
+  similar (9.8). The policy normalises both by their means, so only their spatial shape matters. In the F2 review,
+  surprise carried most of the entity attraction, which is consistent with P1.5's gaze leaving the mobs.
+- **For precision-weighting the loss by gaze,** P1.5's gaze would now put that weight more on the HUD and less on mobs
+  than any earlier world.

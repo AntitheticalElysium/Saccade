@@ -272,3 +272,49 @@ target mob or on the farthest map window from it.
 - **For a gaze-precision-weighted loss,** the route it would act through is unused today. Such a loss would first have
   to create that route (as the brain's transsaccadic learning does), and the deletion it would target happens with full
   information in daylight.
+
+# The eye's checks (user 11-20)
+
+## C1: why P1.5's chooser predicts better (`c1.py`, `c1.json`; 150 DEV episodes; each world's own encoder and final head)
+
+| Per cell | F6 | F6.1 | P1.5 |
+| :--- | ---: | ---: | ---: |
+| Head next-token error (whole frame) | 0.031 | 0.028 | 0.015 |
+| Mob cells: token change | 11.6 | 11.0 | 5.7 |
+| Mob cells: chooser surprise | 7.8 | 7.4 | 3.8 |
+| Static map: token change | 1.87 | 1.68 | 1.53 |
+| Static map: share explained by the head | 0.81 | 0.82 | 0.92 |
+| HUD flip: token change | 14.5 | 14.6 | 13.1 |
+| HUD flip: chooser surprise | 8.4 | 7.5 | 7.6 |
+| Entering terrain: chooser surprise | 2.2 | 2.0 | 1.9 |
+
+- **Mobs barely change P1.5's tokens.** At mob cells the tokens change half as much as in F6 / F6.1, and the head
+  explains the same share (0.32-0.33). P1.5's encoder represents mobs with about half the contrast.
+- **Static terrain moves more predictably** (0.92 explained against 0.81-0.82) at a similar change.
+- **HUD flips and entering terrain are unchanged.** Their share of the chooser's surprise roughly doubles: 11.3% and
+  27.9%, against 6.1-6.2% and 15.8-15.9%.
+- **Coverage on these frames, P1.5 against F6.1:**
+  - entities 0.447 against 0.486;
+  - zombies 0.315 against 0.370 (night 0.251 against 0.318);
+  - cows 0.384 against 0.379 (unchanged);
+  - changed HUD 0.423 against 0.380 (night 0.431 against 0.337).
+- **Cause, by P1.5's design:** two of its five changes decide what trains the encoder. Route by role means the reward,
+  forecast and gaze heads no longer train it; the harmoniser's fixed point reweights G1 / G2 / G3. C1 cannot separate
+  the two. Neither the chooser's inputs nor its recipe changed.
+
+## C2's cost (`c2_cost.py`, `c2_cost.json`; measured)
+
+| Item | Measured |
+| :--- | ---: |
+| Fresh world-eye, 64-step update (trainer 2.284 s) | 1.79 s (78%) |
+| Fresh world-eye, 256-step update (trainer 8.581 s) | 6.94 s (81%) |
+| Projected extra on the 15.4 h run | +12.2 h |
+| Offline fill at 64 streams, per frame | 0.88 ms (in-loop 1.69-1.75 ms) |
+| Cache read per update | 0.75 ms (64) / 2.47 ms (256) |
+| Cache refreshed every 1 / 2 / 5 / 10 passes | +6.3 / +3.1 / +1.3 / +0.6 h |
+
+- **The in-loop cost comes from the pass being sequential.** Each target frame needs one zero-signal evaluation plus
+  its context pass, because in a single-stream diffusion-forcing pass a frame's noisy tokens are also later frames'
+  context.
+- **In imagination the same expectation is free:** it is the sampler's first evaluation.
+- **The page-cache read was measured on a file that fits in RAM.** A full pass of periphery estimates is about 6.6 GB.

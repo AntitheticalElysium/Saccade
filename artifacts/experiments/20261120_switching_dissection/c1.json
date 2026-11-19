@@ -1,0 +1,544 @@
+{
+ "episodes": [
+  1,
+  2,
+  4,
+  19,
+  26,
+  45,
+  58,
+  60,
+  61,
+  63,
+  67,
+  79,
+  84,
+  101,
+  102,
+  108,
+  113,
+  119,
+  128,
+  129,
+  137,
+  141,
+  142,
+  145,
+  148,
+  155,
+  157,
+  158,
+  164,
+  167,
+  176,
+  179,
+  186,
+  190,
+  195,
+  203,
+  220,
+  231,
+  244,
+  253,
+  254,
+  263,
+  275,
+  277,
+  280,
+  283,
+  290,
+  304,
+  324,
+  325,
+  337,
+  345,
+  349,
+  354,
+  357,
+  358,
+  359,
+  360,
+  373,
+  382,
+  384,
+  388,
+  397,
+  398,
+  399,
+  401,
+  404,
+  407,
+  409,
+  416,
+  429,
+  435,
+  443,
+  456,
+  457,
+  474,
+  484,
+  490,
+  500,
+  507,
+  508,
+  511,
+  523,
+  537,
+  543,
+  544,
+  546,
+  555,
+  559,
+  561,
+  567,
+  590,
+  600,
+  603,
+  619,
+  622,
+  627,
+  630,
+  631,
+  634,
+  641,
+  649,
+  664,
+  670,
+  673,
+  678,
+  685,
+  693,
+  704,
+  711,
+  720,
+  721,
+  727,
+  733,
+  737,
+  746,
+  759,
+  768,
+  776,
+  783,
+  785,
+  794,
+  800,
+  802,
+  807,
+  812,
+  820,
+  821,
+  828,
+  830,
+  831,
+  855,
+  858,
+  861,
+  888,
+  890,
+  891,
+  892,
+  894,
+  898,
+  901,
+  908,
+  909,
+  911,
+  920,
+  949,
+  952,
+  956,
+  999,
+  1004
+ ],
+ "F6": {
+  "head_mse": 0.03092043392644337,
+  "groups": {
+   "mob": {
+    "cells": 62929.0,
+    "change_share": 0.10419117678127901,
+    "surprise_share": 0.2484130082215603,
+    "contingency_share": 0.03733393441554053,
+    "change_per_cell": 11.645512002974861,
+    "surprise_per_cell": 7.845343763047163
+   },
+   "changed_hud": {
+    "cells": 14574.0,
+    "change_share": 0.030024979622751188,
+    "surprise_share": 0.06174773284835052,
+    "contingency_share": 0.017354855878797277,
+    "change_per_cell": 14.49046862159751,
+    "surprise_per_cell": 8.420361284203894
+   },
+   "hud_static": {
+    "cells": 878136.0,
+    "change_share": 0.0021671541678858104,
+    "surprise_share": 0.007470510413421607,
+    "contingency_share": 0.003698049894844328,
+    "change_per_cell": 0.017358272434496204,
+    "surprise_per_cell": 0.01690740547457589
+   },
+   "entering_map": {
+    "cells": 141029.0,
+    "change_share": 0.08059104075422498,
+    "surprise_share": 0.15837811966964577,
+    "contingency_share": 0.045359513862609654,
+    "change_per_cell": 4.019359132928084,
+    "surprise_per_cell": 2.231902560928479
+   },
+   "terrain_edit": {
+    "cells": 5465.0,
+    "change_share": 0.007111207141652129,
+    "surprise_share": 0.006282366290100853,
+    "contingency_share": 0.008422859341971083,
+    "change_per_cell": 9.152329301877733,
+    "surprise_per_cell": 2.284659916630112
+   },
+   "map_static": {
+    "cells": 2915062.0,
+    "change_share": 0.7759144415322069,
+    "surprise_share": 0.5177082625569209,
+    "contingency_share": 0.8878307866062372,
+    "change_per_cell": 1.8721666888773238,
+    "surprise_per_cell": 0.35296023068931376
+   }
+  },
+  "coverage": {
+   "any_entity|day": {
+    "learned": 0.5404701508405111,
+    "uniform": 0.19619927700301643,
+    "frames": 21272.0
+   },
+   "any_entity|night": {
+    "learned": 0.39066274595624617,
+    "uniform": 0.22298021498675794,
+    "frames": 13100.0
+   },
+   "any_entity|all": {
+    "learned": 0.48337492886763794,
+    "uniform": 0.20640613978629968,
+    "frames": 34372.0
+   },
+   "cows|day": {
+    "learned": 0.4379714385375498,
+    "uniform": 0.14797094233067937,
+    "frames": 12583.0
+   },
+   "cows|night": {
+    "learned": 0.24356630691289902,
+    "uniform": 0.1463804081632653,
+    "frames": 6250.0
+   },
+   "cows|all": {
+    "learned": 0.3734553207863439,
+    "uniform": 0.14744310085314852,
+    "frames": 18833.0
+   },
+   "zombies|day": {
+    "learned": 0.4169771168416054,
+    "uniform": 0.15915506189921044,
+    "frames": 9558.0
+   },
+   "zombies|night": {
+    "learned": 0.3162688868492169,
+    "uniform": 0.16725890898364773,
+    "frames": 8856.0
+   },
+   "zombies|all": {
+    "learned": 0.368542660211033,
+    "uniform": 0.16305251328292808,
+    "frames": 18414.0
+   },
+   "changed_hud|day": {
+    "learned": 0.3818143626299237,
+    "uniform": 0.11526613548176895,
+    "frames": 8268.0
+   },
+   "changed_hud|night": {
+    "learned": 0.30847725632750794,
+    "uniform": 0.1101195315367212,
+    "frames": 4393.0
+   },
+   "changed_hud|all": {
+    "learned": 0.3563685116868817,
+    "uniform": 0.11348041309565447,
+    "frames": 12661.0
+   },
+   "entering_map|day": {
+    "learned": 0.4639585082501181,
+    "uniform": 0.21649510641799918,
+    "frames": 11283.0
+   },
+   "entering_map|night": {
+    "learned": 0.2523204670638897,
+    "uniform": 0.217283628779979,
+    "frames": 6576.0
+   },
+   "entering_map|all": {
+    "learned": 0.38602963841050236,
+    "uniform": 0.21678545431275145,
+    "frames": 17859.0
+   }
+  }
+ },
+ "F6.1": {
+  "head_mse": 0.027720390956877176,
+  "groups": {
+   "mob": {
+    "cells": 62929.0,
+    "change_share": 0.10816935417863531,
+    "surprise_share": 0.2601893661407817,
+    "contingency_share": 0.03772097901339599,
+    "change_per_cell": 10.969219153024655,
+    "surprise_per_cell": 7.3668353440781305
+   },
+   "changed_hud": {
+    "cells": 14574.0,
+    "change_share": 0.03339559927535644,
+    "surprise_share": 0.061031531022804585,
+    "contingency_share": 0.024035112555209074,
+    "change_per_cell": 14.622875519081514,
+    "surprise_per_cell": 7.461355796710313
+   },
+   "hud_static": {
+    "cells": 878136.0,
+    "change_share": 0.00295684203895791,
+    "surprise_share": 0.00924007755803573,
+    "contingency_share": 0.004696617040561353,
+    "change_per_cell": 0.02148763653860975,
+    "surprise_per_cell": 0.0187480492253975
+   },
+   "entering_map": {
+    "cells": 141029.0,
+    "change_share": 0.07971533639581296,
+    "surprise_share": 0.15867165619617007,
+    "contingency_share": 0.04428426197542054,
+    "change_per_cell": 3.6070799103777524,
+    "surprise_per_cell": 2.0046251690817383
+   },
+   "terrain_edit": {
+    "cells": 5465.0,
+    "change_share": 0.00692823719938106,
+    "surprise_share": 0.007067320449290214,
+    "contingency_share": 0.007444855744615699,
+    "change_per_cell": 8.090118607096136,
+    "surprise_per_cell": 2.304129412807081
+   },
+   "map_static": {
+    "cells": 2915062.0,
+    "change_share": 0.7688346309118563,
+    "surprise_share": 0.5038000486329177,
+    "contingency_share": 0.8818181736707974,
+    "change_per_cell": 1.6830904200409427,
+    "surprise_per_cell": 0.30793046610170427
+   }
+  },
+  "coverage": {
+   "any_entity|day": {
+    "learned": 0.5434631297309491,
+    "uniform": 0.19619927700301643,
+    "frames": 21272.0
+   },
+   "any_entity|night": {
+    "learned": 0.392162788269174,
+    "uniform": 0.22298021498675794,
+    "frames": 13100.0
+   },
+   "any_entity|all": {
+    "learned": 0.4857989168688733,
+    "uniform": 0.20640613978629968,
+    "frames": 34372.0
+   },
+   "cows|day": {
+    "learned": 0.44475798283995316,
+    "uniform": 0.14797094233067937,
+    "frames": 12583.0
+   },
+   "cows|night": {
+    "learned": 0.24707949458122253,
+    "uniform": 0.1463804081632653,
+    "frames": 6250.0
+   },
+   "cows|all": {
+    "learned": 0.37915555724214156,
+    "uniform": 0.14744310085314852,
+    "frames": 18833.0
+   },
+   "zombies|day": {
+    "learned": 0.4180087755853398,
+    "uniform": 0.15915506189921044,
+    "frames": 9558.0
+   },
+   "zombies|night": {
+    "learned": 0.3181587135404106,
+    "uniform": 0.16725890898364773,
+    "frames": 8856.0
+   },
+   "zombies|all": {
+    "learned": 0.3699870466719858,
+    "uniform": 0.16305251328292808,
+    "frames": 18414.0
+   },
+   "changed_hud|day": {
+    "learned": 0.40307424590892704,
+    "uniform": 0.11526613548176895,
+    "frames": 8268.0
+   },
+   "changed_hud|night": {
+    "learned": 0.3365426430567309,
+    "uniform": 0.1101195315367212,
+    "frames": 4393.0
+   },
+   "changed_hud|all": {
+    "learned": 0.37998970844962005,
+    "uniform": 0.11348041309565447,
+    "frames": 12661.0
+   },
+   "entering_map|day": {
+    "learned": 0.46083874585389095,
+    "uniform": 0.21649510641799918,
+    "frames": 11283.0
+   },
+   "entering_map|night": {
+    "learned": 0.2520069461621779,
+    "uniform": 0.217283628779979,
+    "frames": 6576.0
+   },
+   "entering_map|all": {
+    "learned": 0.38394318073378864,
+    "uniform": 0.21678545431275145,
+    "frames": 17859.0
+   }
+  }
+ },
+ "P1.5": {
+  "head_mse": 0.015289711542964884,
+  "groups": {
+   "mob": {
+    "cells": 62929.0,
+    "change_share": 0.06488127764039303,
+    "surprise_share": 0.24641185535116794,
+    "contingency_share": 0.02212902956508049,
+    "change_per_cell": 5.685756298721629,
+    "surprise_per_cell": 3.8481585499548094
+   },
+   "changed_hud": {
+    "cells": 14574.0,
+    "change_share": 0.03450024576275314,
+    "surprise_share": 0.11297545676158456,
+    "contingency_share": 0.015313202418941935,
+    "change_per_cell": 13.054585945921964,
+    "surprise_per_cell": 7.618115094916327
+   },
+   "hud_static": {
+    "cells": 878136.0,
+    "change_share": 0.00023057935606451697,
+    "surprise_share": 0.010280044028768033,
+    "contingency_share": 0.0017230928837940428,
+    "change_per_cell": 0.0014480325300074242,
+    "surprise_per_cell": 0.011504702214033007
+   },
+   "entering_map": {
+    "cells": 141029.0,
+    "change_share": 0.08425669436951817,
+    "surprise_share": 0.2789062252362593,
+    "contingency_share": 0.04233488305568549,
+    "change_per_cell": 3.2946984248251288,
+    "surprise_per_cell": 1.9435332300801131
+   },
+   "terrain_edit": {
+    "cells": 5465.0,
+    "change_share": 0.007742865420340419,
+    "surprise_share": 0.01088478815206426,
+    "contingency_share": 0.0066449751187698716,
+    "change_per_cell": 7.813241042506226,
+    "surprise_per_cell": 1.9573658351328869
+   },
+   "map_static": {
+    "cells": 2915062.0,
+    "change_share": 0.8083883374509307,
+    "surprise_share": 0.3405416304701559,
+    "contingency_share": 0.9118548169577282,
+    "change_per_cell": 1.52929729878226,
+    "surprise_per_cell": 0.11480600480234396
+   }
+  },
+  "coverage": {
+   "any_entity|day": {
+    "learned": 0.5093428401536357,
+    "uniform": 0.19619927700301643,
+    "frames": 21272.0
+   },
+   "any_entity|night": {
+    "learned": 0.3452164311536396,
+    "uniform": 0.22298021498675794,
+    "frames": 13100.0
+   },
+   "any_entity|all": {
+    "learned": 0.44679029966197,
+    "uniform": 0.20640613978629968,
+    "frames": 34372.0
+   },
+   "cows|day": {
+    "learned": 0.4457492954169852,
+    "uniform": 0.14797094233067937,
+    "frames": 12583.0
+   },
+   "cows|night": {
+    "learned": 0.2588269449865818,
+    "uniform": 0.1463804081632653,
+    "frames": 6250.0
+   },
+   "cows|all": {
+    "learned": 0.3837164427025044,
+    "uniform": 0.14744310085314852,
+    "frames": 18833.0
+   },
+   "zombies|day": {
+    "learned": 0.373653034319262,
+    "uniform": 0.15915506189921044,
+    "frames": 9558.0
+   },
+   "zombies|night": {
+    "learned": 0.2514203112865205,
+    "uniform": 0.16725890898364773,
+    "frames": 8856.0
+   },
+   "zombies|all": {
+    "learned": 0.31486662320183323,
+    "uniform": 0.16305251328292808,
+    "frames": 18414.0
+   },
+   "changed_hud|day": {
+    "learned": 0.41879035870580206,
+    "uniform": 0.11526613548176895,
+    "frames": 8268.0
+   },
+   "changed_hud|night": {
+    "learned": 0.4311315411820095,
+    "uniform": 0.1101195315367212,
+    "frames": 4393.0
+   },
+   "changed_hud|all": {
+    "learned": 0.4230723855770573,
+    "uniform": 0.11348041309565447,
+    "frames": 12661.0
+   },
+   "entering_map|day": {
+    "learned": 0.5000871109706782,
+    "uniform": 0.21649510641799918,
+    "frames": 11283.0
+   },
+   "entering_map|night": {
+    "learned": 0.28543161998283106,
+    "uniform": 0.217283628779979,
+    "frames": 6576.0
+   },
+   "entering_map|all": {
+    "learned": 0.42104715826103006,
+    "uniform": 0.21678545431275145,
+    "frames": 17859.0
+   }
+  }
+ }
+}

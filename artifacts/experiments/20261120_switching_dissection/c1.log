@@ -1,0 +1,28 @@
+/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/.venv/lib/python3.12/site-packages/mamba_ssm/utils/determinism.py:73: UserWarning: Deterministic mode: set TRITON_CACHE_AUTOTUNING=1 for cached autotuning.
+  warnings.warn(msg)
+== F6 head next-token MSE 0.03092
+== F6.1 head next-token MSE 0.02772
+== P1.5 head next-token MSE 0.01529
+share of token change / chooser surprise / contingency, and per-cell surprise, by region
+  mob           F6: 0.104 / 0.248 / 0.037  per-cell 7.8453 | F6.1: 0.108 / 0.260 / 0.038  per-cell 7.3668 | P1.5: 0.065 / 0.246 / 0.022  per-cell 3.8482
+  changed_hud   F6: 0.030 / 0.062 / 0.017  per-cell 8.4204 | F6.1: 0.033 / 0.061 / 0.024  per-cell 7.4614 | P1.5: 0.035 / 0.113 / 0.015  per-cell 7.6181
+  hud_static    F6: 0.002 / 0.007 / 0.004  per-cell 0.0169 | F6.1: 0.003 / 0.009 / 0.005  per-cell 0.0187 | P1.5: 0.000 / 0.010 / 0.002  per-cell 0.0115
+  entering_map  F6: 0.081 / 0.158 / 0.045  per-cell 2.2319 | F6.1: 0.080 / 0.159 / 0.044  per-cell 2.0046 | P1.5: 0.084 / 0.279 / 0.042  per-cell 1.9435
+  terrain_edit  F6: 0.007 / 0.006 / 0.008  per-cell 2.2847 | F6.1: 0.007 / 0.007 / 0.007  per-cell 2.3041 | P1.5: 0.008 / 0.011 / 0.007  per-cell 1.9574
+  map_static    F6: 0.776 / 0.518 / 0.888  per-cell 0.3530 | F6.1: 0.769 / 0.504 / 0.882  per-cell 0.3079 | P1.5: 0.808 / 0.341 / 0.912  per-cell 0.1148
+expected coverage when present: learned (uniform)
+  any_entity|day       F6: 0.540 (0.196) | F6.1: 0.543 (0.196) | P1.5: 0.509 (0.196)
+  any_entity|night     F6: 0.391 (0.223) | F6.1: 0.392 (0.223) | P1.5: 0.345 (0.223)
+  any_entity|all       F6: 0.483 (0.206) | F6.1: 0.486 (0.206) | P1.5: 0.447 (0.206)
+  cows|day             F6: 0.438 (0.148) | F6.1: 0.445 (0.148) | P1.5: 0.446 (0.148)
+  cows|night           F6: 0.244 (0.146) | F6.1: 0.247 (0.146) | P1.5: 0.259 (0.146)
+  cows|all             F6: 0.373 (0.147) | F6.1: 0.379 (0.147) | P1.5: 0.384 (0.147)
+  zombies|day          F6: 0.417 (0.159) | F6.1: 0.418 (0.159) | P1.5: 0.374 (0.159)
+  zombies|night        F6: 0.316 (0.167) | F6.1: 0.318 (0.167) | P1.5: 0.251 (0.167)
+  zombies|all          F6: 0.369 (0.163) | F6.1: 0.370 (0.163) | P1.5: 0.315 (0.163)
+  changed_hud|day      F6: 0.382 (0.115) | F6.1: 0.403 (0.115) | P1.5: 0.419 (0.115)
+  changed_hud|night    F6: 0.308 (0.110) | F6.1: 0.337 (0.110) | P1.5: 0.431 (0.110)
+  changed_hud|all      F6: 0.356 (0.113) | F6.1: 0.380 (0.113) | P1.5: 0.423 (0.113)
+  entering_map|day     F6: 0.464 (0.216) | F6.1: 0.461 (0.216) | P1.5: 0.500 (0.216)
+  entering_map|night   F6: 0.252 (0.217) | F6.1: 0.252 (0.217) | P1.5: 0.285 (0.217)
+  entering_map|all     F6: 0.386 (0.217) | F6.1: 0.384 (0.217) | P1.5: 0.421 (0.217)

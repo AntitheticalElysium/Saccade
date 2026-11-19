@@ -124,6 +124,8 @@ def step1(model, cfg, R, enc, rows, plans, eps, sub, L, grids, override):
         for a, w in enumerate(ws):
             s = slice(MF * a, MF * (a + 1))
             out.setdefault("grid", {})[int(w)] = gr[s]; out.setdefault("pos", {})[int(w)] = po[s]
+            out.setdefault("ptok", {})[int(w)] = parts[0][s].half().cpu().numpy()            # the drawn periphery
+            out.setdefault("g0", {})[int(w)] = own[a][0].float().cpu().numpy()            # state 0's glimpse
     return {k: np.stack([v[w] for w in range(len(rows))]) for k, v in out.items()}
 
 
@@ -146,6 +148,16 @@ def main(n=None):
     saved = np.load(S2.HERE / "model.npz")
     same = (res["orig"]["grid"][:, :, 1] == saved["m_grid"][:len(rows), :, 1]).all((-1, -2))
     print(f"orig vs S2's saved step-1 frames: {same.mean():.4f} of futures identical", flush=True)
+    sel = np.array(sorted(T))                                            # the override reached the model?
+    for arm in ("on", "away"):
+        dg = np.abs(res[arm]["g0"][sel] - res["orig"]["g0"][sel]).mean()
+        dp = np.abs(res[arm]["ptok"][sel].astype(np.float32) - res["orig"]["ptok"][sel].astype(np.float32))
+        cell = np.array([T[w]["cell"][0] * 9 + T[w]["cell"][1] for w in sel])
+        near = np.stack([dp[q, :, [c + d for d in (-10, -9, -8, -1, 0, 1, 8, 9, 10) if 0 <= c + d < 63]].mean() for q, c in enumerate(cell)])
+        print(f"{arm} vs orig: state-0 glimpse |diff| {dg:.4f}; drawn step-1 periphery |diff| all cells {dp.mean():.5f},"
+              f" around the target {near.mean():.5f}", flush=True)
+    for r in res.values():
+        r.pop("ptok"); r.pop("g0")
     tag = "" if n is None else "_smoke"
     np.savez_compressed(DL.EV.HERE / f"a5{tag}.npz", **{f"{a}_{k}": v for a, r in res.items() for k, v in r.items()},
                         targets=np.array([[w, v["kind"], *v["cell"], *v["on"], *v["away"]] for w, v in sorted(T.items())]))

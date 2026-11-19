@@ -1,0 +1,16 @@
+/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/.venv/lib/python3.12/site-packages/mamba_ssm/utils/determinism.py:73: UserWarning: Deterministic mode: set TRITON_CACHE_AUTOTUNING=1 for cached autotuning.
+  warnings.warn(msg)
+encoded 0/4
+orig 5s
+on 9s
+away 14s
+orig vs S2's saved step-1 frames: 0.5755 of futures identical
+on vs orig: state-0 glimpse |diff| 0.3693; drawn step-1 periphery |diff| all cells 0.00098, around the target 0.00149; seeded glimpse already covered the target in nan
+away vs orig: state-0 glimpse |diff| 0.2944; drawn step-1 periphery |diff| all cells 0.00087, around the target 0.00127; seeded glimpse already covered the target in nan
+step-1 deletion of the target mob: on / away / orig (paired on - away, episode-bootstrap SE), units
+  cows      day   inner on 0.031 away 0.031 orig 0.031 | on-away +0.000 (0.000) units 4
+  cows      day   ring  on 0.111 away 0.111 orig 0.111 | on-away +0.000 (0.000) units 3
+  skeletons day   inner on 0.208 away 0.208 orig 0.208 | on-away +0.000 (0.000) units 3
+  skeletons day   ring  on 0.292 away 0.250 orig 0.250 | on-away +0.042 (0.000) units 3
+  zombies   day   inner on 0.000 away 0.000 orig 0.000 | on-away +0.000 (0.000) units 1
+  zombies   night inner on 0.250 away 0.250 orig 0.250 | on-away +0.000 (0.000) units 2

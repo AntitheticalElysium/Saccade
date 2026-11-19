@@ -68,7 +68,8 @@ def step1(model, cfg, R, enc, rows, plans, eps, sub, L, grids, override):
                 c = TR.tensors(D.gather([dl_eps[int(rows[w, 0])]], [[(0, 1, t, *fx)]]), DEV)
                 with TR.autocast(DEV, cfg):
                     pc = model.perception(c["frames"], c["fixation"])
-                assert torch.allclose(pc.p[0, 0].float().cpu(), en["p"][t].float(), atol=2e-2), "periphery depends on fixation?"
+                dp = (pc.p[0, 0].float().cpu() - en["p"][t].float()).abs()          # bf16 batch-size rounding: max 0.024,
+                assert dp.max() < 0.05 and dp.mean() < 0.01, ("not the same frame?", float(dp.max()), float(dp.mean()))   # mean <= 0.004 (diag)
                 own.append((pc.g[0, 0].to(en["g"].dtype).cpu(), torch.as_tensor(fx, dtype=en["fix"].dtype)))
         at = lambda key, dt: torch.stack([own[a][0] if key == "g" and dt == 0 else own[a][1] if key == "fix" and dt == 0
                                           else enc[i][key][max(t + dt, 0)] for a, (i, t) in enumerate(rr)]).to(DEV)

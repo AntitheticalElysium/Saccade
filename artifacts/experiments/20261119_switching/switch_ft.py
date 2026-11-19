@@ -12,7 +12,8 @@ target is kept (Codex verified frame t's flow and bootstrap terms bitwise unchan
 draw at an independent flow level (signal uniform on the finest grid), conditioned on the recorded past and memory,
 and clamps it to the token range. Routes:
 - ctx: the frame's clean signal under its own noise in the G1 pass becomes the estimate, so later frames attend to it;
-- mem: Mamba and the record read the estimate for that frame; the memory tokens and record the denoiser reads come
+- mem: Mamba and the record read the estimate for that frame; rec: the record alone (Mamba's percept input keeps the
+  recorded frame and reads the switched record); the memory tokens and record the denoiser reads come
   from them (Mamba is frozen; the carried state, cache and record for the next chunk come from the recorded frames).
 The control arm (--substitute 0) draws the same mask and excludes the same frames' terms without substituting. Three
 seeded generators, shared by both arms: G1's levels and noise, the mask, and the substitute's own draws (Codex: the
@@ -56,8 +57,8 @@ def g1(model, chunk, carry, cache, record, cfg, boot, update, gens, p, substitut
             Pc = model.perception(t["frames"][:, P:], fix[:, P:])
             Pp = model.perception(t["frames"][:, :P], fix[:, :P])
 
-            def belief_pass(Pchunk):
-                rin, rst = model.record.scan(torch.cat([Pp.p, Pchunk.p], 1), first, record)
+            def belief_pass(Pchunk, p_rec=None):                             # p_rec: what the record reads (rec route)
+                rin, rst = model.record.scan(torch.cat([Pp.p, Pchunk.p if p_rec is None else p_rec], 1), first, record)
                 emb = bel.percept_embed(Pchunk, rst[:, P:])
                 y, c = bel(bel.tokens(emb, t["reward"][:, P:], t["terminated"][:, P:], t["action"][:, P:]), carry, seq)
                 nxt = y[:, 1::2]
@@ -84,6 +85,9 @@ def g1(model, chunk, carry, cache, record, cfg, boot, update, gens, p, substitut
                 x_in = tuple(torch.where(M._bcast(m, x), e, x) for x, e in zip(x0, est))
                 if "mem" in routes:
                     rin, _, bpred, _, _ = belief_pass(M.Percept(*(x[:, P:] for x in x_in), fix[:, P:]))
+                    memory = (bel.memory(bpred), rin)
+                elif "rec" in routes:                                         # Codex 11-19: the record alone; Mamba keeps
+                    rin, _, bpred, _, _ = belief_pass(Pc, x_in[0][:, P:])     # the recorded percepts, reads the record
                     memory = (bel.memory(bpred), rin)
                 if "ctx" in routes:
                     x_ctx = x_in

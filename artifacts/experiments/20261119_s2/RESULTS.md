@@ -142,3 +142,16 @@ The spatial record carries 94% of the self-feeding mob loss; Mamba's own input c
 Mamba are both built from clean recorded tokens, while every frame the denoiser's context holds is noised (diffusion
 forcing); of the two clean routes, the record is the one whose read breaks when it integrates the world's own frames.
 Its read (`record_read`) is denoiser parameters, so a denoiser-only fine-tune can change it.
+
+**The two readers of the record (`routes_readers.json`; the same starts, seeds and fixation schedule, all four arms from
+one process).** Paired change in mobs per frame against free running, at steps 4 / 8 / 16:
+
+| Arm | All mobs | Cows at 16 | Zombies at 16 | Skeletons at 16 | Alive at 16 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Both readers read the record of recorded frames (record_real) | +0.108 / +0.227 / +0.432 | +0.285 | +0.094 | +0.044 | 0.880 |
+| Only the denoiser's per-cell read does (dread_real) | +0.110 / +0.228 / +0.433 | +0.285 | +0.094 | +0.044 | 0.881 |
+| Only Mamba's read does (mread_real) | +0.002 / -0.001 / +0.011 (SE 0.008) | +0.003 | +0.010 | +0.001 | 0.905 |
+
+The denoiser's own read of the record of its generated frames carries the whole self-feeding loss; Mamba's read of the
+same record carries none (free running: 0.94 / 0.83 / 0.71 / 0.55 mobs per frame at steps 1 / 4 / 8 / 16). By the rule
+fixed in PLAN.md, the switching rerun trains the denoiser alone.

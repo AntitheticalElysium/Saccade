@@ -70,7 +70,8 @@ def episode_data(model, cfg, dl, e):
     return tuple(z[ix].cpu() for z in xx), y[ix].cpu(), rin, keep
 
 
-def main(updates=1500):
+def main(updates=1500, record_lr=None):
+    record_lr = record_lr or None
     model, cfg = AI.load(CK)
     model.requires_grad_(False).eval()
     pol = dict(cfg["fixation"]["chooser"])
@@ -85,6 +86,7 @@ def main(updates=1500):
     fc = torch.load(CK, weights_only=False, map_location="cpu")["fixation_controller"]
     state = fc["head"]
     final_lr = pol["minimum_learning_rate"]                                 # the head's schedule ended (25,000 updates)
+    record_lr = record_lr or final_lr
     assert fc["updates"] == cfg["p1"]["frames"] // pol["world_frames_per_head_update"]
     arms = {}
     for name, rd in (("plain", None), ("record", model.record.dim)):
@@ -97,8 +99,8 @@ def main(updates=1500):
         opts[n].load_state_dict(fc["optimizer"])
         for gr in opts[n].param_groups:
             gr["lr"] = final_lr
-        if h.record is not None:
-            opts[n].add_param_group({"params": list(h.record.parameters()), "lr": final_lr, "weight_decay": pol["weight_decay"]})
+        if h.record is not None:                                            # fresh parameters: the chooser's peak rate
+            opts[n].add_param_group({"params": list(h.record.parameters()), "lr": record_lr, "weight_decay": pol["weight_decay"]})
     sizes = np.array([len(data[e][1]) for e in fit]); prob_e = sizes / sizes.sum()
     g = np.random.default_rng(611602)
     log = []
@@ -111,6 +113,8 @@ def main(updates=1500):
             batch.append((tuple(z[ix].to(DEV) for z in xx), y[ix].to(DEV), rin[ix].to(DEV)))
         xx = tuple(torch.cat([b[0][i] for b in batch]) for i in range(3)); y = torch.cat([b[1] for b in batch]); rin = torch.cat([b[2] for b in batch])
         row = {"update": u}
+        if record_lr != final_lr:                                            # warm-up of the new read's group only
+            opts["record"].param_groups[-1]["lr"] = record_lr * min(1.0, (u + 1) / pol["warmup_updates"])
         for n, h in arms.items():
             loss = (h(xx, rin) - y).square().mean()
             opts[n].zero_grad(set_to_none=True); loss.backward(); torch.nn.utils.clip_grad_norm_(h.parameters(), pol["grad_clip"]); opts[n].step()
@@ -118,7 +122,7 @@ def main(updates=1500):
         if u % 500 == 0 or u == updates - 1:
             print(row, flush=True); log.append(row)
     # held-out reading
-    res = {"updates": updates, "log": log}
+    res = {"updates": updates, "record_lr": record_lr, "log": log}
     for n, h in arms.items():
         h.eval()
         acc = {gname: [0., 0., 0.] for gname in C1.GROUPS}                     # surprise, squared error, cells
@@ -150,8 +154,9 @@ def main(updates=1500):
     print("held-out coverage when present: learned (uniform)")
     for k in res["plain"]["coverage"]:
         print(f"  {k:20s}", " | ".join(f"{n}: {res[n]['coverage'][k][0]:.3f} ({res[n]['coverage'][k][1]:.3f})" for n in arms))
-    (HERE / "c3.json").write_text(json.dumps(res, indent=1) + "\n")
+    (HERE / ("c3.json" if record_lr == final_lr else f"c3_lr{record_lr:g}_{updates}.json")).write_text(json.dumps(res, indent=1) + "\n")
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else 1500)
+    a = sys.argv[1:]
+    main(int(a[0]) if a else 1500, float(a[1]) if len(a) > 1 else None)

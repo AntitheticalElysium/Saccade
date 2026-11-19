@@ -108,3 +108,63 @@ So the shrinkage reading below is last night's prediction. Stage A tests it; it 
 - **What separates:**
   - Recovery rises in R2k / R4k against P1.5: switching taught the lesson, and attenuation outweighed it.
   - Equal or lower: the lesson did not land.
+
+## Stage B (user 11-20: plan and run both, then discuss)
+
+### (1) Where P1.5's one-step deletion comes from
+
+From a perfect history, P1.5 loses 9.5% of the start's cows at step 1 (simulator 1.2%). Candidates:
+
+- **Motion uncertainty:** a mob whose next cell is uncertain has its probability spread over several cells. If the cells
+  resolve nearly independently, each cell's likeliest state is "empty", and the mob vanishes. This is our own 10-14
+  finding ("direct = per-tile own-noise coin flips").
+- **Scroll:** the record is per screen cell, not registered to the world. On a camera shift every mob must move one
+  screen cell, while the record under its new cell holds a different world cell's history.
+- **Sampler discretisation:** the shortcut sampler takes K = 4 steps, while k_max = 8 is the finest trained step. Few
+  steps may fail to commit sparse content.
+- **Instrument:** the reader may miss atypical generated mobs. Not separated here; it is a stated limit.
+
+**A3 (`deletions.py`, CPU, saved grids).**
+- **Units:** isolated start mobs (no same-kind mob within 2 cells; reader and labels agree at state 0; inner cells).
+- **Measure:** the step-1 deletion rate in P1.5's and R4k's 8 futures.
+- **Splits:**
+  - by the simulator's own motion of that mob over its 16 label futures (P(stays in its cell): 1, [0.5, 1), (0, 0.5),
+    0);
+  - by whether the world's own camera moved at step 1;
+  - by ring (next to the view edge or inner);
+  - by day or night.
+- **Instrument floor:** the same measure on the simulator's half B read through the reader.
+
+**K sweep (GPU, frozen P1.5).**
+- **What runs:** S2's world futures on the first 1,000 starts at K = 1, 2, 4, 8.
+  - `s2.py` gains an `S2_STEPS` override of `edm.sampler.steps`, default unchanged.
+  - Tags `_K1`, `_K2`, `_K4`, `_K8`; the K = 4 run is this process's own reference.
+- **Read with `events.py`'s measures on those starts:** start-mob hazard at step 1 and depth, spawns, arrivals,
+  vanishings.
+- **What separates:**
+  - Deletions fall with K: the sampler's coarse steps.
+  - Flat: the denoiser's conditional (the model), with the motion and scroll splits locating it.
+
+### (2) B2: record reliance by region (`b2.py`, GPU, P1.5 and R4k)
+
+- **Windows:** the monitor's 2,000 held-out windows (its picks, noise and fixations). Added: up to 300 windows whose
+  target is a food drop and 300 an energy drop, read by S2's HUD reader on real tokens.
+- **Error:** the flow term's per-cell x-error on the target frame at each of the 8 levels, under three records:
+  - real;
+  - none (history removed, record_read's offset kept);
+  - switched: half the frames, by a fixed draw, replaced by one-step estimates at random finest-grid levels, made in
+    64-frame chunks as in training. Mamba re-reads the switched record, as on the rec route.
+- **Regions, read by S2's frozen reader on the real frames:**
+  - mob cells;
+  - cells next to a mob;
+  - cells a mob just left;
+  - other map cells;
+  - the food and energy cells;
+  - other HUD cells.
+- **Readings:**
+  - Reliance = none - real, at low signal (levels 0-3) and at all levels.
+  - The switching penalty = switched - real, per region: its size and its share of the frame's loss is the dose.
+- **Predictions of attenuation:**
+  - R4k's reliance falls against P1.5's at mob, near-mob and vacated cells and at food drops, and less at static cells.
+  - R4k's switching penalty is smaller (it learned its task).
+  - Energy drops: the penalty is small at both, if switching's estimates are accurate on the energy cell.

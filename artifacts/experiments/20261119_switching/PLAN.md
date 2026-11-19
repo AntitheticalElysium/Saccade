@@ -165,3 +165,24 @@ One seed; a fine-tune, not a from-scratch run; the readers read generated frames
 - **Then:** a pass runs the matched control (`--substitute 0`, the same optimizer and draws) to separate switching
   from extra G1 training; persistence still improving at 4,000 with the guards intact extends to 6,000 first. A fail
   with the first arm's direction (spawns, record distrust) at the right rate bounds one-step switching on the record.
+
+## Control after the fail (11-20 early morning; user: call the shots)
+
+- **Why now, although the plan ran it only after a pass:** the rule judged the package against P1.5. The package is
+  switching plus 4,000 extra denoiser-only G1 updates at 1e-5. Its changes could belong to either part:
+  - the hunger clock (on schedule 0.873 → 0.781);
+  - zombie persistence (0.911 → 0.864);
+  - interior spawns (cows by day 0.0052 → 0.0121);
+  - the count gain (step 16: 0.603 → 0.718).
+
+  The next step (another switching variant, P2 or from scratch) depends on which. A switching variant would be the same
+  fine-tune, so it inherits the recipe's part.
+- **Arm:** `bash run_arm.sh sw_rec2_ctl 4000 --substitute 0`.
+  - Same script, optimizer continuation, seeds and readings as `sw_rec2`.
+  - The mask is drawn but nothing is substituted. On the record route every G1 target is kept, so this is P1.5's
+    denoiser trained on, alone, on identical draws.
+  - Smoke: the first update's draw fingerprints must equal `sw_rec2`'s.
+- **Attribution rule, per reading** (the four above, plus the S2 overdue-food curve, the edge arrivals and return):
+  - The control moves less than 1/3 of the rerun's change from P1.5: the change is switching's.
+  - It moves more than 2/3 in the same direction: it is the recipe's.
+  - In between: unresolved.

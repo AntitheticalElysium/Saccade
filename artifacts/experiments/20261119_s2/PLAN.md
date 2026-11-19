@@ -72,3 +72,22 @@ all 4,000 starts: median 0.006, 99.9th percentile 0.021, one start above 0.03, n
 five worst starts an FP32 rebuild sits 0.007-0.030 from both bf16 computations, so neither is misaligned: it is
 Mamba-3's bf16 floor. The assert is now a gross-misalignment guard at 0.1 and every start's error is saved; the model
 stage and the gates were rerun from the start (same seeds). Nothing was read before the rerun.
+
+## Stage 1b (11-19, user: finish S2 before switching; `s2b.py`)
+
+The readings stage 1 lacked, on P1.5 (frozen), with stage 1's readers and reading rule:
+- **Competent starts** (`bank_competent.json`): DEV episodes of collector epsilon 0.1 / 0.25 / 0.5, start step >= 7,
+  admitted by position or the start state only. 1,000 uniform starts with fresh uniform random plans, and 764 hold pairs
+  (Codex): the player awake facing a block it can collect (tree, stone, coal, iron, diamond, water: up to 150 each, the
+  material below 9, the tool held), the same start run with DO or NOOP first and then the same 15 random actions.
+  Median 15 achievements at the start (stage 1: 1). The reference is the simulator under the same plan, rendered and read.
+- **Readings:**
+  - On the random-plan starts: L1 (persistence, count, the bookkeeping blocker), L2b and consistency.
+  - On the holds: the action's effect (DO minus NOOP on the collected quantity by steps 1 / 4 / 16), the world against
+    the simulator through the readers, beside the simulator's label effect.
+  - On both banks: spread (randomised PIT of each simulator future among the world's 8; the null of oracle B among A
+    beside it) and revisits (TEST_SPEC S2.2 over the real 64-frame prefix and the rollout, by gap).
+- **Route localisation** (for the switching plan's step 0): stage 1's bank, 1,000 starts x 4 futures, the recorded frame
+  fed to the context, to Mamba and the record, to both, or to neither.
+- **Reader caveat** found in the smoke: on competent simulator frames the HUD reader is less exact (0.92-0.97 per
+  quantity in 24 starts) than on random play (about 1.0); the label effect is reported beside the read one for that reason.

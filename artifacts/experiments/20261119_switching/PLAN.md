@@ -148,8 +148,9 @@ One seed; a fine-tune, not a from-scratch run; the readers read generated frames
 
 - **Why:** the first arm (`RESULTS.md`) re-warmed a fresh AdamW to 1e-4, P1.5's peak and ten times the rate its cosine
   schedule ended at (1e-5 for the denoiser), with weight decay on every denoiser tensor (P1.5 decays Linear / Conv
-  weights only). Its smoke already showed the jolt: the held-out one-step monitor rose 3.5% in 20 warm-up updates
-  (mean rate about 1e-5, fresh moments). Re-warming a converged model costs upstream loss over a short horizon (Gupta et
+  weights only). Its smoke (on the context and memory routes, not the arm's record route) moved the held-out one-step
+  monitor +3.5% in 20 warm-up updates, against +0.46% for this rerun's smoke on the record route: suggestive, not a
+  clean comparison (the routes differ). Re-warming a converged model costs upstream loss over a short horizon (Gupta et
   al. 2023, arXiv 2308.04014).
 - **The readers (S2 `RESULTS.md`, `routes_readers.json`):** the denoiser's own read of the record carries the whole
   self-feeding loss (+0.433 of record_real's +0.432 at step 16), Mamba's `record_in` none, so the denoiser alone trains,

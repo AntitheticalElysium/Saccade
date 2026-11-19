@@ -19,8 +19,10 @@ BANK = HERE.parent / "20261114_s2_harness/dev_bank_h16.npz"
 KINDS = G.KINDS
 BUCKETS = {"1": [0], "2-4": [1, 2, 3], "5-8": [4, 5, 6, 7], "9-16": list(range(8, 16))}   # transition j: state j -> j + 1
 EDGE = np.zeros((7, 9), bool); EDGE[[0, 6], :] = True; EDGE[:, [0, 8]] = True
-WORLDS = ("simulator", "P1.5", "sw_rec2_2000", "sw_rec2_4000", "sw_rec_2000")
+WORLDS = tuple(os.environ["EV_WORLDS"].split(",")) if os.environ.get("EV_WORLDS") else \
+    ("simulator", "P1.5", "sw_rec2_2000", "sw_rec2_4000", "sw_rec_2000")             # the K sweep: EV_WORLDS, EV_N
 NS = int(os.environ.get("EV_N", 0)) or None                               # smoke: the first EV_N starts
+REF = os.environ.get("EV_REF", "P1.5")                                    # the paired reference world
 
 
 def load(name):
@@ -140,7 +142,7 @@ def main():
                 row = {}
                 for w in WORLDS:
                     num, den = R[w][kn][e][:, js].sum(1), V[w][:, js].sum(1)
-                    ref = (R["P1.5"][kn][e][:, js].sum(1), V["P1.5"][:, js].sum(1)) if w != "P1.5" else None
+                    ref = (R[REF][kn][e][:, js].sum(1), V[REF][:, js].sum(1)) if w != REF else None
                     row[w] = ratio_ci(num, den, ep, rng, ref)
                 res["rates"][f"{kn}|{e}|{bk}"] = row
                 print(f"  {kn:9s} {e:16s} {bk:5s}", " | ".join(
@@ -152,7 +154,7 @@ def main():
             row = {}
             for w in WORLDS:
                 dth, rk = SV[w][0][kn]
-                ref = (SV["P1.5"][0][kn][0][:, js].sum(1), SV["P1.5"][0][kn][1][:, js].sum(1)) if w != "P1.5" else None
+                ref = (SV[REF][0][kn][0][:, js].sum(1), SV[REF][0][kn][1][:, js].sum(1)) if w != REF else None
                 row[w] = ratio_ci(dth[:, js].sum(1), rk[:, js].sum(1), ep, rng, ref) + (float(rk[:, js].sum()),)
             res["start_hazard"][f"{kn}|{bk}"] = row
             print(f"  {kn:9s} {bk:5s}", " | ".join(
@@ -169,7 +171,7 @@ def main():
                 row[w] = [float(cum[0]), float(cum[1]), float(cum[3]), float(rk[:, 0].sum())]
             res["born_death_within"][f"{kn}|{t}"] = row
             print(f"  {kn:9s} {t:6s}", " | ".join(f"{w}: {x[0]:.2f}/{x[1]:.2f}/{x[2]:.2f} n={int(x[3])}" for w, x in row.items()), flush=True)
-    (HERE / ("events.json" if NS is None else "events_smoke.json")).write_text(json.dumps(res, indent=1) + "\n")
+    (HERE / ("events.json" if NS is None else f"events_{os.environ.get('EV_TAG', 'smoke')}.json")).write_text(json.dumps(res, indent=1) + "\n")
 
 
 if __name__ == "__main__":

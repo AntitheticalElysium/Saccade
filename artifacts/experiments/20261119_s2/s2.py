@@ -44,6 +44,8 @@ HUD = ("health", "food", "drink", "energy", "wood", "stone", "coal", "iron", "di
 
 def load():
     model, cfg = AI.load(CK)
+    if os.environ.get("S2_STEPS"):                                  # the sampler's K (20261120_switching_dissection's sweep)
+        cfg["edm"]["sampler"]["steps"] = int(os.environ["S2_STEPS"])
     return model.requires_grad_(False), cfg
 
 

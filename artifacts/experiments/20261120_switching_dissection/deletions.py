@@ -67,7 +67,7 @@ def deleted(grid, pos, u):
 
 def main(extra):
     o = np.load(S2 / "oracle.npz")
-    names = ["simulator_B", "P1.5", "sw_rec2_4000", *extra]
+    names = ["simulator_B", *(extra or ["P1.5", "sw_rec2_4000"])]
     n_starts = min(len(world(x)[0]) for x in names)
     U = units(o, n_starts)
     print(f"{len(U)} isolated inner start mobs over {n_starts} starts", flush=True)

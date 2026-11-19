@@ -138,7 +138,7 @@ frame identical in every arm).** Paired change in mobs per frame against free ru
 | Both | +0.11 / +0.23 / +0.44 | +0.29 | +0.10 | +0.047 | 0.884 |
 | Teacher (all routes) | +0.12 / +0.24 / +0.46 | +0.30 | +0.10 | +0.049 | 0.884 |
 
-The spatial record carries 94% of the self-feeding mob loss; Mamba's own input carries about 2%. In P1 the record is
-built from clean recorded tokens, while every frame the denoiser conditions on is noised (diffusion forcing): it is the
-only conditioning route never trained on anything but perfect inputs, and in free running it integrates the world's
-own frames. Its read (`record_read`) is denoiser parameters, so a denoiser-only fine-tune can change it.
+The spatial record carries 94% of the self-feeding mob loss; Mamba's own input carries about 2%. In P1 the record and
+Mamba are both built from clean recorded tokens, while every frame the denoiser's context holds is noised (diffusion
+forcing); of the two clean routes, the record is the one whose read breaks when it integrates the world's own frames.
+Its read (`record_read`) is denoiser parameters, so a denoiser-only fine-tune can change it.

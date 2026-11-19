@@ -123,3 +123,23 @@ this fine-tune trains.
 ## Limits
 
 One seed; a fine-tune, not a from-scratch run; the readers read generated frames off their domain (TEST_SPEC).
+
+## Launch (11-19, user: run to 4,000, maybe 6,000; Codex's review of the record split adopted)
+
+- **The arm:** the record route alone (Codex: Mamba's percept input keeps the recorded frames and reads the switched
+  record; its percept route carried about 2% of the loss), fresh substitutes, p = 0.5 per frame, every G1 target kept,
+  4,000 updates in one continuous run.
+- **Saved at the reads:**
+  - S2 checkpoints at 2,000 and 4,000;
+  - the live state at 4,000 (optimizer, streams, carry, cache, record, generators, chooser), so `--resume` can extend
+    the same run to 6,000 (Codex).
+- **Readings (`run_arm.sh sw_rec 4000`):**
+  - S2 stage 1 at 2,000 and 4,000;
+  - stage 1b at 4,000;
+  - P1.5's exact clock checks at 4,000 (check 17's due-versus-delayed pairs, check 15's natural catalogue).
+  - Reason for the clock checks: Codex saw due-step hunger drops fall 42/48 to 35/48 on a frozen replay after the
+    100-update memory-route smoke.
+- **Decision at 4,000:** extend to 6,000 if persistence is still improving and the guards hold. The matched no-switch
+  control (`--substitute 0`) comes after, if the arm passes.
+- **Not run:** the grounding replay of the F4 regression (user: not worth the compute for that diagnostic).
+- **Parked for after the arm:** the epoch-stale cache (STALENESS.md), if switching carries over to a from-scratch run.

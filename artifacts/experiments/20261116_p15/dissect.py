@@ -14,6 +14,7 @@ no code, and check 15's inventory rows measured cells that do not change on thei
 """
 import importlib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -21,7 +22,8 @@ import numpy as np
 import torch
 
 HERE = Path(__file__).resolve().parent
-CK = HERE / "run/ckpt_10.pt"
+CK = Path(os.environ.get("DISSECT_CKPT", HERE / "run/ckpt_10.pt"))   # another world (11-19: the switching arm)
+TAG = os.environ.get("DISSECT_TAG", "")                                 # its outputs: catalogue{TAG}.json, schedule{TAG}.json
 
 
 @torch.no_grad()
@@ -131,7 +133,7 @@ def catalogue(events=128, quiet=64, batch=8):
                                 "drawn_change_quiet": float(np.mean([r["drawn_change"] for r in no])) if no else None,
                                 "true_change": float(np.mean([r["true_change"] for r in ev]))}
             print(name, json.dumps(res["p15"][name]), flush=True)
-    (HERE / "catalogue.json").write_text(json.dumps(res, indent=1) + "\n")
+    (HERE / f"catalogue{TAG}.json").write_text(json.dumps(res, indent=1) + "\n")
 
 
 @torch.no_grad()
@@ -199,7 +201,7 @@ def schedule():
         res["due_episode_step"][name] = float(np.median([len(r[0][0]) + r[4] + 1 for r in rows]))
         res["p15"][name] = read_bank(rows, slot, sign, readers[slot][0])
         print(name, json.dumps(res["p15"][name]), flush=True)
-    (HERE / "schedule.json").write_text(json.dumps(res, indent=1) + "\n")
+    (HERE / f"schedule{TAG}.json").write_text(json.dumps(res, indent=1) + "\n")
 
 
 def drift():

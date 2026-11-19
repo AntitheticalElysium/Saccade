@@ -116,6 +116,7 @@ def main():
     ap.add_argument("--p", type=float, default=0.5)
     ap.add_argument("--substitute", type=int, default=1)
     ap.add_argument("--routes", default="ctx,mem")
+    ap.add_argument("--resume", type=Path)                               # a state_sw*.pt of this folder: continue it (Codex)
     args = ap.parse_args()
     assert os.environ.get("MAMBA_DETERMINISTIC") == "1"
     routes, reads = tuple(args.routes.split(",")), {int(x) for x in args.reads.split(",")}
@@ -133,10 +134,11 @@ def main():
     res = {"recipe": {"from": str(P15.relative_to(ROOT)), "checkpoint_sha256": TR.file_sha256(P15), "updates": args.updates,
                       "p": args.p, "substitute": bool(args.substitute), "routes": routes, "lr": 1e-4, "warmup": 100, "clip": 1.0, "chunk": 64, "seed": SEED,
                       "script_sha256": TR.file_sha256(__file__)}, "log": [], "monitor": {}}
-    model.eval()
-    res["monitor"][0] = TR.monitor(model, cfg, split["monitor"])
-    print("monitor 0", json.dumps(res["monitor"][0]), flush=True)
-    model.train()
+    if args.resume is None:
+        model.eval()
+        res["monitor"][0] = TR.monitor(model, cfg, split["monitor"])
+        print("monitor 0", json.dumps(res["monitor"][0]), flush=True)
+        model.train()
     den.checkpoint = cfg["p1"]["activation_checkpointing"]
     opt = torch.optim.AdamW(params, lr=1e-4, betas=tuple(cfg["optimizer"]["betas"]), eps=cfg["optimizer"]["eps"], weight_decay=0.01)
     streams = D.Streams(split["train"], d["streams"], P, seed=WORLD_SEED, targets_offsets=D.frame_offsets(split["train"]))
@@ -147,8 +149,20 @@ def main():
     ctl = C.Controller(model, cfg, out, dev); ctl.load_state(st)
     base = ck["state"]["update"]
     gens = tuple(torch.Generator(device=dev).manual_seed(SEED + i) for i in (1, 2, 3))   # G1, mask, substitute
+    u0 = 0
+    if args.resume is not None:                                          # the live state saved at the last read
+        rs = torch.load(args.resume, map_location="cpu", weights_only=False)
+        assert rs["recipe"] == {k: v for k, v in res["recipe"].items() if k != "updates"}, "resume with another recipe"
+        model.load_state_dict(rs["model"]); opt.load_state_dict(rs["opt"]); streams.load_state(rs["streams"])
+        carry = tuple(type(c)(*(getattr(c, f.name).to(dev) for f in dataclasses.fields(c))) for c in rs["carry"])
+        cache, record = rs["cache"].to(dev), rs["record"].to(dev)
+        for g, s in zip(gens, rs["gens"]):
+            g.set_state(s.cpu() if s.device.type == "cpu" else s)
+        ctl.load_state(rs["controller"])
+        u0, res["log"], res["monitor"] = rs["update"], rs["log"], rs["monitor"]
+        print("resumed at update", u0, flush=True)
     losses, stats, t0 = [], [], time.time()
-    for u in range(1, args.updates + 1):
+    for u in range(u0 + 1, args.updates + 1):
         chunk = streams.next(64)
         ctl.prepare(chunk, streams)
         boot = TR.bootstrap_rows(cfg, WORLD_SEED, base + u)
@@ -174,13 +188,19 @@ def main():
             res["log"].append({"update": u, "g1": float(np.mean(losses[-200:])), "masked": float(np.mean([s["masked"] for s in stats[-200:]])),
                                "substitute_mse_by_signal_quartile": [float(np.mean([x[i] for x in sub if x[i] is not None])) if sub else None
                                                                      for i in range(4)],
-                               "grad_norm": gn, "sec_per_update": (time.time() - t0) / u})
+                               "grad_norm": gn, "sec_per_update": (time.time() - t0) / (u - u0)})
             print(json.dumps(res["log"][-1]), flush=True)
         if u in reads:
             model.eval()
             res["monitor"][u] = TR.monitor(model, cfg, split["monitor"])
             print(f"monitor {u}", json.dumps(res["monitor"][u]), flush=True)
             torch.save(dict(ck, model=model.state_dict(), switching=res["recipe"], switch_update=u), out / f"ckpt_sw{u:04d}.pt")
+            if u == max(reads):                                          # the live state, to extend the run later
+                ctl.pending = None                                       # the frozen chooser never learns: nothing pending
+                torch.save({"model": model.state_dict(), "opt": opt.state_dict(), "streams": streams.state(), "carry": carry,
+                            "cache": cache, "record": record, "gens": [g.get_state() for g in gens], "controller": ctl.state(),
+                            "update": u, "log": res["log"], "monitor": res["monitor"],
+                            "recipe": {k: v for k, v in res["recipe"].items() if k != "updates"}}, out / f"state_sw{u:04d}.pt")
             model.train()
         (out / "switch_ft.json").write_text(json.dumps(res, indent=1) + "\n")
 

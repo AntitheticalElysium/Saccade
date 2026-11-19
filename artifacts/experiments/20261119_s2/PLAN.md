@@ -63,3 +63,12 @@ L3, the one-step planning test (real return of the imagination-guided policy min
   only (TEST_SPEC: its real-data error does not bound its error on generated ones).
 - The second drop of a clock after a drawn first one needs more than 16 steps (cycles 21-31); not read here (Codex).
 - One world seed.
+
+## Correction during the run (11-19)
+
+The model stage's prefix check (the rebuilt prefix belief against `encode`'s, an assert at RMS 0.03 borrowed from
+`recursion_steps.py`, a Mamba-2 tool) fired at start 3,902 of 4,000 (t0 = 52, RMS 0.036). `prefix_check.py` measured
+all 4,000 starts: median 0.006, 99.9th percentile 0.021, one start above 0.03, no growth with prefix length; on the
+five worst starts an FP32 rebuild sits 0.007-0.030 from both bf16 computations, so neither is misaligned: it is
+Mamba-3's bf16 floor. The assert is now a gross-misalignment guard at 0.1 and every start's error is saved; the model
+stage and the gates were rerun from the start (same seeds). Nothing was read before the rerun.

@@ -252,7 +252,8 @@ def model_futures(n=None):
                 y, c = model.belief(model.belief.tokens(S.embed(model, pp, reads), en["reward"][:t + 1].to(DEV)[None],
                                     en["terminated"][:t + 1].to(DEV)[None], en["action"][:t + 1].to(DEV)[None]), model.belief.initial(1, DEV))
             err = float((y[0, -1].float() - en["bp"][t + 1].to(DEV).float()).square().mean().sqrt())
-            assert err < 0.03, ("prefix belief differs from encode's", err)              # recursion_steps' bound
+            assert err < 0.1, ("prefix belief differs from encode's", err)               # a gross misalignment guard:
+            out.setdefault("m_prefix_error", {})[int(w)] = np.float32(err)              # bf16 floor, prefix_check.json
             cs.append(c); bps.append(y[:, -1].float()); rl.append(last)
         carry = tuple(type(cs[0][l])(*(rep(torch.cat([getattr(c[l], f.name) for c in cs])) for f in dataclasses.fields(cs[0][l])))
                       for l in range(len(cs[0])))

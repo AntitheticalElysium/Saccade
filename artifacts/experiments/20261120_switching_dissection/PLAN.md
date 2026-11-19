@@ -233,3 +233,28 @@ From a perfect history, P1.5 loses 9.5% of the start's cows at step 1 (simulator
   - Reading: where its surprise moves, and whether HUD-flip surprise drops.
   - Compared with C2, this separates "the eye has the world's memory" from "the eye has the world's own model".
 - **Order:** C1, C2, C3, one GPU job at a time. Each is committed as code before it runs.
+
+### C2's cost and cache (user: "don't guess - test it")
+
+- **Baseline, measured by the run itself** (`20261116_p15/run/log.jsonl`, `sec_per_update`):
+  - 64-step chunks: 2.284 s per update over 12,500 updates;
+  - 256-step chunks: 8.581 s per update over 3,125 updates;
+  - total 15.4 h, matching STATUS's 15 h 20 min.
+- **Fresh world-eye (`c2_cost.py`).**
+  - Needed per target frame: the world's zero-signal estimate of that frame given its real past. In a single-stream
+    diffusion-forcing pass, a frame's noisy tokens are also later frames' context, so the exact estimate needs a
+    sequential pass: per frame, one periphery evaluation at tau = 0 (the sampler's first step), then the frame's
+    context pass.
+  - Timed after warm-up, at the trainer's shapes: 16 streams x (8 prefix + 64) frames and 16 x (8 + 256), from P1.5
+    checkpoint 10 on its own training streams, with the memory tokens and record from the trainer's own passes
+    (computed, not timed).
+  - Projection: 12,500 x t64 + 3,125 x t256.
+- **Cache.**
+  - Read cost: a memmap of fp16 estimates per update, timed.
+  - Fill cost: the same estimate made offline in large batches, as throughput per frame.
+  - Saving at refresh period k passes: the in-loop cost minus (the fill cost x 10 / k passes) minus reads.
+  - The quality side is measured, not assumed. On the same DEV windows, the eye's window probabilities from the stale
+    estimate of P1.5 checkpoints 9, 8 and 5 (1, 2 and 5 passes stale) are compared against checkpoint 10's encoder
+    tokens: total-variation distance, argmax agreement and mob coverage, against the fresh checkpoint-10 eye.
+- **In imagination the expectation is free:** the sampler's first evaluation is the zero-signal estimate. The cost is
+  training-only.

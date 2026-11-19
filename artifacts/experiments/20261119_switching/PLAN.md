@@ -40,10 +40,14 @@ check before any trainer is built.
 
 ## Step 0: which route's self-feeding loses the mobs (frozen P1.5, `20261119_s2/s2b.py routes`)
 
-Stage 1's bank, 1,000 starts x 4 futures. In free running three routes read the generated frames: the denoiser's
-context, Mamba and the record. Four modes feed the recorded frame instead, while the recording lives: none (free),
-the context only (ctx_real), Mamba and the record only (mem_real), all (teacher); the scored frame is always the
-generated one. Read: mob counts by step against the simulator's.
+Stage 1's bank, 1,000 starts x 4 futures, the same seeds in every arm. In free running three routes read the generated
+frames: the denoiser's context, Mamba and the record. Four arms feed the recorded frame instead, while the recording
+lives: none (free), the context only (ctx_real), Mamba and the record only (mem_real), all (teacher). The scored frame
+is always the generated one. After Codex's review:
+- every arm uses the recording's own fixation schedule, so a recorded glimpse sits at the crop its fixation names (no
+  chooser);
+- every arm feeds the belief the world's own sampled reward and termination, so arms differ in frames only.
+Read: mob counts by step paired against free running, with survival beside them.
 **Rule for the first arm's routes, fixed now:** switch the routes whose recorded input recovers at least a third of the
 free-running step-16 deficit (teacher minus free); both if each does, or if only teacher does.
 
@@ -52,26 +56,36 @@ free-running step-16 deficit (teacher minus free); both if each does, or if only
 - **Protocol:** that of the earlier denoiser fine-tunes (traces, SWAX, record).
   - From P1.5 checkpoint 10 with its streams, carry, cache and record state; the denoiser alone trains.
   - G1 alone (shortcut forcing, bootstrap rows included); AdamW 1e-4, 100 warm-up updates, clip 1.0.
-  - 64-step chunks, 16 streams; the checkpoint's chooser picks the fixations (frozen); 3,000 updates.
-- **Switching:** each chunk frame, with p = 0.5 independently (JEDI's uniform choice), is replaced on the chosen routes
-  by the denoiser's own one-step estimate of it.
+  - 64-step chunks, 16 streams; the checkpoint's chooser picks the fixations (frozen).
+  - 4,000 updates, read at 2,000 and 4,000 (tests 2-3's length; the earlier denoiser fine-tunes were still improving
+    at 4,000-6,000), extended to 6,000 only if the 4,000 reading is still moving. JEDI uses switching from scratch,
+    throughout its 400,000 updates (1,000 epochs x 400, Atari100k online); this fine-tune screens the mechanism, and a
+    positive result goes into a from-scratch run, as the record went from tests 2-3 to P1.5.
+- **Switching:** each chunk frame enters the switch mask with p = 0.5 independently (JEDI's uniform choice) and is
+  replaced on the chosen routes by the denoiser's own one-step estimate of it. Masked frames serve as history only: their
+  own G1 terms are excluded (JEDI switches the next prediction's conditioning; Codex's review).
   - The estimate comes from an independent noise draw at an independent flow level, conditioned on the recorded past
     and memory, and is clamped.
   - Targets are always the recorded frames. The carry, cache and record passed to the next chunk come from the
     recorded frames.
-  - In this single-stream diffusion-forcing world, a frame's noisy tokens are both its own denoising input and later
-    frames' context. So on the ctx route a switched frame's own target is reached from a noised estimate: a
-    self-correction term (declared; JEDI's frame-by-frame training does not have it).
+  - In this single-stream diffusion-forcing world a frame's noisy tokens are both its own denoising input and later
+    frames' context; excluding the switched frames' own terms removes the same-frame self-correction term.
+  - On bootstrap rows the target is the model's own finer-step prediction, as in P1; only flow rows target the recorded
+    frame.
+  - The substitute's error against the recorded frame is logged by signal level (at zero signal it carries no direct
+    information from the recorded frame: the model's conditional prediction).
+  - Three seeded generators shared by both arms: G1's levels and noise, the mask, the substitute's draws; the smoke
+    checks that the arms' draws are identical.
 - **Readings, at 1,500 and 3,000 updates:**
   - Primary: S2 stage 1 against P1.5 on the same bank and simulator futures: mob counts and 4-step persistence by
     kind, the bookkeeping blocker, mobs by step.
   - Guards: the G1 monitor (P1.5's 2,000 held-out windows), S2's L2b clocks and danger, first-step consequences,
     internal consistency, N5; stage 1b on competent starts, once it exists.
 - **Decisions:**
-  - If the mob deficit shrinks with the guards intact, the control arm (the same fine-tune, p = 0) runs next, to separate
-    switching from extra G1 training.
+  - If the mob deficit shrinks with the guards intact, the control arm runs next, to separate switching from extra G1
+    training: the same fine-tune, the same mask and excluded frames, no substitute (`--substitute 0`).
   - If it does not shrink, the variants below come before P2.
-- **Cost:** about 3 s per update (one extra no-gradient denoiser pass and a belief pass), so about 2.5 h, plus readings.
+- **Cost:** about 3 s per update (one extra no-gradient denoiser pass and a belief pass), so about 3.3 h, plus readings.
 
 ## Variants (brainstormed; one at a time, after the first arm is read)
 

@@ -4,18 +4,24 @@ checkpoint 10 with its streams, carry, cache and record state; the denoiser alon
 G1 (shortcut forcing, bootstrap rows included) alone; AdamW 1e-4, 100 warm-up updates, clip 1.0; 64-step chunks,
 16 streams in 2 microbatches; the checkpoint's chooser picks the fixations (frozen), as in P1.5's training.
 
-Switching: every chunk frame (never a prefix frame), with probability p independently, is replaced by the denoiser's
-own one-step estimate of it on the routes chosen: pass 1 (no gradient) denoises every frame from an independent noise
+Switching: every chunk frame (never a prefix frame) is drawn into the switch mask with probability p independently;
+masked frames serve as history only (their own G1 terms are excluded: JEDI switches the next prediction's conditioning,
+Codex's review) and, with substitution on, are replaced by the denoiser's own one-step estimate of them on the routes
+chosen: pass 1 (no gradient) denoises every frame from an independent noise
 draw at an independent flow level (signal uniform on the finest grid), conditioned on the recorded past and memory,
 and clamps it to the token range. Routes:
-- ctx: the frame's clean signal under its own noise in the G1 pass becomes the estimate, so later frames attend to it
-  (and the frame's own target, always the recorded frame, is reached from a noised estimate);
+- ctx: the frame's clean signal under its own noise in the G1 pass becomes the estimate, so later frames attend to it;
 - mem: Mamba and the record read the estimate for that frame; the memory tokens and record the denoiser reads come
   from them (Mamba is frozen; the carried state, cache and record for the next chunk come from the recorded frames).
-The estimate enters shortcut_loss through its own (levels, noise) arguments: noise' = noise + tau / (1 - tau) (x_in -
+The control arm (--substitute 0) draws the same mask and excludes the same frames' terms without substituting. Three
+seeded generators, shared by both arms: G1's levels and noise, the mask, and the substitute's own draws (Codex: the
+arms must see identical frames, fixations, levels, noise and masks). On bootstrap rows the target is the model's own
+finer-step prediction, as in P1 (only flow rows target the recorded frame). The estimate enters shortcut_loss through
+its own (levels, noise) arguments: noise' = noise + tau / (1 - tau) (x_in -
 x0) makes its input (1 - tau) noise + tau x_in while its target stays x0 (tau < 1 on every grid); checked at update 1.
 
-    MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261119_switching.switch_ft OUT [--updates N] [--p P] [--routes ctx,mem]
+    MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261119_switching.switch_ft OUT [--updates N] [--p P]
+        [--substitute 1|0] [--routes ctx,mem]
 """
 import argparse, dataclasses, importlib, json, os, time
 from pathlib import Path
@@ -33,8 +39,10 @@ WORLD_SEED = importlib.import_module("artifacts.experiments.20261116_p15.train")
 SEED = 20261121
 
 
-def g1(model, chunk, carry, cache, record, cfg, boot, update, gen, p, routes, check=False):
-    """G1 of one microbatch with switching; returns (g1, carry, cache, record, switched share)."""
+def g1(model, chunk, carry, cache, record, cfg, boot, update, gens, p, substitute, routes, check=False):
+    """G1 of one microbatch with switching; gens = (G1's generator, None = the process RNG; the mask's; the substitute's).
+    Returns (g1, carry, cache, record, stats: masked share, the substitute's error by signal quartile, draw fingerprints)."""
+    g1_gen, mask_gen, est_gen = gens
     P, dev = cfg["data"]["context_prefix"], cache.device
     t = TR.tensors(chunk, dev)
     first, fix = t["first"], t["fixation"]
@@ -56,28 +64,33 @@ def g1(model, chunk, carry, cache, record, cfg, boot, update, gen, p, routes, ch
             rin, rst, bpred, carry_out, nxt = belief_pass(Pc)
             new_record, new_cache = rst[:, L - P - 1], torch.cat([bpred[:, -P:], nxt[:, -1:]], 1).float()
             x0 = tuple(torch.cat([a, b], 1) for a, b in zip(Pp.parts(), Pc.parts()))
-            memory, x_ctx, share = (bel.memory(bpred), rin), x0, 0.0
-            if p > 0:
-                lv = [M.shortcut_levels((B, L), k, torch.zeros(B, dtype=torch.bool, device=dev), dev, gen) for _ in range(2)]
+            memory, x_ctx, stats = (bel.memory(bpred), rin), x0, {}
+            m = (torch.rand(B, L, device=dev, generator=mask_gen) < p) & t["valid"]
+            m[:, :P] = False
+            stats["masked"] = float(m[:, P:].float().mean())
+            if p > 0 and substitute:
+                lv = [M.shortcut_levels((B, L), k, torch.zeros(B, dtype=torch.bool, device=dev), dev, est_gen) for _ in range(2)]
                 tau = [s.float() / k for s in M._parts(tuple(l[0] for l in lv))]
-                z1 = tuple((1 - M._bcast(tt, x)) * torch.randn(x.shape, device=dev, generator=gen, dtype=torch.float32)
+                z1 = tuple((1 - M._bcast(tt, x)) * torch.randn(x.shape, device=dev, generator=est_gen, dtype=torch.float32)
                            + M._bcast(tt, x) * x.float() for x, tt in zip(x0, tau))
                 est = den(tuple(z.to(x.dtype) for z, x in zip(z1, x0)), tuple(M.shortcut_code(l[0], l[1], k) for l in lv),
                           t["prev_action"], memory, fix, t["episode"], t["valid"])
                 clamp = cfg["perception"]["periphery"]["tanh_clamp"]
                 est = tuple(e.float().clamp(-clamp, clamp).to(x.dtype) for e, x in zip(est, x0))
-                m = (torch.rand(B, L, device=dev, generator=gen) < p) & t["valid"]
-                m[:, :P] = False
-                share = float(m[:, P:].float().mean())
+                err = (est[0].float() - x0[0].float()).square().mean((-1, -2))[:, P:]          # periphery, per frame
+                q = (tau[0][:, P:] * 4).floor().clamp(max=3).long()
+                stats["substitute_mse_by_signal_quartile"] = [float(err[q == i].mean()) if (q == i).any() else None for i in range(4)]
                 x_in = tuple(torch.where(M._bcast(m, x), e, x) for x, e in zip(x0, est))
                 if "mem" in routes:
                     rin, _, bpred, _, _ = belief_pass(M.Percept(*(x[:, P:] for x in x_in), fix[:, P:]))
                     memory = (bel.memory(bpred), rin)
                 if "ctx" in routes:
                     x_ctx = x_in
-        levels = [M.shortcut_levels((B, L), k, torch.as_tensor(boot, device=dev), dev) for _ in range(2)]
+        levels = [M.shortcut_levels((B, L), k, torch.as_tensor(boot, device=dev), dev, g1_gen) for _ in range(2)]
         tau = [s.float() / k for s in M._parts(tuple(l[0] for l in levels))]
-        base = tuple(torch.randn_like(x) for x in x0)
+        base = tuple(torch.randn(x.shape, device=dev, dtype=x.dtype, generator=g1_gen) for x in x0)
+        stats["fingerprint"] = [float(levels[0][0].float().sum()), float(levels[1][0].float().sum()), float(base[0].float().sum()),
+                                int(m.sum()), float(t["frames"].float().mean()), int(fix.sum())]
         noise = tuple(n + M._bcast(tt / (1 - tt), x) * (xi.float() - x.float()) for n, x, xi, tt in zip(base, x0, x_ctx, tau))
         if check:                                                        # the input the loss builds is (1 - tau) n + tau x_in
             for n, x, xi, tt, nn_ in zip(base, x0, x_ctx, tau, noise):
@@ -86,15 +99,17 @@ def g1(model, chunk, carry, cache, record, cfg, boot, update, gen, p, routes, ch
                 assert float((built.float() - want.float()).abs().max()) < 1e-3, "switching input identity"
         loss = M.shortcut_loss(den, x0, t["prev_action"], memory, fix, t["episode"], t["valid"], sc,
                                torch.as_tensor(boot, device=dev), update >= sc["bootstrap_start"], levels=levels, noise=noise)
-    return loss[:, P:].mean().float(), carry_out, new_cache, new_record, share
+    keep = ~m[:, P:]                                                     # switched frames: history only
+    return loss[:, P:][keep].mean().float(), carry_out, new_cache, new_record, stats
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("out", type=Path)
-    ap.add_argument("--updates", type=int, default=3000)
-    ap.add_argument("--reads", default="1500,3000")
+    ap.add_argument("--updates", type=int, default=4000)
+    ap.add_argument("--reads", default="2000,4000")
     ap.add_argument("--p", type=float, default=0.5)
+    ap.add_argument("--substitute", type=int, default=1)
     ap.add_argument("--routes", default="ctx,mem")
     args = ap.parse_args()
     assert os.environ.get("MAMBA_DETERMINISTIC") == "1"
@@ -111,7 +126,7 @@ def main():
         q.requires_grad_(True)
     split = D.load_split(cfg)
     res = {"recipe": {"from": str(P15.relative_to(ROOT)), "checkpoint_sha256": TR.file_sha256(P15), "updates": args.updates,
-                      "p": args.p, "routes": routes, "lr": 1e-4, "warmup": 100, "clip": 1.0, "chunk": 64, "seed": SEED,
+                      "p": args.p, "substitute": bool(args.substitute), "routes": routes, "lr": 1e-4, "warmup": 100, "clip": 1.0, "chunk": 64, "seed": SEED,
                       "script_sha256": TR.file_sha256(__file__)}, "log": [], "monitor": {}}
     model.eval()
     res["monitor"][0] = TR.monitor(model, cfg, split["monitor"])
@@ -125,8 +140,9 @@ def main():
     cache, record = ck["cache"].to(dev), ck["record"].to(dev)
     st = dict(ck["fixation_controller"], trace_rows=0, log_bytes=0)     # a fresh trace in this folder; the head frozen
     ctl = C.Controller(model, cfg, out, dev); ctl.load_state(st)
-    base, gen = ck["state"]["update"], torch.Generator(device=dev).manual_seed(SEED)
-    losses, shares, t0 = [], [], time.time()
+    base = ck["state"]["update"]
+    gens = tuple(torch.Generator(device=dev).manual_seed(SEED + i) for i in (1, 2, 3))   # G1, mask, substitute
+    losses, stats, t0 = [], [], time.time()
     for u in range(1, args.updates + 1):
         chunk = streams.next(64)
         ctl.prepare(chunk, streams)
@@ -135,18 +151,24 @@ def main():
             g["lr"] = 1e-4 * min(1.0, u / 100)
         opt.zero_grad(set_to_none=True)
         for rows in np.array_split(np.arange(d["streams"]), 2):
-            loss, c_new, cache_new, rec_new, share = g1(model, D.select(chunk, rows), M.carry_rows(carry, rows), cache[rows],
-                                                        record[rows], cfg, boot[rows], base + u, gen, args.p, routes, check=u == 1)
+            loss, c_new, cache_new, rec_new, sx = g1(model, D.select(chunk, rows), M.carry_rows(carry, rows), cache[rows],
+                                                     record[rows], cfg, boot[rows], base + u, gens, args.p, args.substitute, routes,
+                                                     check=u == 1)
             (loss / 2).backward()
             M.carry_put(carry, rows, c_new)
             cache[rows], record[rows] = cache_new, rec_new
-            losses.append(float(loss)); shares.append(share)
+            losses.append(float(loss)); stats.append(sx)
+            if u <= 2:
+                res.setdefault("fingerprints", []).append(sx["fingerprint"])
         gn = float(torch.nn.utils.clip_grad_norm_(params, 1.0))
         opt.step()
         if u == 1:
             print("peak GiB", torch.cuda.max_memory_allocated() / 2 ** 30, "sec", time.time() - t0, flush=True)
         if u % 100 == 0:
-            res["log"].append({"update": u, "g1": float(np.mean(losses[-200:])), "switched": float(np.mean(shares[-200:])),
+            sub = [s["substitute_mse_by_signal_quartile"] for s in stats[-200:] if "substitute_mse_by_signal_quartile" in s]
+            res["log"].append({"update": u, "g1": float(np.mean(losses[-200:])), "masked": float(np.mean([s["masked"] for s in stats[-200:]])),
+                               "substitute_mse_by_signal_quartile": [float(np.mean([x[i] for x in sub if x[i] is not None])) if sub else None
+                                                                     for i in range(4)],
                                "grad_norm": gn, "sec_per_update": (time.time() - t0) / u})
             print(json.dumps(res["log"][-1]), flush=True)
         if u in reads:

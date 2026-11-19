@@ -1,0 +1,1599 @@
+{
+ "starts": 4000,
+ "episodes": 257,
+ "reader_error_on_simulator_frames": {
+  "hud_exact": {
+   "health": 0.9786,
+   "food": 0.9894,
+   "drink": 0.9999,
+   "energy": 0.9999,
+   "wood": 1.0,
+   "stone": 1.0,
+   "coal": 1.0,
+   "iron": 1.0,
+   "diamond": 1.0,
+   "sapling": 0.9889,
+   "wood_pickaxe": 1.0,
+   "stone_pickaxe": 1.0,
+   "iron_pickaxe": 1.0,
+   "wood_sword": 1.0,
+   "stone_sword": 1.0,
+   "iron_sword": 1.0
+  },
+  "asleep_accuracy": 0.9877481617647059,
+  "entity_cells": {
+   "zombies": {
+    "recall": 0.9519298780910642,
+    "precision": 0.9943846107040099
+   },
+   "cows": {
+    "recall": 0.9743543150947216,
+    "precision": 0.991655454549968
+   },
+   "skeletons": {
+    "recall": 0.9158127804916796,
+    "precision": 0.9967257402204452
+   },
+   "arrows": {
+    "recall": 0.9480308920695246,
+    "precision": 0.9865747460087083
+   }
+  },
+  "position_exact_at_16": 0.800046875
+ },
+ "label_level_null": {
+  "persistence": {
+   "diff": [
+    -0.00021,
+    0.00042,
+    0.0009,
+    0.00159
+   ],
+   "se": [
+    0.00018,
+    0.00036,
+    0.00055,
+    0.00079
+   ],
+   "rejects": false
+  },
+  "count": {
+   "diff": 0.00421,
+   "se": 0.00309,
+   "rejects": false
+  },
+  "terminated": {
+   "diff": 0.00069,
+   "se": 0.00085,
+   "rejects": false
+  },
+  "death_step": {
+   "diff": -0.00147,
+   "se": 0.00573,
+   "rejects": false
+  },
+  "level": {
+   "persistence": [
+    0.9878,
+    0.9702,
+    0.9563,
+    0.9445
+   ],
+   "count": 1.177472854533139,
+   "terminated": 0.1078125,
+   "reference_persistence": [
+    0.988,
+    0.9698,
+    0.9554,
+    0.9429
+   ],
+   "reference_count": 1.1732582124934576,
+   "reference_terminated": 0.107125
+  },
+  "event_gates_rejecting": {},
+  "event_gates_unmeasured": [],
+  "energy_score": {
+   "model": 5.868991665066438,
+   "reference": 5.850279285703944
+  },
+  "rejected_by": []
+ },
+ "null_A_vs_B_through_reader": {
+  "persistence": {
+   "diff": [
+    0.0002,
+    0.00108,
+    0.00215,
+    0.00309
+   ],
+   "se": [
+    0.00037,
+    0.00053,
+    0.0008,
+    0.00106
+   ],
+   "rejects": false
+  },
+  "count": {
+   "diff": 0.00477,
+   "se": 0.00285,
+   "rejects": false
+  },
+  "terminated": {
+   "diff": 0.00069,
+   "se": 0.00092,
+   "rejects": false
+  },
+  "death_step": {
+   "diff": -0.00147,
+   "se": 0.00561,
+   "rejects": false
+  },
+  "level": {
+   "persistence": [
+    0.9756,
+    0.9544,
+    0.9386,
+    0.9255
+   ],
+   "count": 1.1419035694492907,
+   "terminated": 0.1078125,
+   "reference_persistence": [
+    0.9754,
+    0.9533,
+    0.9364,
+    0.9224
+   ],
+   "reference_count": 1.1371345299303182,
+   "reference_terminated": 0.107125
+  },
+  "event_gates_rejecting": {},
+  "event_gates_unmeasured": [],
+  "energy_score": {
+   "model": 5.866632436531818,
+   "reference": 5.849508562741541
+  },
+  "rejected_by": []
+ },
+ "sanity_recorded_vs_B_through_reader": {
+  "persistence": {
+   "diff": [
+    0.00043,
+    0.00092,
+    3e-05,
+    -0.00205
+   ],
+   "se": [
+    0.00112,
+    0.00179,
+    0.00256,
+    0.00315
+   ],
+   "rejects": false
+  },
+  "count": {
+   "diff": -0.00484,
+   "se": 0.01076,
+   "rejects": false
+  },
+  "terminated": {
+   "diff": -0.00188,
+   "se": 0.00195,
+   "rejects": false
+  },
+  "death_step": {
+   "diff": 0.00941,
+   "se": 0.01345,
+   "rejects": false
+  },
+  "level": {
+   "persistence": [
+    0.9758,
+    0.9542,
+    0.9365,
+    0.9203
+   ],
+   "count": 1.132295017396442,
+   "terminated": 0.10525,
+   "reference_persistence": [
+    0.9754,
+    0.9533,
+    0.9364,
+    0.9224
+   ],
+   "reference_count": 1.1371345299303182,
+   "reference_terminated": 0.107125
+  },
+  "event_gates_rejecting": {},
+  "event_gates_unmeasured": [],
+  "energy_score": {
+   "model": null,
+   "reference": 5.849508562741541
+  },
+  "rejected_by": []
+ },
+ "power_through_reader": {
+  "fake_consequences": [
+   "events"
+  ],
+  "immortal": [
+   "count",
+   "terminated",
+   "death_step",
+   "events"
+  ],
+  "sudden_death": [
+   "persistence",
+   "terminated",
+   "death_step"
+  ]
+ },
+ "L1_model_vs_B": {
+  "persistence": {
+   "diff": [
+    -0.06543,
+    -0.08983,
+    -0.11189,
+    -0.13189
+   ],
+   "se": [
+    0.00246,
+    0.00338,
+    0.00408,
+    0.00458
+   ],
+   "rejects": true
+  },
+  "count": {
+   "diff": -0.3866,
+   "se": 0.01749,
+   "rejects": true
+  },
+  "terminated": {
+   "diff": -0.01169,
+   "se": 0.00241,
+   "rejects": true
+  },
+  "death_step": {
+   "diff": 0.05772,
+   "se": 0.02103,
+   "rejects": false
+  },
+  "level": {
+   "persistence": [
+    0.91,
+    0.8635,
+    0.8245,
+    0.7905
+   ],
+   "count": 0.7505381756867368,
+   "terminated": 0.0954375,
+   "reference_persistence": [
+    0.9754,
+    0.9533,
+    0.9364,
+    0.9224
+   ],
+   "reference_count": 1.1371345299303182,
+   "reference_terminated": 0.107125
+  },
+  "event_gates_rejecting": {
+   "appear_edge_zombies_day": [
+    0.0114,
+    0.0062
+   ],
+   "vanish_zombies_day": [
+    0.0003,
+    0.0023
+   ],
+   "appear_edge_zombies_night": [
+    0.0386,
+    0.0213
+   ],
+   "vanish_zombies_night": [
+    0.0095,
+    0.0198
+   ],
+   "diag_move_zombies_night": [
+    0.0097,
+    0.0051
+   ],
+   "count_zombies_night": [
+    0.5695,
+    0.3512
+   ],
+   "appear_edge_cows_day": [
+    0.0454,
+    0.0217
+   ],
+   "appear_interior_cows_day": [
+    0.0042,
+    0.0052
+   ],
+   "vanish_cows_day": [
+    0.0011,
+    0.0161
+   ],
+   "count_cows_day": [
+    0.7128,
+    0.4733
+   ],
+   "appear_edge_cows_night": [
+    0.0788,
+    0.0247
+   ],
+   "vanish_cows_night": [
+    0.019,
+    0.0406
+   ],
+   "count_cows_night": [
+    0.8405,
+    0.4374
+   ],
+   "appear_edge_skeletons_day": [
+    0.0111,
+    0.0057
+   ],
+   "appear_interior_skeletons_day": [
+    0.0003,
+    0.0018
+   ],
+   "vanish_skeletons_day": [
+    0.0002,
+    0.0033
+   ],
+   "appear_edge_skeletons_night": [
+    0.0188,
+    0.0056
+   ],
+   "count_skeletons_night": [
+    0.1125,
+    0.0478
+   ],
+   "appear_edge_arrows_day": [
+    0.0033,
+    0.0086
+   ],
+   "vanish_arrows_day": [
+    0.0068,
+    0.0127
+   ],
+   "count_arrows_night": [
+    0.0682,
+    0.0269
+   ],
+   "drop_given_adj_since3": [
+    0.0319,
+    0.0572
+   ],
+   "drop_given_adj_since5": [
+    0.0332,
+    0.1182
+   ],
+   "drop_given_adj_since6": [
+    0.6935,
+    0.595
+   ],
+   "arrow_given_skel_range": [
+    0.2043,
+    0.1271
+   ],
+   "arrow_given_no_skel_range": [
+    0.0063,
+    0.0174
+   ]
+  },
+  "event_gates_unmeasured": [],
+  "energy_score": {
+   "model": 7.614835453258182,
+   "reference": 5.849508562741541
+  },
+  "rejected_by": [
+   "persistence",
+   "count",
+   "terminated",
+   "events"
+  ]
+ },
+ "L1_model_vs_recorded": {
+  "persistence": {
+   "diff": [
+    -0.06586,
+    -0.09076,
+    -0.11192,
+    -0.12984
+   ],
+   "se": [
+    0.00262,
+    0.00374,
+    0.00487,
+    0.00586
+   ],
+   "rejects": true
+  },
+  "count": {
+   "diff": -0.38176,
+   "se": 0.02116,
+   "rejects": true
+  },
+  "terminated": {
+   "diff": -0.00981,
+   "se": 0.00303,
+   "rejects": true
+  },
+  "death_step": {
+   "diff": 0.04831,
+   "se": 0.02368,
+   "rejects": false
+  },
+  "level": {
+   "persistence": [
+    0.91,
+    0.8635,
+    0.8245,
+    0.7905
+   ],
+   "count": 0.7505381756867368,
+   "terminated": 0.0954375,
+   "reference_persistence": [
+    0.9758,
+    0.9542,
+    0.9365,
+    0.9203
+   ],
+   "reference_count": 1.132295017396442,
+   "reference_terminated": 0.10525
+  },
+  "event_gates_rejecting": {
+   "appear_edge_zombies_day": [
+    0.0109,
+    0.0062
+   ],
+   "vanish_zombies_day": [
+    0.0004,
+    0.0023
+   ],
+   "appear_edge_zombies_night": [
+    0.0416,
+    0.0213
+   ],
+   "vanish_zombies_night": [
+    0.0089,
+    0.0198
+   ],
+   "count_zombies_night": [
+    0.5567,
+    0.3512
+   ],
+   "appear_edge_cows_day": [
+    0.044,
+    0.0217
+   ],
+   "vanish_cows_day": [
+    0.0015,
+    0.0161
+   ],
+   "count_cows_day": [
+    0.7147,
+    0.4733
+   ],
+   "appear_edge_cows_night": [
+    0.0752,
+    0.0247
+   ],
+   "vanish_cows_night": [
+    0.017,
+    0.0406
+   ],
+   "count_cows_night": [
+    0.824,
+    0.4374
+   ],
+   "appear_edge_skeletons_day": [
+    0.0103,
+    0.0057
+   ],
+   "appear_interior_skeletons_day": [
+    0.0003,
+    0.0018
+   ],
+   "vanish_skeletons_day": [
+    0.0002,
+    0.0033
+   ],
+   "appear_edge_skeletons_night": [
+    0.0187,
+    0.0056
+   ],
+   "appear_edge_arrows_day": [
+    0.0032,
+    0.0086
+   ],
+   "vanish_arrows_day": [
+    0.0069,
+    0.0127
+   ],
+   "count_arrows_night": [
+    0.0701,
+    0.0269
+   ],
+   "drop_given_adj_since5": [
+    0.0372,
+    0.1182
+   ],
+   "arrow_given_skel_range": [
+    0.2056,
+    0.1271
+   ],
+   "arrow_given_no_skel_range": [
+    0.0063,
+    0.0174
+   ]
+  },
+  "event_gates_unmeasured": [],
+  "energy_score": {
+   "model": 7.614835453258182,
+   "reference": NaN
+  },
+  "rejected_by": [
+   "persistence",
+   "count",
+   "terminated",
+   "events"
+  ]
+ },
+ "S3_bookkeeping_blocker": {
+  "zombies": {
+   "count_model": 0.20309686343843106,
+   "count_reference": 0.26919737692805024,
+   "count_relative": -0.2455466477568472,
+   "count_se": 0.00615,
+   "persistence4_model": 0.9107367915658071,
+   "persistence4_reference": 0.9798986429033026,
+   "persistence4_se": 0.0042,
+   "fires": false
+  },
+  "cows": {
+   "count_model": 0.4661399502340962,
+   "count_reference": 0.7381464035384789,
+   "count_relative": -0.36849932750529657,
+   "count_se": 0.0134,
+   "persistence4_model": 0.8055647335014346,
+   "persistence4_reference": 0.9592880875792595,
+   "persistence4_se": 0.00413,
+   "fires": true
+  },
+  "skeletons": {
+   "count_model": 0.048572913597223585,
+   "count_reference": 0.08152458360272159,
+   "count_relative": -0.40419304888541574,
+   "count_se": 0.00559,
+   "persistence4_model": 0.58592,
+   "persistence4_reference": 0.8518873960332694,
+   "persistence4_se": 0.02003,
+   "fires": true
+  },
+  "arrows": {
+   "count_model": 0.03272844841698589,
+   "count_reference": 0.048266165861067495,
+   "count_relative": -0.3219173755961141,
+   "count_se": 0.00514,
+   "persistence4_model": 0.12850812407680945,
+   "persistence4_reference": 0.3457336665476615,
+   "persistence4_se": 0.02095,
+   "fires": true
+  }
+ },
+ "L2b_time_to_event": {
+  "damage|all": {
+   "starts": 4000,
+   "model_by_k": [
+    0.0239,
+    0.0928,
+    0.1488,
+    0.2013
+   ],
+   "reference_by_k": [
+    0.0236,
+    0.0981,
+    0.1686,
+    0.2501
+   ],
+   "max_abs_diff": 0.04878125,
+   "rejects_at_k": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "damage|zombie_within_2": {
+   "starts": 479,
+   "model_by_k": [
+    0.1696,
+    0.578,
+    0.8319,
+    0.8933
+   ],
+   "reference_by_k": [
+    0.1688,
+    0.584,
+    0.8677,
+    0.9322
+   ],
+   "max_abs_diff": 0.04123173277661796,
+   "rejects_at_k": [
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "damage|no_zombie_within_2": {
+   "starts": 3521,
+   "model_by_k": [
+    0.0041,
+    0.0268,
+    0.0558,
+    0.1072
+   ],
+   "reference_by_k": [
+    0.0038,
+    0.032,
+    0.0735,
+    0.1573
+   ],
+   "max_abs_diff": 0.05012780460096565,
+   "rejects_at_k": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "death|all": {
+   "starts": 4000,
+   "model_by_k": [
+    0.0069,
+    0.025,
+    0.0475,
+    0.0954
+   ],
+   "reference_by_k": [
+    0.0069,
+    0.0243,
+    0.0508,
+    0.1071
+   ],
+   "max_abs_diff": 0.011687500000000003,
+   "rejects_at_k": [
+    14,
+    15,
+    16
+   ]
+  },
+  "death|zombie_within_2": {
+   "starts": 479,
+   "model_by_k": [
+    0.0517,
+    0.1923,
+    0.3664,
+    0.6472
+   ],
+   "reference_by_k": [
+    0.0553,
+    0.1926,
+    0.3922,
+    0.7059
+   ],
+   "max_abs_diff": 0.058716075156576175,
+   "rejects_at_k": [
+    12,
+    14,
+    15,
+    16
+   ]
+  },
+  "death|no_zombie_within_2": {
+   "starts": 3521,
+   "model_by_k": [
+    0.0008,
+    0.0023,
+    0.0041,
+    0.0204
+   ],
+   "reference_by_k": [
+    0.0003,
+    0.0014,
+    0.0044,
+    0.0257
+   ],
+   "max_abs_diff": 0.00528969042885544,
+   "rejects_at_k": []
+  },
+  "wake|asleep_at_start": {
+   "starts": 701,
+   "model_by_k": [
+    0.0733,
+    0.3122,
+    0.5699,
+    0.8807
+   ],
+   "reference_by_k": [
+    0.0745,
+    0.3486,
+    0.6277,
+    0.9212
+   ],
+   "max_abs_diff": 0.06508559201141229,
+   "rejects_at_k": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "unlock|all": {
+   "starts": 4000,
+   "model_by_k": [
+    0.0169,
+    0.0689,
+    0.1263,
+    0.233
+   ],
+   "reference_by_k": [
+    0.0173,
+    0.0748,
+    0.1358,
+    0.255
+   ],
+   "max_abs_diff": 0.022093749999999995,
+   "rejects_at_k": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "food_drop|all": {
+   "starts": 4000,
+   "model_by_k": [
+    0.0322,
+    0.1212,
+    0.2344,
+    0.461
+   ],
+   "reference_by_k": [
+    0.034,
+    0.1343,
+    0.253,
+    0.5042
+   ],
+   "max_abs_diff": 0.04318749999999999,
+   "rejects_at_k": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "food_drop|food_since_last_drop_0_9": {
+   "starts": 1068,
+   "model_by_k": [
+    0.0019,
+    0.0025,
+    0.0049,
+    0.016
+   ],
+   "reference_by_k": [
+    0.0019,
+    0.002,
+    0.0037,
+    0.0063
+   ],
+   "max_abs_diff": 0.009714419475655432,
+   "rejects_at_k": [
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "food_drop|food_since_last_drop_10_19": {
+   "starts": 1125,
+   "model_by_k": [
+    0.0011,
+    0.0068,
+    0.0523,
+    0.518
+   ],
+   "reference_by_k": [
+    0.0009,
+    0.0018,
+    0.0344,
+    0.5228
+   ],
+   "max_abs_diff": 0.044999999999999984,
+   "rejects_at_k": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13
+   ]
+  },
+  "food_drop|food_since_last_drop_20_98": {
+   "starts": 1085,
+   "model_by_k": [
+    0.0853,
+    0.3232,
+    0.6028,
+    0.7632
+   ],
+   "reference_by_k": [
+    0.0949,
+    0.377,
+    0.6896,
+    0.9279
+   ],
+   "max_abs_diff": 0.17626728110599088,
+   "rejects_at_k": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "food_drop|food_since_last_drop_99_99": {
+   "starts": 722,
+   "model_by_k": [
+    0.0459,
+    0.1714,
+    0.304,
+    0.576
+   ],
+   "reference_by_k": [
+    0.0416,
+    0.1717,
+    0.3061,
+    0.5748
+   ],
+   "max_abs_diff": 0.004674515235457033,
+   "rejects_at_k": []
+  },
+  "drink_drop|all": {
+   "starts": 4000,
+   "model_by_k": [
+    0.0293,
+    0.1295,
+    0.2682,
+    0.5663
+   ],
+   "reference_by_k": [
+    0.0342,
+    0.1511,
+    0.298,
+    0.6109
+   ],
+   "max_abs_diff": 0.044625000000000026,
+   "rejects_at_k": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "drink_drop|drink_since_last_drop_0_9": {
+   "starts": 1309,
+   "model_by_k": [
+    0.0008,
+    0.0065,
+    0.0125,
+    0.2343
+   ],
+   "reference_by_k": [
+    0.0,
+    0.0,
+    0.0,
+    0.2216
+   ],
+   "max_abs_diff": 0.0273109243697479,
+   "rejects_at_k": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ]
+  },
+  "drink_drop|drink_since_last_drop_10_19": {
+   "starts": 1386,
+   "model_by_k": [
+    0.0031,
+    0.1091,
+    0.3327,
+    0.7492
+   ],
+   "reference_by_k": [
+    0.0,
+    0.1027,
+    0.347,
+    0.8396
+   ],
+   "max_abs_diff": 0.09045815295815296,
+   "rejects_at_k": [
+    1,
+    2,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "drink_drop|drink_since_last_drop_20_98": {
+   "starts": 703,
+   "model_by_k": [
+    0.1337,
+    0.3834,
+    0.577,
+    0.7009
+   ],
+   "reference_by_k": [
+    0.1693,
+    0.5318,
+    0.7427,
+    0.8019
+   ],
+   "max_abs_diff": 0.16571834992887624,
+   "rejects_at_k": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "drink_drop|drink_since_last_drop_99_99": {
+   "starts": 602,
+   "model_by_k": [
+    0.0299,
+    0.1472,
+    0.315,
+    0.7097
+   ],
+   "reference_by_k": [
+    0.0299,
+    0.1462,
+    0.314,
+    0.7076
+   ],
+   "max_abs_diff": 0.0031146179401992935,
+   "rejects_at_k": [
+    2
+   ]
+  },
+  "energy_drop|all": {
+   "starts": 4000,
+   "model_by_k": [
+    0.0212,
+    0.0803,
+    0.1601,
+    0.3182
+   ],
+   "reference_by_k": [
+    0.0198,
+    0.0771,
+    0.1549,
+    0.3113
+   ],
+   "max_abs_diff": 0.007281250000000017,
+   "rejects_at_k": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ]
+  },
+  "energy_drop|energy_since_last_drop_0_9": {
+   "starts": 721,
+   "model_by_k": [
+    0.0,
+    0.0,
+    0.0002,
+    0.0009
+   ],
+   "reference_by_k": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "max_abs_diff": 0.0008668515950069349,
+   "rejects_at_k": []
+  },
+  "energy_drop|energy_since_last_drop_10_19": {
+   "starts": 654,
+   "model_by_k": [
+    0.0,
+    0.0002,
+    0.001,
+    0.0529
+   ],
+   "reference_by_k": [
+    0.0,
+    0.0,
+    0.0,
+    0.0419
+   ],
+   "max_abs_diff": 0.011085626911314983,
+   "rejects_at_k": [
+    10,
+    11,
+    12
+   ]
+  },
+  "energy_drop|energy_since_last_drop_20_98": {
+   "starts": 1768,
+   "model_by_k": [
+    0.0274,
+    0.1172,
+    0.232,
+    0.4539
+   ],
+   "reference_by_k": [
+    0.0243,
+    0.1106,
+    0.2221,
+    0.4444
+   ],
+   "max_abs_diff": 0.012938348416289602,
+   "rejects_at_k": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    11,
+    13
+   ]
+  },
+  "energy_drop|energy_since_last_drop_99_99": {
+   "starts": 857,
+   "model_by_k": [
+    0.0426,
+    0.133,
+    0.2675,
+    0.5076
+   ],
+   "reference_by_k": [
+    0.042,
+    0.1319,
+    0.2649,
+    0.5041
+   ],
+   "max_abs_diff": 0.004229871645274219,
+   "rejects_at_k": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  }
+ },
+ "L2b_return_per_future": {
+  "diff": -0.01026,
+  "se": 0.00553,
+  "rejects": false,
+  "model": 0.14616249912651255,
+  "reference": 0.15641874899994582
+ },
+ "L2b_internal_consistency": {
+  "health0_alive": {
+   "model": 2.059163897091225e-05,
+   "reference": 0.0,
+   "diff": 2.059163897091225e-05,
+   "se": 1.2825489804787648e-05,
+   "rejects": false
+  },
+  "terminated_with_health": {
+   "model": 0.17354289456450556,
+   "reference": 0.15256709451575262,
+   "diff": 0.020975800048752935,
+   "se": 0.01486424994149464,
+   "rejects": false
+  },
+  "reward_inconsistent": {
+   "model": 0.0036014798808237567,
+   "reference": 0.0033989101320772144,
+   "diff": 0.0002025697487465423,
+   "se": 0.00020620863026079976,
+   "rejects": false
+  },
+  "wood_inc": {
+   "model": 0.003918655665782667,
+   "reference": 0.004685816323389058,
+   "diff": -0.0007671606576063915,
+   "se": 0.0003055601611755007,
+   "rejects": false
+  },
+  "wood_dec": {
+   "model": 0.001182758733588711,
+   "reference": 0.0012725388175651407,
+   "diff": -8.978008397642978e-05,
+   "se": 0.00012835589874864116,
+   "rejects": false
+  },
+  "wood_jump": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "stone_inc": {
+   "model": 3.683331696297024e-05,
+   "reference": 3.283971142103589e-05,
+   "diff": 3.993605541934352e-06,
+   "se": 3.873230010334649e-06,
+   "rejects": false
+  },
+  "stone_dec": {
+   "model": 3.274072618930688e-05,
+   "reference": 3.283971142103589e-05,
+   "diff": -9.898523172900963e-08,
+   "se": 9.494656411304231e-08,
+   "rejects": false
+  },
+  "stone_jump": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "coal_inc": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "coal_dec": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "coal_jump": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "iron_inc": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "iron_dec": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "iron_jump": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "diamond_inc": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "diamond_dec": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "diamond_jump": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "sapling_inc": {
+   "model": 0.0015633696755394035,
+   "reference": 0.002770850651149903,
+   "diff": -0.0012074809756104996,
+   "se": 0.00012523102749049033,
+   "rejects": true
+  },
+  "sapling_dec": {
+   "model": 0.0019644435713584126,
+   "reference": 0.0023521443305316954,
+   "diff": -0.00038770075917328277,
+   "se": 0.00014103244835059848,
+   "rejects": false
+  },
+  "sapling_jump": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "wood_pickaxe_inc": {
+   "model": 8.18518154732672e-05,
+   "reference": 0.0001477787013946615,
+   "diff": -6.59268859213943e-05,
+   "se": 5.881994861311098e-05,
+   "rejects": false
+  },
+  "wood_pickaxe_dec": {
+   "model": 4.09259077366336e-06,
+   "reference": 0.0,
+   "diff": 4.09259077366336e-06,
+   "se": 3.950375255229671e-06,
+   "rejects": false
+  },
+  "wood_pickaxe_jump": {
+   "model": 4.09259077366336e-06,
+   "reference": 0.0,
+   "diff": 4.09259077366336e-06,
+   "se": 3.950375255229671e-06,
+   "rejects": false
+  },
+  "stone_pickaxe_inc": {
+   "model": 2.04629538683168e-06,
+   "reference": 0.0,
+   "diff": 2.04629538683168e-06,
+   "se": 2.0574962911698737e-06,
+   "rejects": false
+  },
+  "stone_pickaxe_dec": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "stone_pickaxe_jump": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "iron_pickaxe_inc": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "iron_pickaxe_dec": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "iron_pickaxe_jump": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "wood_sword_inc": {
+   "model": 2.660184002881184e-05,
+   "reference": 0.0001580411112137352,
+   "diff": -0.00013143927118492335,
+   "se": 7.407210883034088e-05,
+   "rejects": false
+  },
+  "wood_sword_dec": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "wood_sword_jump": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "stone_sword_inc": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "stone_sword_dec": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "stone_sword_jump": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "iron_sword_inc": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "iron_sword_dec": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  },
+  "iron_sword_jump": {
+   "model": 0.0,
+   "reference": 0.0,
+   "diff": 0.0,
+   "se": 0.0,
+   "rejects": false
+  }
+ },
+ "N5_belief_hud_exact": {
+  "health@1": {
+   "generated": 0.98171875,
+   "real": 0.98325,
+   "diff": -0.001531249999999984,
+   "se": 0.001178648804413809
+  },
+  "health@4": {
+   "generated": 0.9842828450282144,
+   "real": 0.9844427441979087,
+   "diff": -0.00015989916969427753,
+   "se": 0.0015856711146561917
+  },
+  "health@8": {
+   "generated": 0.9809266081966679,
+   "real": 0.9848563968668407,
+   "diff": -0.003929788670172796,
+   "se": 0.0018791349401163459
+  },
+  "health@16": {
+   "generated": 0.981042654028436,
+   "real": 0.9816971713810316,
+   "diff": -0.000654517352595585,
+   "se": 0.0024387892193417355
+  },
+  "food@1": {
+   "generated": 0.625375,
+   "real": 0.631,
+   "diff": -0.005624999999999991,
+   "se": 0.004181362914896348
+  },
+  "food@4": {
+   "generated": 0.6091114865941913,
+   "real": 0.6225452690640143,
+   "diff": -0.013433782469822964,
+   "se": 0.005207557599708646
+  },
+  "food@8": {
+   "generated": 0.5998500211926575,
+   "real": 0.6075718015665796,
+   "diff": -0.007721780373922127,
+   "se": 0.005350022523677364
+  },
+  "food@16": {
+   "generated": 0.5702314719417543,
+   "real": 0.5759844703272324,
+   "diff": -0.0057529983854781586,
+   "se": 0.007099859437684936
+  },
+  "drink@1": {
+   "generated": 0.6093125,
+   "real": 0.6055,
+   "diff": 0.0038124999999999964,
+   "se": 0.004332229882380977
+  },
+  "drink@4": {
+   "generated": 0.6006312366499824,
+   "real": 0.5983167559296098,
+   "diff": 0.002314480720372658,
+   "se": 0.005568290966377626
+  },
+  "drink@8": {
+   "generated": 0.5853738058752568,
+   "real": 0.587467362924282,
+   "diff": -0.002093557049025252,
+   "se": 0.0050746679400792295
+  },
+  "drink@16": {
+   "generated": 0.5583831307095267,
+   "real": 0.5718247365501942,
+   "diff": -0.013441605840667448,
+   "se": 0.007264016783740502
+  },
+  "energy@1": {
+   "generated": 0.8763125,
+   "real": 0.87575,
+   "diff": 0.0005625000000000213,
+   "se": 0.0026049026482277576
+  },
+  "energy@4": {
+   "generated": 0.8686517677814264,
+   "real": 0.8735016577403724,
+   "diff": -0.004849889958945974,
+   "se": 0.0031635693357851854
+  },
+  "energy@8": {
+   "generated": 0.8735939486811646,
+   "real": 0.8733681462140992,
+   "diff": 0.00022580246706538354,
+   "se": 0.0040643097480569
+  },
+  "energy@16": {
+   "generated": 0.8706298509513016,
+   "real": 0.8724348308374931,
+   "diff": -0.001804979886191438,
+   "se": 0.004951839057418671
+  },
+  "inventory@1": {
+   "generated": 0.9757135416666667,
+   "real": 0.97575,
+   "diff": -3.645833333332238e-05,
+   "se": 0.00036930964145036137
+  },
+  "inventory@4": {
+   "generated": 0.9752154599844848,
+   "real": 0.9745813142905722,
+   "diff": 0.0006341456939126244,
+   "se": 0.000531221772666668
+  },
+  "inventory@8": {
+   "generated": 0.9746883592535838,
+   "real": 0.9741514360313316,
+   "diff": 0.0005369232222521836,
+   "se": 0.000644500645395366
+  },
+  "inventory@16": {
+   "generated": 0.9733383703093161,
+   "real": 0.9720373451654649,
+   "diff": 0.00130102514385122,
+   "se": 0.0008283857015600005
+  }
+ }
+}

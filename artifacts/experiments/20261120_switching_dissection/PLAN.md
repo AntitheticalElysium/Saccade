@@ -198,7 +198,9 @@ From a perfect history, P1.5 loses 9.5% of the start's cows at step 1 (simulator
     with episode-bootstrap SEs.
   - Separates: on lower than away at the night edge means the glimpse protects where the periphery token is corrupted
     (the 11-20 hint: -9 points at 1.4 SE). Equal means it does not.
-- **A6 (`gaze_dev.py`, CPU): the learned fixation across the ten learned-gaze worlds (F2 → P1.5).**
+- **A6 (`gaze_dev.py`, CPU): the learned fixation across the learned-gaze worlds (F2 → P1.5).** F2.1 is excluded: it
+  trained on `craftax_union_v1`, not on the same frames, and the loader refuses it against our replay store. The other
+  nine run.
   - The F2 review's `trace.py` runs unchanged on each world's executed training trace, on the same labelled training
     subset.
   - Reading: crop coverage of entities by kind, HUD changes, terrain edits, entering map and the counters' attempts,

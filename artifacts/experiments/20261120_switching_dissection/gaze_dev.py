@@ -11,7 +11,7 @@ from pathlib import Path
 
 T = importlib.import_module("artifacts.experiments.20261104_p1f2_review.trace")
 HERE = Path(__file__).resolve().parent
-WORLDS = {"F2": "20261103_p1f2", "F2.1": "20261104_p1f21", "F3": "20261105_p1f3", "F4": "20261106_p1f4",
+WORLDS = {"F2": "20261103_p1f2", "F3": "20261105_p1f3",                     # F2.1 (craftax_union_v1): other frames "F4": "20261106_p1f4",
           "HUD-Change": "20261109_p1_hud_change", "F5": "20261111_p1f5", "MultiStep": "20261111_p1_multistep_mamba",
           "F6": "20261113_p1f6", "F6.1": "20261114_p1f61", "P1.5": "20261116_p15"}
 KEYS = ("any_entity", "cows", "zombies", "skeletons", "arrows", "changed_hud", "terrain_edit", "entering_map")

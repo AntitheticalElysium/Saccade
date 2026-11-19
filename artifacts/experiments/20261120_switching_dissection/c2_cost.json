@@ -1,0 +1,65 @@
+{
+ "baseline": {
+  "64": [
+   2.284,
+   12500
+  ],
+  "256": [
+   8.581,
+   3125
+  ]
+ },
+ "eye_64": {
+  "sec_per_update": 1.7934689856677626,
+  "runs": [
+   1.8099050849996274,
+   1.7524685560056241,
+   1.8180333159980364
+  ],
+  "peak_gib": 0.34917497634887695,
+  "fraction_of_update": 0.7852316049333462
+ },
+ "eye_256": {
+  "sec_per_update": 6.937829859336489,
+  "runs": [
+   7.241374293007539,
+   6.696758545003831,
+   6.875356739998097
+  ],
+  "peak_gib": 0.8966183662414551,
+  "fraction_of_update": 0.8085106467004416
+ },
+ "fill_64_streams": {
+  "sec_per_frame": 0.0008812945056178023,
+  "in_loop_sec_per_frame_256": 0.0016938061180020725,
+  "in_loop_sec_per_frame_64": 0.0017514345563161744
+ },
+ "cache_read_64": {
+  "sec_per_update": 0.0007522255036747083
+ },
+ "cache_read_256": {
+  "sec_per_update": 0.0024722070011193864
+ },
+ "projection_hours": {
+  "baseline_run": 15.379340277777779,
+  "fresh_eye_extra": 12.24974461979821,
+  "cache": {
+   "refresh_every_1_passes": {
+    "extra": 6.271741058191713,
+    "saved_vs_fresh": 5.9780035616064975
+   },
+   "refresh_every_2_passes": {
+    "extra": 3.13824948266175,
+    "saved_vs_fresh": 9.11149513713646
+   },
+   "refresh_every_5_passes": {
+    "extra": 1.2581545373437721,
+    "saved_vs_fresh": 10.991590082454438
+   },
+   "refresh_every_10_passes": {
+    "extra": 0.6314562222377794,
+    "saved_vs_fresh": 11.61828839756043
+   }
+  }
+ }
+}

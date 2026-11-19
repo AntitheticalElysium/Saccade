@@ -103,6 +103,7 @@ def main(n=150):
             r = DL.deleted(mg, mp, u)
             if r:
                 units.append((w, e, t0 + 1, kind, i, j, np.mean([x[0] for x in r]), u[7]))
+    units = units if n == 150 else units[:60]                          # smoke: a few units
     unit_eps = sorted({x[1] for x in units})
     tokens, est = {}, {k: {} for k in CKPTS}
     for k in CKPTS:

@@ -1,0 +1,1372 @@
+{
+ "routes_counts_by_step": {
+  "simulator_B": {
+   "zombies": [
+    0.231,
+    0.2341,
+    0.2339,
+    0.2315,
+    0.2267,
+    0.2337,
+    0.2343,
+    0.2368,
+    0.2407,
+    0.2468,
+    0.2482,
+    0.2617,
+    0.2658,
+    0.2661,
+    0.2657,
+    0.2693,
+    0.2717
+   ],
+   "cows": [
+    0.661,
+    0.6474,
+    0.645,
+    0.6589,
+    0.6652,
+    0.667,
+    0.6626,
+    0.663,
+    0.6728,
+    0.6804,
+    0.6802,
+    0.6837,
+    0.6909,
+    0.6914,
+    0.6953,
+    0.701,
+    0.7005
+   ],
+   "skeletons": [
+    0.107,
+    0.1006,
+    0.097,
+    0.0955,
+    0.098,
+    0.096,
+    0.0932,
+    0.0948,
+    0.0967,
+    0.0977,
+    0.0945,
+    0.094,
+    0.0953,
+    0.0942,
+    0.0953,
+    0.1025,
+    0.1016
+   ],
+   "arrows": [
+    0.054,
+    0.0514,
+    0.0555,
+    0.0531,
+    0.0541,
+    0.0573,
+    0.056,
+    0.0595,
+    0.0613,
+    0.0635,
+    0.0627,
+    0.0608,
+    0.0598,
+    0.0603,
+    0.063,
+    0.062,
+    0.0672
+   ]
+  },
+  "free": {
+   "zombies": [
+    0.231,
+    0.2248,
+    0.2137,
+    0.209,
+    0.2018,
+    0.2002,
+    0.1972,
+    0.1926,
+    0.1853,
+    0.18,
+    0.1737,
+    0.1745,
+    0.1634,
+    0.1711,
+    0.1639,
+    0.157,
+    0.1555
+   ],
+   "cows": [
+    0.661,
+    0.5896,
+    0.5543,
+    0.5275,
+    0.5058,
+    0.4803,
+    0.4594,
+    0.4273,
+    0.4202,
+    0.4079,
+    0.3798,
+    0.3701,
+    0.3608,
+    0.3559,
+    0.3465,
+    0.3331,
+    0.3204
+   ],
+   "skeletons": [
+    0.107,
+    0.0851,
+    0.0806,
+    0.0766,
+    0.0705,
+    0.0654,
+    0.0608,
+    0.0616,
+    0.0569,
+    0.0509,
+    0.0514,
+    0.0463,
+    0.0444,
+    0.0467,
+    0.0457,
+    0.0402,
+    0.0412
+   ],
+   "arrows": [
+    0.054,
+    0.0413,
+    0.044,
+    0.0487,
+    0.0497,
+    0.0443,
+    0.0449,
+    0.0395,
+    0.0421,
+    0.0373,
+    0.0403,
+    0.0403,
+    0.0351,
+    0.0361,
+    0.0311,
+    0.0325,
+    0.0343
+   ]
+  },
+  "ctx_real": {
+   "zombies": [
+    0.231,
+    0.2248,
+    0.2137,
+    0.2087,
+    0.2006,
+    0.2021,
+    0.1975,
+    0.1913,
+    0.1798,
+    0.1713,
+    0.17,
+    0.1653,
+    0.1577,
+    0.1594,
+    0.1552,
+    0.1514,
+    0.1501
+   ],
+   "cows": [
+    0.661,
+    0.5896,
+    0.5558,
+    0.5239,
+    0.5041,
+    0.4799,
+    0.4573,
+    0.4292,
+    0.419,
+    0.4053,
+    0.3855,
+    0.3816,
+    0.3759,
+    0.3648,
+    0.3554,
+    0.3403,
+    0.3368
+   ],
+   "skeletons": [
+    0.107,
+    0.0851,
+    0.0798,
+    0.0761,
+    0.07,
+    0.0628,
+    0.059,
+    0.0545,
+    0.0514,
+    0.047,
+    0.0463,
+    0.0423,
+    0.0384,
+    0.0435,
+    0.041,
+    0.0407,
+    0.0384
+   ],
+   "arrows": [
+    0.054,
+    0.0413,
+    0.0407,
+    0.0481,
+    0.0433,
+    0.0405,
+    0.037,
+    0.0324,
+    0.0392,
+    0.0355,
+    0.0336,
+    0.0325,
+    0.0294,
+    0.0271,
+    0.0289,
+    0.0266,
+    0.0265
+   ]
+  },
+  "mem_real": {
+   "zombies": [
+    0.231,
+    0.2248,
+    0.2179,
+    0.2157,
+    0.2127,
+    0.2162,
+    0.2022,
+    0.2038,
+    0.2107,
+    0.2113,
+    0.2123,
+    0.2221,
+    0.223,
+    0.2353,
+    0.2332,
+    0.2359,
+    0.2517
+   ],
+   "cows": [
+    0.661,
+    0.5896,
+    0.5787,
+    0.5954,
+    0.6016,
+    0.593,
+    0.5919,
+    0.6019,
+    0.5995,
+    0.5968,
+    0.5947,
+    0.59,
+    0.5934,
+    0.6148,
+    0.6156,
+    0.6295,
+    0.6089
+   ],
+   "skeletons": [
+    0.107,
+    0.0851,
+    0.09,
+    0.0878,
+    0.0829,
+    0.0832,
+    0.0839,
+    0.0888,
+    0.0879,
+    0.085,
+    0.0816,
+    0.0884,
+    0.0848,
+    0.0915,
+    0.0912,
+    0.0801,
+    0.088
+   ],
+   "arrows": [
+    0.054,
+    0.0413,
+    0.0369,
+    0.0368,
+    0.0401,
+    0.0434,
+    0.0409,
+    0.0355,
+    0.0383,
+    0.0426,
+    0.0399,
+    0.0424,
+    0.0419,
+    0.0372,
+    0.047,
+    0.0489,
+    0.0441
+   ]
+  },
+  "teacher": {
+   "zombies": [
+    0.231,
+    0.2248,
+    0.2174,
+    0.2175,
+    0.2137,
+    0.2217,
+    0.2051,
+    0.2091,
+    0.2133,
+    0.2172,
+    0.2175,
+    0.227,
+    0.2315,
+    0.2444,
+    0.2401,
+    0.2456,
+    0.2593
+   ],
+   "cows": [
+    0.661,
+    0.5896,
+    0.5805,
+    0.5977,
+    0.6106,
+    0.6029,
+    0.594,
+    0.6046,
+    0.6053,
+    0.6067,
+    0.5977,
+    0.6036,
+    0.6049,
+    0.6269,
+    0.6318,
+    0.6388,
+    0.6226
+   ],
+   "skeletons": [
+    0.107,
+    0.0851,
+    0.0903,
+    0.0926,
+    0.0863,
+    0.0852,
+    0.0879,
+    0.0914,
+    0.0887,
+    0.0874,
+    0.0811,
+    0.0886,
+    0.0867,
+    0.0945,
+    0.0925,
+    0.0826,
+    0.0905
+   ],
+   "arrows": [
+    0.054,
+    0.0413,
+    0.0369,
+    0.0376,
+    0.0401,
+    0.0439,
+    0.043,
+    0.0358,
+    0.0381,
+    0.0405,
+    0.0426,
+    0.0389,
+    0.0399,
+    0.0391,
+    0.0467,
+    0.0483,
+    0.0421
+   ]
+  }
+ },
+ "routes_paired_vs_free": {
+  "ctx_real": {
+   "mobs_diff_by_step": [
+    0.0,
+    -0.0098,
+    -0.0152,
+    0.0004
+   ],
+   "se": [
+    0.0,
+    0.0042,
+    0.0059,
+    0.0136
+   ],
+   "alive_by_step": [
+    0.993,
+    0.971,
+    0.944,
+    0.8975
+   ]
+  },
+  "mem_real": {
+   "mobs_diff_by_step": [
+    0.0,
+    0.1094,
+    0.2318,
+    0.4412
+   ],
+   "se": [
+    0.0,
+    0.0182,
+    0.0269,
+    0.0447
+   ],
+   "alive_by_step": [
+    0.993,
+    0.9675,
+    0.9388,
+    0.884
+   ]
+  },
+  "teacher": {
+   "mobs_diff_by_step": [
+    0.0,
+    0.1228,
+    0.2409,
+    0.463
+   ],
+   "se": [
+    0.0,
+    0.0189,
+    0.0278,
+    0.0467
+   ],
+   "alive_by_step": [
+    0.993,
+    0.9675,
+    0.9388,
+    0.8842
+   ]
+  },
+  "free_alive_by_step": [
+   0.993,
+   0.9712,
+   0.9442,
+   0.8972
+  ]
+ },
+ "reader_error_competent_simulator_frames": {
+  "hud_exact": {
+   "health": 0.9517,
+   "food": 0.9909,
+   "drink": 0.9927,
+   "energy": 0.9723,
+   "wood": 0.969,
+   "stone": 0.9623,
+   "coal": 0.9314,
+   "iron": 0.9408,
+   "diamond": 0.9827,
+   "sapling": 0.9914,
+   "wood_pickaxe": 0.9591,
+   "stone_pickaxe": 0.9217,
+   "iron_pickaxe": 0.976,
+   "wood_sword": 0.9609,
+   "stone_sword": 0.9671,
+   "iron_sword": 0.9481
+  },
+  "entity_cells": {
+   "zombies": {
+    "recall": 0.9421004698904281
+   },
+   "cows": {
+    "recall": 0.9403705417932774
+   },
+   "skeletons": {
+    "recall": 0.9185944927117513
+   },
+   "arrows": {
+    "recall": 0.9241382128215954
+   }
+  }
+ },
+ "competent_random_plans": {
+  "null_A_vs_B": {
+   "persistence": {
+    "diff": [
+     0.00048,
+     0.00132,
+     0.00158,
+     0.00239
+    ],
+    "se": [
+     0.00087,
+     0.00141,
+     0.00181,
+     0.00227
+    ],
+    "rejects": false
+   },
+   "count": {
+    "diff": -0.00862,
+    "se": 0.0063,
+    "rejects": false
+   },
+   "level": {
+    "persistence": [
+     0.9592,
+     0.9254,
+     0.9005,
+     0.8822
+    ],
+    "count": 1.289428612009257,
+    "reference_persistence": [
+     0.9587,
+     0.9241,
+     0.899,
+     0.8798
+    ],
+    "reference_count": 1.2980526956898997
+   },
+   "S3_bookkeeping_blocker": {
+    "zombies": {
+     "count": [
+      0.5405,
+      0.5438
+     ],
+     "persistence4": [
+      0.9752,
+      0.9708
+     ],
+     "fires": false
+    },
+    "cows": {
+     "count": [
+      0.4741,
+      0.475
+     ],
+     "persistence4": [
+      0.9396,
+      0.9341
+     ],
+     "fires": false
+    },
+    "skeletons": {
+     "count": [
+      0.1811,
+      0.1832
+     ],
+     "persistence4": [
+      0.8601,
+      0.8656
+     ],
+     "fires": false
+    },
+    "arrows": {
+     "count": [
+      0.0938,
+      0.0961
+     ],
+     "persistence4": [
+      0.2866,
+      0.3055
+     ],
+     "fires": false
+    }
+   }
+  },
+  "model_vs_B": {
+   "persistence": {
+    "diff": [
+     -0.07147,
+     -0.08932,
+     -0.10772,
+     -0.12665
+    ],
+    "se": [
+     0.0037,
+     0.00515,
+     0.00637,
+     0.0074
+    ],
+    "rejects": true
+   },
+   "count": {
+    "diff": -0.51662,
+    "se": 0.0224,
+    "rejects": true
+   },
+   "level": {
+    "persistence": [
+     0.8872,
+     0.8347,
+     0.7912,
+     0.7531
+    ],
+    "count": 0.7814294020817807,
+    "reference_persistence": [
+     0.9587,
+     0.9241,
+     0.899,
+     0.8798
+    ],
+    "reference_count": 1.2980526956898997
+   },
+   "S3_bookkeeping_blocker": {
+    "zombies": {
+     "count": [
+      0.3853,
+      0.5438
+     ],
+     "persistence4": [
+      0.877,
+      0.9708
+     ],
+     "fires": false
+    },
+    "cows": {
+     "count": [
+      0.2674,
+      0.475
+     ],
+     "persistence4": [
+      0.7236,
+      0.9341
+     ],
+     "fires": true
+    },
+    "skeletons": {
+     "count": [
+      0.0972,
+      0.1832
+     ],
+     "persistence4": [
+      0.5652,
+      0.8656
+     ],
+     "fires": true
+    },
+    "arrows": {
+     "count": [
+      0.0315,
+      0.0961
+     ],
+     "persistence4": [
+      0.0381,
+      0.3055
+     ],
+     "fires": true
+    }
+   }
+  }
+ },
+ "competent_consistency": {
+  "terminated_with_health": {
+   "model": 0.53455,
+   "reference": 0.53745,
+   "rejects": false
+  },
+  "reward_inconsistent": {
+   "model": 0.0064,
+   "reference": 0.00834,
+   "rejects": true
+  },
+  "wood_inc": {
+   "model": 0.00393,
+   "reference": 0.00247,
+   "rejects": true
+  },
+  "wood_dec": {
+   "model": 0.01362,
+   "reference": 0.01421,
+   "rejects": false
+  },
+  "wood_jump": {
+   "model": 0.0016,
+   "reference": 0.00123,
+   "rejects": false
+  },
+  "stone_inc": {
+   "model": 0.01013,
+   "reference": 0.00849,
+   "rejects": false
+  },
+  "stone_dec": {
+   "model": 0.03363,
+   "reference": 0.02891,
+   "rejects": true
+  },
+  "stone_jump": {
+   "model": 0.00147,
+   "reference": 0.00095,
+   "rejects": false
+  },
+  "coal_inc": {
+   "model": 0.00167,
+   "reference": 0.0012,
+   "rejects": false
+  },
+  "coal_dec": {
+   "model": 0.00247,
+   "reference": 0.00214,
+   "rejects": false
+  },
+  "coal_jump": {
+   "model": 0.00079,
+   "reference": 0.0007,
+   "rejects": false
+  },
+  "iron_inc": {
+   "model": 0.00128,
+   "reference": 0.00159,
+   "rejects": false
+  },
+  "iron_dec": {
+   "model": 0.00332,
+   "reference": 0.00426,
+   "rejects": false
+  },
+  "iron_jump": {
+   "model": 0.00171,
+   "reference": 0.00246,
+   "rejects": false
+  },
+  "diamond_inc": {
+   "model": 0.00031,
+   "reference": 0.00026,
+   "rejects": false
+  },
+  "diamond_dec": {
+   "model": 0.00035,
+   "reference": 0.00028,
+   "rejects": false
+  },
+  "sapling_inc": {
+   "model": 0.00039,
+   "reference": 0.00174,
+   "rejects": true
+  },
+  "sapling_dec": {
+   "model": 0.00059,
+   "reference": 0.00101,
+   "rejects": false
+  },
+  "wood_pickaxe_inc": {
+   "model": 0.0027,
+   "reference": 0.00285,
+   "rejects": false
+  },
+  "wood_pickaxe_dec": {
+   "model": 0.00115,
+   "reference": 0.00136,
+   "rejects": false
+  },
+  "wood_pickaxe_jump": {
+   "model": 0.00048,
+   "reference": 0.00038,
+   "rejects": false
+  },
+  "stone_pickaxe_inc": {
+   "model": 0.00192,
+   "reference": 0.00179,
+   "rejects": false
+  },
+  "stone_pickaxe_dec": {
+   "model": 0.00094,
+   "reference": 0.00117,
+   "rejects": false
+  },
+  "stone_pickaxe_jump": {
+   "model": 0.00016,
+   "reference": 0.00033,
+   "rejects": false
+  },
+  "iron_pickaxe_inc": {
+   "model": 0.00099,
+   "reference": 0.00114,
+   "rejects": false
+  },
+  "iron_pickaxe_dec": {
+   "model": 0.00088,
+   "reference": 0.00092,
+   "rejects": false
+  },
+  "iron_pickaxe_jump": {
+   "model": 0.00011,
+   "reference": 0.00025,
+   "rejects": false
+  },
+  "wood_sword_inc": {
+   "model": 0.00174,
+   "reference": 0.0031,
+   "rejects": true
+  },
+  "wood_sword_dec": {
+   "model": 0.00138,
+   "reference": 0.00156,
+   "rejects": false
+  },
+  "wood_sword_jump": {
+   "model": 0.00044,
+   "reference": 0.00041,
+   "rejects": false
+  },
+  "stone_sword_inc": {
+   "model": 0.00162,
+   "reference": 0.00106,
+   "rejects": false
+  },
+  "stone_sword_dec": {
+   "model": 0.00034,
+   "reference": 0.0003,
+   "rejects": false
+  },
+  "stone_sword_jump": {
+   "model": 0.00015,
+   "reference": 0.00016,
+   "rejects": false
+  },
+  "iron_sword_inc": {
+   "model": 0.00128,
+   "reference": 0.00154,
+   "rejects": false
+  },
+  "iron_sword_dec": {
+   "model": 0.00106,
+   "reference": 0.0014,
+   "rejects": false
+  },
+  "iron_sword_jump": {
+   "model": 1e-05,
+   "reference": 0.0,
+   "rejects": false
+  }
+ },
+ "competent_time_to_event": {
+  "damage": {
+   "model_by_k": [
+    0.0342,
+    0.1238,
+    0.2014,
+    0.2689
+   ],
+   "reference_by_k": [
+    0.0341,
+    0.1479,
+    0.2394,
+    0.3408
+   ],
+   "rejects_at_k": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "death": {
+   "model_by_k": [
+    0.0084,
+    0.0229,
+    0.0455,
+    0.1031
+   ],
+   "reference_by_k": [
+    0.008,
+    0.026,
+    0.063,
+    0.1519
+   ],
+   "rejects_at_k": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "food_drop": {
+   "model_by_k": [
+    0.0239,
+    0.108,
+    0.2114,
+    0.4136
+   ],
+   "reference_by_k": [
+    0.02,
+    0.1282,
+    0.2394,
+    0.4748
+   ],
+   "rejects_at_k": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "drink_drop": {
+   "model_by_k": [
+    0.0391,
+    0.1256,
+    0.2425,
+    0.4508
+   ],
+   "reference_by_k": [
+    0.0436,
+    0.1542,
+    0.2769,
+    0.544
+   ],
+   "rejects_at_k": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "energy_drop": {
+   "model_by_k": [
+    0.0248,
+    0.1026,
+    0.1758,
+    0.3198
+   ],
+   "reference_by_k": [
+    0.027,
+    0.0984,
+    0.1691,
+    0.3079
+   ],
+   "rejects_at_k": []
+  },
+  "unlock": {
+   "model_by_k": [
+    0.0112,
+    0.0441,
+    0.0879,
+    0.1611
+   ],
+   "reference_by_k": [
+    0.0126,
+    0.0488,
+    0.0912,
+    0.1605
+   ],
+   "rejects_at_k": []
+  }
+ },
+ "holds_effect_of_DO": {
+  "tree": {
+   "pairs": 150,
+   "step_1": {
+    "world": 0.775,
+    "simulator": 0.8733,
+    "simulator_labels": 1.0,
+    "diff_se": 0.0468,
+    "rejects": false
+   },
+   "step_4": {
+    "world": 0.6508,
+    "simulator": 0.6992,
+    "simulator_labels": 0.76,
+    "diff_se": 0.0508,
+    "rejects": false
+   },
+   "step_16": {
+    "world": 0.4675,
+    "simulator": 0.4608,
+    "simulator_labels": 0.5267,
+    "diff_se": 0.0632,
+    "rejects": false
+   }
+  },
+  "stone": {
+   "pairs": 150,
+   "step_1": {
+    "world": 0.7725,
+    "simulator": 0.92,
+    "simulator_labels": 1.0,
+    "diff_se": 0.0351,
+    "rejects": true
+   },
+   "step_4": {
+    "world": 0.5408,
+    "simulator": 0.5883,
+    "simulator_labels": 0.6667,
+    "diff_se": 0.0429,
+    "rejects": false
+   },
+   "step_16": {
+    "world": 0.51,
+    "simulator": 0.5308,
+    "simulator_labels": 0.5692,
+    "diff_se": 0.0571,
+    "rejects": false
+   }
+  },
+  "coal": {
+   "pairs": 150,
+   "step_1": {
+    "world": 0.3425,
+    "simulator": 0.8767,
+    "simulator_labels": 1.0,
+    "diff_se": 0.0641,
+    "rejects": true
+   },
+   "step_4": {
+    "world": 0.2975,
+    "simulator": 0.7542,
+    "simulator_labels": 0.86,
+    "diff_se": 0.0692,
+    "rejects": true
+   },
+   "step_16": {
+    "world": 0.2408,
+    "simulator": 0.6583,
+    "simulator_labels": 0.785,
+    "diff_se": 0.0604,
+    "rejects": true
+   }
+  },
+  "iron": {
+   "pairs": 150,
+   "step_1": {
+    "world": 0.2183,
+    "simulator": 0.9242,
+    "simulator_labels": 1.0,
+    "diff_se": 0.0555,
+    "rejects": true
+   },
+   "step_4": {
+    "world": 0.1975,
+    "simulator": 0.745,
+    "simulator_labels": 0.84,
+    "diff_se": 0.0529,
+    "rejects": true
+   },
+   "step_16": {
+    "world": 0.1975,
+    "simulator": 0.6292,
+    "simulator_labels": 0.7267,
+    "diff_se": 0.0624,
+    "rejects": true
+   }
+  },
+  "diamond": {
+   "pairs": 14,
+   "step_1": {
+    "world": 0.0,
+    "simulator": 0.3571,
+    "simulator_labels": 1.0,
+    "diff_se": 0.1411,
+    "rejects": false
+   },
+   "step_4": {
+    "world": -0.0089,
+    "simulator": 0.2857,
+    "simulator_labels": 0.8571,
+    "diff_se": 0.1347,
+    "rejects": false
+   },
+   "step_16": {
+    "world": 0.0,
+    "simulator": 0.2143,
+    "simulator_labels": 0.8571,
+    "diff_se": 0.1174,
+    "rejects": false
+   }
+  },
+  "water": {
+   "pairs": 150,
+   "step_1": {
+    "world": 0.6667,
+    "simulator": 0.9267,
+    "simulator_labels": 1.02,
+    "diff_se": 0.0498,
+    "rejects": true
+   },
+   "step_4": {
+    "world": 0.6917,
+    "simulator": 0.9425,
+    "simulator_labels": 1.0267,
+    "diff_se": 0.0592,
+    "rejects": true
+   },
+   "step_16": {
+    "world": 0.6983,
+    "simulator": 1.1058,
+    "simulator_labels": 1.245,
+    "diff_se": 0.0851,
+    "rejects": true
+   }
+  }
+ },
+ "spread_competent": {
+  "model_vs_B": {
+   "health_drops": [
+    0.2184,
+    0.2372,
+    0.249,
+    0.2954
+   ],
+   "displacement": [
+    0.2586,
+    0.2382,
+    0.2466,
+    0.2565
+   ],
+   "mobs_at_end": [
+    0.1035,
+    0.1406,
+    0.2246,
+    0.5312
+   ],
+   "food_drops": [
+    0.2218,
+    0.2348,
+    0.2589,
+    0.2846
+   ],
+   "drink_drops": [
+    0.2104,
+    0.2345,
+    0.2575,
+    0.2976
+   ],
+   "energy_drops": [
+    0.257,
+    0.256,
+    0.2408,
+    0.2462
+   ],
+   "return": [
+    0.3275,
+    0.2386,
+    0.2141,
+    0.2198
+   ],
+   "death_step": [
+    0.2801,
+    0.2465,
+    0.2416,
+    0.2318
+   ]
+  },
+  "null_A_vs_B": {
+   "health_drops": [
+    0.2502,
+    0.2566,
+    0.248,
+    0.2451
+   ],
+   "displacement": [
+    0.2452,
+    0.2517,
+    0.257,
+    0.246
+   ],
+   "mobs_at_end": [
+    0.2399,
+    0.2526,
+    0.2616,
+    0.2459
+   ],
+   "food_drops": [
+    0.2401,
+    0.2527,
+    0.2506,
+    0.2565
+   ],
+   "drink_drops": [
+    0.2547,
+    0.2505,
+    0.2551,
+    0.2396
+   ],
+   "energy_drops": [
+    0.2511,
+    0.2511,
+    0.2445,
+    0.2532
+   ],
+   "return": [
+    0.2509,
+    0.2454,
+    0.2481,
+    0.2556
+   ],
+   "death_step": [
+    0.2485,
+    0.246,
+    0.2488,
+    0.2568
+   ]
+  }
+ },
+ "revisits_competent": {
+  "model": {
+   "gap_1_16": {
+    "agree": 0.6790660932151321,
+    "events": 56965
+   },
+   "gap_17_64": {
+    "agree": 0.604442380620695,
+    "events": 25842
+   },
+   "gap_65_more": {
+    "agree": 0.6589041095890411,
+    "events": 730
+   }
+  },
+  "simulator_B": {
+   "gap_1_16": {
+    "agree": 0.9364440868865648,
+    "events": 55935
+   },
+   "gap_17_64": {
+    "agree": 0.878017585931255,
+    "events": 25020
+   },
+   "gap_65_more": {
+    "agree": 0.8169811320754717,
+    "events": 1060
+   }
+  }
+ },
+ "spread_stage1_bank": {
+  "model_vs_B": {
+   "health_drops": [
+    0.2315,
+    0.2371,
+    0.2454,
+    0.286
+   ],
+   "displacement": [
+    0.2474,
+    0.2419,
+    0.2468,
+    0.2639
+   ],
+   "mobs_at_end": [
+    0.1192,
+    0.1597,
+    0.2449,
+    0.4762
+   ],
+   "food_drops": [
+    0.2283,
+    0.2437,
+    0.263,
+    0.2651
+   ],
+   "drink_drops": [
+    0.2293,
+    0.2431,
+    0.262,
+    0.2657
+   ],
+   "energy_drops": [
+    0.2493,
+    0.2536,
+    0.2527,
+    0.2444
+   ],
+   "return": [
+    0.2679,
+    0.2367,
+    0.2388,
+    0.2567
+   ],
+   "death_step": [
+    0.2498,
+    0.2511,
+    0.2552,
+    0.2439
+   ]
+  },
+  "null_A_vs_B": {
+   "health_drops": [
+    0.2505,
+    0.2478,
+    0.251,
+    0.2507
+   ],
+   "displacement": [
+    0.2517,
+    0.25,
+    0.2482,
+    0.2501
+   ],
+   "mobs_at_end": [
+    0.2482,
+    0.2525,
+    0.2509,
+    0.2483
+   ],
+   "food_drops": [
+    0.2501,
+    0.2527,
+    0.2467,
+    0.2505
+   ],
+   "drink_drops": [
+    0.2481,
+    0.2508,
+    0.251,
+    0.2501
+   ],
+   "energy_drops": [
+    0.2504,
+    0.2523,
+    0.2477,
+    0.2496
+   ],
+   "return": [
+    0.2501,
+    0.2505,
+    0.2506,
+    0.2489
+   ],
+   "death_step": [
+    0.2505,
+    0.2493,
+    0.2482,
+    0.252
+   ]
+  }
+ }
+}

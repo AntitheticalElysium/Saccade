@@ -51,6 +51,11 @@ Read: mob counts by step paired against free running, with survival beside them.
 **Rule for the first arm's routes, fixed now:** switch the routes whose recorded input recovers at least a third of the
 free-running step-16 deficit (teacher minus free); both if each does, or if only teacher does.
 
+**Result (`20261119_s2/RESULTS.md` 5):** Mamba and the record fed recorded frames recover 96% of the step-16 deficit
+(+0.44 of +0.46 mobs per frame); the context fed them recovers nothing (+0.000). By the rule the first arm switches
+**mem only** (`--routes mem`): Mamba and the record read the substitute, the denoiser's context keeps the recorded
+frames. Mamba (frozen here) and the record (no parameters; read by the denoiser's record_read) were one arm.
+
 ## The first arm (`switch_ft.py`)
 
 - **Protocol:** that of the earlier denoiser fine-tunes (traces, SWAX, record).

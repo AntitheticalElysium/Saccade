@@ -74,3 +74,56 @@ from real histories, so this also starts in P1.
 - Failures 2 and 3 start one step from real histories (P1). P2's outcome credit (RESEARCH.md 1) could calibrate the
   death probability at depth; it cannot give the world the cooldown or the overdue clock.
 - Not yet measured: whether imagined decisions go the right way (L3, stage 2).
+
+## 5. Stage 1b (PLAN.md "Stage 1b"; `gates_1b.json`, scored after Codex's selector fix)
+
+**Where the mob loss comes from (route localisation; stage 1's bank, 1,000 starts x 4 futures, the recording's own
+fixation schedule and the world's own outcomes in every arm).** Mobs per frame at steps 1 / 4 / 8 / 16:
+
+| Arm | Mobs | Paired change against free running at 4 / 8 / 16 | Alive at 16 |
+| :--- | :--- | :--- | :--- |
+| Simulator | 1.03 / 1.04 / 1.07 / 1.14 | | |
+| Free running | 0.94 / 0.83 / 0.71 / 0.55 | | 0.897 |
+| Context fed the recorded frames | 0.94 / 0.82 / 0.69 / 0.55 | -0.010 / -0.015 / +0.000 (SE <= 0.014) | 0.898 |
+| Mamba and the record fed them | 0.94 / 0.94 / 0.94 / 0.99 | +0.11 / +0.23 / +0.44 (SE <= 0.045) | 0.884 |
+| Both (teacher) | 0.94 / 0.95 / 0.95 / 1.01 | +0.12 / +0.24 / +0.46 | 0.884 |
+
+The loss comes from Mamba and the record reading the world's own frames: feeding them recorded frames recovers 96% of
+the step-16 deficit, while the denoiser's context reading its own frames costs nothing (P1's diffusion-forcing context
+corruption already covers it). The remaining step-1 gap (0.94 against 1.03) is one-step error. Mamba and the record were
+one arm; which of the two carries it is not separated.
+
+**Competent starts (1,000 random-plan starts; the null passes on every gate).**
+- Mobs fade as in random play: count 0.78 against 1.30 (-40%), 4-step persistence 0.75 against 0.88.
+  - The blocker fires for cows (0.27 against 0.48; persistence 0.72 against 0.93), skeletons and arrows.
+  - Zombies: 0.39 against 0.54, persistence 0.877 against 0.971 (0.094 below, just inside the 0.10 bound).
+- By step 16: damage 0.27 against 0.34, death 0.10 against 0.15, food drops 0.41 against 0.47, drink drops 0.45
+  against 0.54; energy drops (0.32 / 0.31) and unlocks (0.161 / 0.161) match.
+- Bookkeeping: inventory changes at the simulator's rates except sapling collection (0.0004 against 0.0017 per step),
+  wood sword crafting (0.0017 / 0.0031) and wood increments (0.0039 / 0.0025, too many).
+
+**The action's effect, DO minus NOOP (764 hold pairs, through the readers; the simulator's label effect in brackets).**
+
+| Faced block | Step 1, world / simulator | Step 16, world / simulator |
+| :--- | :--- | :--- |
+| Tree (wood) | 0.78 / 0.87 [1.00] | 0.47 / 0.46 [0.53] |
+| Stone | 0.77 / 0.92 [1.00] (rejects) | 0.51 / 0.53 [0.57] |
+| Coal | 0.34 / 0.88 [1.00] (rejects) | 0.24 / 0.66 [0.79] (rejects) |
+| Iron | 0.22 / 0.92 [1.00] (rejects) | 0.20 / 0.63 [0.73] (rejects) |
+| Diamond (14 pairs) | 0.00 / 0.36 [1.00] | 0.00 / 0.21 [0.86] |
+| Water (drink) | 0.67 / 0.93 [1.02] (rejects) | 0.70 / 1.11 [1.25] (rejects) |
+
+Wood and stone follow the action at depth; coal is drawn about 40% of the time and iron about 25%, from the first step
+on: the P1 increment regression, measured where it matters (Codex is on it). Drinking is under-drawn too.
+
+**Spread (randomised PIT of the simulator's futures among the world's 8; null uniform in both banks).** Calibrated for
+displacement, health drops, food / drink / energy drops and death step; biased for mobs at the end (53% of the simulator's
+futures above every world future on competent starts, 48% on stage 1's bank), and on competent starts for return (33%
+below every world future: the world pays more reward there).
+
+**Revisits (TEST_SPEC S2.2, competent starts).** A cell re-entering view agrees with its last clear sighting in 0.68 of
+cases within 16 steps and 0.60 at 17-64, against 0.94 / 0.88 for the simulator through the same readers: the world
+redraws terrain it has seen. (The camera-shift reader is shared; stage 1's self-motion gates did not reject.)
+
+**Readers on competent simulator frames:** HUD 0.92-0.99 per quantity, entity recall 0.92-0.94 (random play: about 1.0
+and 0.95-0.97); the hold table's label column shows the attenuation.

@@ -48,7 +48,7 @@ def main():
                         "record_equal": bool(torch.allclose(mine[3].float(), ref[3].float(), atol=1e-5))}}
     print(json.dumps(out), flush=True)
     assert out["identity"]["abs_diff"] < 1e-5 and out["identity"]["cache_equal"] and out["identity"]["record_equal"]
-    del model; torch.cuda.empty_cache()
+    del model, ctl, ref, mine; torch.cuda.empty_cache()                 # one model on the GPU from here
     sys.argv = ["switch_ft", str(scratch / "run"), "--updates", "20", "--reads", "20"]
     SW.main()
     res = json.loads((scratch / "run/switch_ft.json").read_text())

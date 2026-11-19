@@ -118,3 +118,101 @@ cell of their last position at the next 1-2 steps. R4k's change against P1.5 is 
   - Zombies: more deletions, the same recovery.
 
   Switching taught a little of the intended recovery. The distrust it taught as well outweighs it.
+
+# Stage B (user 11-20: plan and run both)
+
+## A3: where P1.5's step-1 deletion lives (`deletions.py`; isolated inner start mobs; deletion = no same-kind mob within 1 cell)
+
+| Step-1 deletion | Simulator through reader | P1.5 |
+| :--- | ---: | ---: |
+| Cows, all | 0.010 | 0.098 |
+| Cows, day | 0.004 | 0.062 |
+| Cows, night | 0.032 | 0.226 |
+| Cows, day, inner | 0.006 | 0.052 |
+| Cows, day, edge ring | 0.002 | 0.070 |
+| Cows, night, edge ring | 0.040 | 0.291 |
+| Zombies, all | 0.014 | 0.069 |
+| Zombies, night, edge ring | 0.047 | 0.331 |
+| Skeletons, all | 0.026 | 0.236 |
+
+- **Night is the largest factor.** Craftax-Classic's renderer adds fresh per-pixel random static at night. Its intensity
+  grows with darkness and with distance from the view's centre (`craftax_classic/renderer.py`, `night_noise_intensity_texture`).
+  That is why the night and edge-ring effects come together.
+- **In daylight a base loss remains.** Inner cows with the camera still are lost at 0.048 (floor 0.000), even when the
+  simulator says they almost surely stay (0.042-0.057).
+- **Motion uncertainty matters for zombies.** Zombies that certainly stay are lost at 0.014 (by day 0.000); those whose
+  next cell is uncertain at 0.118-0.135.
+- **Scroll matters little** once the reader's own error on scroll steps is subtracted (floor 0.033-0.036). Zombies are
+  about 2x; cows show none.
+- **R4k** is the same or slightly worse in every split.
+
+## A4: a glimpse barely protects (`fovea.py`)
+
+**Step 1 (a natural experiment).** The last real frame's glimpse was a seeded uniform draw. Deletion, glimpsed against
+not, in P1.5:
+
+| Step-1 deletion | Glimpsed | Not glimpsed | SE of the difference |
+| :--- | ---: | ---: | ---: |
+| Cows, day, inner | 0.058 | 0.048 | |
+| Cows, day, ring | 0.049 | 0.065 | |
+| Cows, night, inner | 0.125 | 0.131 | |
+| Cows, night, ring | 0.219 | 0.311 | 0.064 |
+| Zombies, day, inner | 0.014 | 0.017 | |
+| Zombies, night, ring | 0.388 | 0.307 | |
+
+- At the night ring, cows differ by -0.092 at 1.4 SE, while zombies at the night ring go the other way.
+- The rerun shows the same pattern, but it is not independent: the same starts and the same glimpses.
+
+**Later steps (observational: the chooser picks).**
+- Cows: 0.047 against 0.055 by day, 0.084 against 0.108 at night.
+- Zombies and skeletons: no difference.
+
+**Reading.** At step 1 the world has full information: the cow is in the real tokens, the record and the belief. It
+still loses inner daylight cows at about 5%. So the deletion is not missing information a glimpse could supply. The only
+hint of protection is where the periphery token is corrupted (the night static at the edges). A5 tests that.
+
+## K sweep: the sampler is a minor part (`ksweep_*.log`; first 1,000 starts; K = 4 is this process's reference)
+
+| Step-1 hazard of start mobs | K = 1 | K = 2 | K = 4 | K = 8 | Simulator |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| Cows | 0.091 | 0.082 | 0.077 | 0.065 | 0.008 |
+| Zombies | 0.068 | 0.059 | 0.049 | 0.045 | 0.020 |
+| Skeletons | 0.349 | 0.164 | 0.109 | 0.102 | 0.000 |
+
+- **Cows at steps 9-16:** hazard 0.081 / 0.056 / 0.050 / 0.040. Unpaired vanishing at step 1 is 31.6 / 28.9 / 26.8 /
+  22.6 per 1,000 transitions (simulator 2.0).
+- **Spawns and arrivals do not change with K.** Cow edge arrivals are 18-23 per 1,000 against the simulator's 38-51.
+- **The finest trained step (k_max = 8)** cuts cow deletion about 15% against K = 4, with no extra spawns. It still
+  leaves 8x the simulator.
+- **So most of the deletion is in what the denoiser predicts, not in how coarsely it is sampled.** The arrival deficit
+  is not the sampler's at all.
+
+## B2: switching made the denoiser rely less on the record, map-wide (`b2.py`, `b2.json`, `b2.log`)
+
+The smoke reproduced the P1 monitor's G1 at every level within 0.29%. Below, reliance = the error with the record's
+history removed minus with the real record, per cell, at low signal (levels 0-3), on the monitor's 2,000 windows.
+
+| Region | P1.5 reliance | R4k reliance | Change (SE) |
+| :--- | ---: | ---: | ---: |
+| Mob cells | 0.1326 | 0.0971 | -27% (± 1%) |
+| Next to a mob | 0.0670 | 0.0392 | -41% |
+| Cells a mob just left | 0.0455 | 0.0212 | -53% |
+| Other map cells | 0.0837 | 0.0462 | -45% |
+| Food cell | 0.1270 | 0.1222 | -4% |
+| Energy cell | 0.1233 | 0.1171 | -5% |
+| Other HUD | 0.1426 | 0.1237 | -13% |
+| Food cell at food drops | 0.0885 | 0.0810 | -8% |
+| Energy cell at energy drops | 0.1336 | 0.1265 | -5% |
+
+- **Attenuation is now measured, and it covers the whole map,** static terrain included, not just mobs.
+  - With the real record, R4k's error is unchanged: mob cells 0.0482 → 0.0489, other map 0.00206 → 0.00209.
+  - So R4k moved its reliance from the record to its other inputs.
+- **The HUD barely changed.** This does not explain why hunger regressed while energy held; that stays open.
+- **The dose was not small.** At P1.5 a switched record raises the periphery loss by 17%: 21% of that rise falls on mob
+  cells, 69% on other map cells. R4k cut it to 12%: it learned its own task, by trusting the record less.
+- **Mobs are not under-weighted in the loss.** Mob cells are about 1.4% of cells but carry 20% of the periphery loss
+  (per-cell error about 15x the mean). Much of that error is probably irreducible (where a cow moves is random), and
+  these numbers cannot split it.
+  - So the "diluted supervision" explanation for small objects (OC-STORM, ConsisDrive) does not hold here in loss-share
+    terms.
+  - More loss weight at mobs would mostly add pressure on irreducible motion noise.

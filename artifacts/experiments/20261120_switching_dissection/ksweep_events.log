@@ -1,0 +1,116 @@
+loaded simulator
+loaded K1_smoke
+loaded K2_smoke
+loaded K4_smoke
+loaded K8_smoke
+cells per transition (x1000), by depth; diff vs P1.5 (SE)
+  zombies   edge             1     simulator:  13.38 (+7.75±3.07) | K1_smoke:   6.75 (+1.13±1.30) | K2_smoke:   5.12 (-0.50±0.83) | K4_smoke:   5.62 | K8_smoke:   6.00 (+0.38±0.40)
+  zombies   edge             2-4   simulator:   9.24 (+1.96±1.38) | K1_smoke:   6.52 (-0.76±0.88) | K2_smoke:   6.69 (-0.59±0.52) | K4_smoke:   7.28 | K8_smoke:   7.32 (+0.04±0.32)
+  zombies   edge             5-8   simulator:  15.35 (+7.56±1.77) | K1_smoke:   7.74 (-0.06±1.13) | K2_smoke:   6.98 (-0.82±0.57) | K4_smoke:   7.80 | K8_smoke:   8.51 (+0.71±0.36)
+  zombies   edge             9-16  simulator:  18.28 (+9.87±1.59) | K1_smoke:   8.47 (+0.06±0.86) | K2_smoke:   8.00 (-0.42±0.49) | K4_smoke:   8.42 | K8_smoke:   8.44 (+0.02±0.34)
+  zombies   spawn            1     simulator:   2.88 (-1.00±1.26) | K1_smoke:   3.25 (-0.63±0.60) | K2_smoke:   3.12 (-0.75±0.49) | K4_smoke:   3.88 | K8_smoke:   4.12 (+0.25±0.45)
+  zombies   spawn            2-4   simulator:   4.49 (+1.11±1.06) | K1_smoke:   4.78 (+1.40±0.59) | K2_smoke:   4.06 (+0.68±0.35) | K4_smoke:   3.38 | K8_smoke:   2.45 (-0.93±0.28)
+  zombies   spawn            5-8   simulator:   5.39 (+2.89±1.35) | K1_smoke:   4.13 (+1.63±0.48) | K2_smoke:   3.38 (+0.87±0.39) | K4_smoke:   2.50 | K8_smoke:   2.31 (-0.20±0.16)
+  zombies   spawn            9-16  simulator:   3.95 (+1.72±0.80) | K1_smoke:   3.76 (+1.53±0.67) | K2_smoke:   2.71 (+0.47±0.36) | K4_smoke:   2.24 | K8_smoke:   2.29 (+0.05±0.18)
+  zombies   jump             1     simulator:   1.62 (+0.50±0.43) | K1_smoke:   1.25 (+0.13±0.27) | K2_smoke:   1.50 (+0.38±0.21) | K4_smoke:   1.12 | K8_smoke:   1.25 (+0.13±0.13)
+  zombies   jump             2-4   simulator:   0.76 (+0.17±0.31) | K1_smoke:   0.42 (-0.17±0.15) | K2_smoke:   0.63 (+0.04±0.11) | K4_smoke:   0.59 | K8_smoke:   0.51 (-0.08±0.06)
+  zombies   jump             5-8   simulator:   0.88 (+0.65±0.40) | K1_smoke:   0.10 (-0.13±0.09) | K2_smoke:   0.23 (-0.00±0.09) | K4_smoke:   0.23 | K8_smoke:   0.36 (+0.13±0.09)
+  zombies   jump             9-16  simulator:   0.68 (+0.40±0.21) | K1_smoke:   0.19 (-0.10±0.10) | K2_smoke:   0.29 (-0.00±0.10) | K4_smoke:   0.29 | K8_smoke:   0.46 (+0.17±0.09)
+  zombies   vanish_paired    1     simulator:   1.62 (+0.50±0.44) | K1_smoke:   1.25 (+0.13±0.28) | K2_smoke:   1.50 (+0.38±0.22) | K4_smoke:   1.12 | K8_smoke:   1.25 (+0.13±0.12)
+  zombies   vanish_paired    2-4   simulator:   0.76 (+0.17±0.29) | K1_smoke:   0.51 (-0.08±0.19) | K2_smoke:   0.63 (+0.04±0.12) | K4_smoke:   0.59 | K8_smoke:   0.55 (-0.04±0.08)
+  zombies   vanish_paired    5-8   simulator:   0.91 (+0.69±0.43) | K1_smoke:   0.23 (+0.00±0.12) | K2_smoke:   0.29 (+0.06±0.10) | K4_smoke:   0.23 | K8_smoke:   0.36 (+0.13±0.09)
+  zombies   vanish_paired    9-16  simulator:   0.75 (+0.43±0.21) | K1_smoke:   0.19 (-0.14±0.12) | K2_smoke:   0.34 (+0.02±0.11) | K4_smoke:   0.32 | K8_smoke:   0.47 (+0.15±0.10)
+  zombies   vanish_unpaired  1     simulator:   2.62 (-6.37±1.83) | K1_smoke:  12.62 (+3.63±1.17) | K2_smoke:  10.50 (+1.50±0.63) | K4_smoke:   9.00 | K8_smoke:   8.25 (-0.75±0.43)
+  zombies   vanish_unpaired  2-4   simulator:   2.20 (-5.28±1.10) | K1_smoke:  11.13 (+3.65±0.84) | K2_smoke:   8.76 (+1.27±0.54) | K4_smoke:   7.49 | K8_smoke:   6.73 (-0.76±0.32)
+  zombies   vanish_unpaired  5-8   simulator:   1.63 (-2.59±0.66) | K1_smoke:   6.38 (+2.15±0.79) | K2_smoke:   5.65 (+1.43±0.58) | K4_smoke:   4.22 | K8_smoke:   3.83 (-0.39±0.36)
+  zombies   vanish_unpaired  9-16  simulator:   1.47 (-1.71±0.55) | K1_smoke:   4.98 (+1.80±0.73) | K2_smoke:   4.18 (+0.99±0.29) | K4_smoke:   3.18 | K8_smoke:   2.95 (-0.24±0.22)
+  cows      edge             1     simulator:  37.88 (+18.50±3.43) | K1_smoke:  18.38 (-1.00±1.87) | K2_smoke:  14.62 (-4.75±1.00) | K4_smoke:  19.38 | K8_smoke:  21.25 (+1.88±0.50)
+  cows      edge             2-4   simulator:  47.37 (+25.41±2.77) | K1_smoke:  28.15 (+6.20±1.46) | K2_smoke:  18.20 (-3.76±0.74) | K4_smoke:  21.96 | K8_smoke:  22.04 (+0.09±0.59)
+  cows      edge             5-8   simulator:  48.91 (+26.75±2.92) | K1_smoke:  24.88 (+2.73±0.91) | K2_smoke:  18.47 (-3.68±0.63) | K4_smoke:  22.16 | K8_smoke:  22.70 (+0.54±0.44)
+  cows      edge             9-16  simulator:  50.83 (+28.49±2.53) | K1_smoke:  26.27 (+3.93±1.01) | K2_smoke:  18.01 (-4.33±0.67) | K4_smoke:  22.33 | K8_smoke:  23.07 (+0.74±0.46)
+  cows      spawn            1     simulator:   6.00 (+0.63±1.86) | K1_smoke:   1.62 (-3.75±0.79) | K2_smoke:   3.88 (-1.50±0.43) | K4_smoke:   5.38 | K8_smoke:   5.62 (+0.25±0.43)
+  cows      spawn            2-4   simulator:   5.21 (-2.78±1.14) | K1_smoke:   7.54 (-0.46±0.80) | K2_smoke:   7.83 (-0.17±0.56) | K4_smoke:   8.00 | K8_smoke:   6.85 (-1.14±0.45)
+  cows      spawn            5-8   simulator:   5.52 (-1.43±0.76) | K1_smoke:   6.18 (-0.77±0.68) | K2_smoke:   6.27 (-0.69±0.36) | K4_smoke:   6.95 | K8_smoke:   6.20 (-0.75±0.40)
+  cows      spawn            9-16  simulator:   4.75 (-1.65±0.71) | K1_smoke:   4.81 (-1.59±0.45) | K2_smoke:   5.44 (-0.96±0.38) | K4_smoke:   6.40 | K8_smoke:   6.12 (-0.29±0.30)
+  cows      jump             1     simulator:   0.88 (+0.38±0.41) | K1_smoke:   0.25 (-0.25±0.23) | K2_smoke:   0.25 (-0.25±0.18) | K4_smoke:   0.50 | K8_smoke:   0.38 (-0.12±0.13)
+  cows      jump             2-4   simulator:   0.59 (+0.04±0.28) | K1_smoke:   0.47 (-0.08±0.21) | K2_smoke:   0.55 (+0.00±0.13) | K4_smoke:   0.55 | K8_smoke:   0.63 (+0.08±0.10)
+  cows      jump             5-8   simulator:   0.95 (+0.10±0.31) | K1_smoke:   0.68 (-0.16±0.20) | K2_smoke:   0.71 (-0.13±0.15) | K4_smoke:   0.84 | K8_smoke:   0.68 (-0.16±0.13)
+  cows      jump             9-16  simulator:   0.96 (+0.08±0.22) | K1_smoke:   0.53 (-0.36±0.16) | K2_smoke:   0.61 (-0.27±0.12) | K4_smoke:   0.88 | K8_smoke:   0.81 (-0.07±0.13)
+  cows      vanish_paired    1     simulator:   1.00 (+0.00±0.58) | K1_smoke:   0.50 (-0.50±0.52) | K2_smoke:   0.50 (-0.50±0.39) | K4_smoke:   1.00 | K8_smoke:   0.88 (-0.12±0.30)
+  cows      vanish_paired    2-4   simulator:   0.85 (-0.08±0.31) | K1_smoke:   1.02 (+0.09±0.35) | K2_smoke:   1.02 (+0.08±0.22) | K4_smoke:   0.93 | K8_smoke:   0.89 (-0.04±0.11)
+  cows      vanish_paired    5-8   simulator:   1.18 (+0.17±0.40) | K1_smoke:   0.98 (-0.03±0.21) | K2_smoke:   0.91 (-0.10±0.16) | K4_smoke:   1.01 | K8_smoke:   0.78 (-0.23±0.11)
+  cows      vanish_paired    9-16  simulator:   1.20 (-0.01±0.27) | K1_smoke:   0.75 (-0.46±0.20) | K2_smoke:   0.79 (-0.41±0.18) | K4_smoke:   1.20 | K8_smoke:   1.07 (-0.14±0.15)
+  cows      vanish_unpaired  1     simulator:   2.00 (-24.75±4.95) | K1_smoke:  31.62 (+4.88±1.95) | K2_smoke:  28.88 (+2.13±1.24) | K4_smoke:  26.75 | K8_smoke:  22.62 (-4.12±0.77)
+  cows      vanish_unpaired  2-4   simulator:   1.95 (-19.16±2.25) | K1_smoke:  33.53 (+12.42±1.90) | K2_smoke:  23.78 (+2.67±0.95) | K4_smoke:  21.11 | K8_smoke:  18.23 (-2.88±0.53)
+  cows      vanish_unpaired  5-8   simulator:   2.16 (-15.09±1.94) | K1_smoke:  22.02 (+4.77±0.98) | K2_smoke:  19.67 (+2.42±0.69) | K4_smoke:  17.25 | K8_smoke:  15.07 (-2.18±0.46)
+  cows      vanish_unpaired  9-16  simulator:   1.98 (-11.16±1.46) | K1_smoke:  17.12 (+3.98±0.89) | K2_smoke:  14.66 (+1.52±0.54) | K4_smoke:  13.14 | K8_smoke:  11.87 (-1.27±0.43)
+  skeletons edge             1     simulator:  15.62 (+8.38±3.03) | K1_smoke:  11.50 (+4.25±1.51) | K2_smoke:   7.62 (+0.37±0.92) | K4_smoke:   7.25 | K8_smoke:   6.62 (-0.63±0.46)
+  skeletons edge             2-4   simulator:  12.88 (+5.86±1.93) | K1_smoke:  18.12 (+11.10±1.31) | K2_smoke:   9.35 (+2.33±0.57) | K4_smoke:   7.02 | K8_smoke:   6.98 (-0.04±0.38)
+  skeletons edge             5-8   simulator:  13.98 (+7.39±2.11) | K1_smoke:  15.58 (+8.99±1.25) | K2_smoke:   8.41 (+1.81±0.58) | K4_smoke:   6.59 | K8_smoke:   5.91 (-0.69±0.40)
+  skeletons edge             9-16  simulator:  14.71 (+7.88±2.09) | K1_smoke:  15.71 (+8.88±1.04) | K2_smoke:   7.81 (+0.99±0.51) | K4_smoke:   6.82 | K8_smoke:   6.79 (-0.03±0.28)
+  skeletons spawn            1     simulator:   0.38 (-2.00±0.61) | K1_smoke:   2.75 (+0.37±0.79) | K2_smoke:   2.00 (-0.37±0.37) | K4_smoke:   2.38 | K8_smoke:   2.38 (+0.00±0.34)
+  skeletons spawn            2-4   simulator:   0.47 (-2.54±0.55) | K1_smoke:   6.43 (+3.43±1.18) | K2_smoke:   4.40 (+1.40±0.60) | K4_smoke:   3.00 | K8_smoke:   2.20 (-0.80±0.32)
+  skeletons spawn            5-8   simulator:   0.52 (-1.26±0.35) | K1_smoke:   4.07 (+2.28±0.68) | K2_smoke:   1.98 (+0.19±0.35) | K4_smoke:   1.79 | K8_smoke:   1.72 (-0.07±0.23)
+  skeletons spawn            9-16  simulator:   1.04 (-0.95±0.36) | K1_smoke:   2.08 (+0.09±0.41) | K2_smoke:   1.64 (-0.36±0.30) | K4_smoke:   2.00 | K8_smoke:   1.63 (-0.37±0.25)
+  skeletons jump             1     simulator:   0.00 (-0.12±0.13) | K1_smoke:   0.12 (+0.00±0.00) | K2_smoke:   0.00 (-0.12±0.11) | K4_smoke:   0.12 | K8_smoke:   0.25 (+0.12±0.12)
+  skeletons jump             2-4   simulator:   0.04 (-0.17±0.12) | K1_smoke:   0.30 (+0.08±0.06) | K2_smoke:   0.25 (+0.04±0.07) | K4_smoke:   0.21 | K8_smoke:   0.08 (-0.13±0.07)
+  skeletons jump             5-8   simulator:   0.10 (-0.06±0.07) | K1_smoke:   0.23 (+0.07±0.06) | K2_smoke:   0.16 (-0.00±0.07) | K4_smoke:   0.16 | K8_smoke:   0.19 (+0.03±0.07)
+  skeletons jump             9-16  simulator:   0.19 (+0.10±0.12) | K1_smoke:   0.15 (+0.07±0.07) | K2_smoke:   0.07 (-0.02±0.04) | K4_smoke:   0.08 | K8_smoke:   0.15 (+0.07±0.04)
+  skeletons vanish_paired    1     simulator:   0.00 (-0.38±0.36) | K1_smoke:   0.62 (+0.25±0.18) | K2_smoke:   0.12 (-0.25±0.25) | K4_smoke:   0.38 | K8_smoke:   0.38 (+0.00±0.18)
+  skeletons vanish_paired    2-4   simulator:   0.04 (-0.25±0.15) | K1_smoke:   0.64 (+0.34±0.17) | K2_smoke:   0.38 (+0.08±0.12) | K4_smoke:   0.30 | K8_smoke:   0.21 (-0.08±0.12)
+  skeletons vanish_paired    5-8   simulator:   0.29 (+0.03±0.20) | K1_smoke:   0.36 (+0.10±0.09) | K2_smoke:   0.42 (+0.16±0.11) | K4_smoke:   0.26 | K8_smoke:   0.32 (+0.06±0.12)
+  skeletons vanish_paired    9-16  simulator:   0.22 (+0.10±0.13) | K1_smoke:   0.27 (+0.15±0.10) | K2_smoke:   0.20 (+0.08±0.08) | K4_smoke:   0.12 | K8_smoke:   0.19 (+0.07±0.05)
+  skeletons vanish_unpaired  1     simulator:   0.00 (-5.50±1.86) | K1_smoke:  17.62 (+12.12±4.77) | K2_smoke:   8.50 (+3.00±1.34) | K4_smoke:   5.50 | K8_smoke:   5.00 (-0.50±0.34)
+  skeletons vanish_unpaired  2-4   simulator:   0.34 (-6.05±1.77) | K1_smoke:   9.78 (+3.39±1.00) | K2_smoke:   7.79 (+1.40±0.54) | K4_smoke:   6.39 | K8_smoke:   5.08 (-1.31±0.38)
+  skeletons vanish_unpaired  5-8   simulator:   0.42 (-3.90±1.21) | K1_smoke:   6.28 (+1.96±0.58) | K2_smoke:   4.81 (+0.48±0.33) | K4_smoke:   4.32 | K8_smoke:   3.80 (-0.52±0.31)
+  skeletons vanish_unpaired  9-16  simulator:   0.46 (-2.86±0.62) | K1_smoke:   3.59 (+0.27±0.34) | K2_smoke:   2.89 (-0.43±0.24) | K4_smoke:   3.32 | K8_smoke:   3.07 (-0.25±0.32)
+  arrows    edge             1     simulator:   2.50 (-13.00±1.81) | K1_smoke:  27.75 (+12.25±3.97) | K2_smoke:  14.62 (-0.87±1.74) | K4_smoke:  15.50 | K8_smoke:   9.50 (-6.00±1.07)
+  arrows    edge             2-4   simulator:   3.81 (-7.95±1.10) | K1_smoke:  26.67 (+14.91±1.82) | K2_smoke:  14.73 (+2.97±0.91) | K4_smoke:  11.76 | K8_smoke:   6.90 (-4.86±0.68)
+  arrows    edge             5-8   simulator:   5.13 (-5.04±0.98) | K1_smoke:  22.71 (+12.54±1.83) | K2_smoke:  12.05 (+1.88±0.71) | K4_smoke:  10.17 | K8_smoke:   6.40 (-3.77±0.55)
+  arrows    edge             9-16  simulator:   5.47 (-2.98±0.97) | K1_smoke:  21.62 (+13.17±1.19) | K2_smoke:  10.79 (+2.34±0.57) | K4_smoke:   8.45 | K8_smoke:   5.47 (-2.98±0.38)
+  arrows    spawn            1     simulator:   9.12 (-6.00±3.13) | K1_smoke:  24.62 (+9.50±5.80) | K2_smoke:  11.88 (-3.25±1.54) | K4_smoke:  15.12 | K8_smoke:   8.00 (-7.12±1.47)
+  arrows    spawn            2-4   simulator:  12.75 (-4.42±2.51) | K1_smoke:  17.40 (+0.22±1.65) | K2_smoke:  11.89 (-5.28±1.04) | K4_smoke:  17.18 | K8_smoke:  11.72 (-5.46±0.95)
+  arrows    spawn            5-8   simulator:  10.68 (-2.54±1.91) | K1_smoke:  12.91 (-0.31±1.37) | K2_smoke:  10.29 (-2.93±0.66) | K4_smoke:  13.22 | K8_smoke:   9.22 (-4.00±0.71)
+  arrows    spawn            9-16  simulator:  11.71 (+1.03±2.00) | K1_smoke:   8.81 (-1.87±0.88) | K2_smoke:   6.91 (-3.77±0.58) | K4_smoke:  10.68 | K8_smoke:   8.23 (-2.45±0.55)
+  arrows    jump             1     simulator:   0.00 (-2.62±1.09) | K1_smoke:   5.00 (+2.38±1.24) | K2_smoke:   2.50 (-0.13±0.43) | K4_smoke:   2.62 | K8_smoke:   1.62 (-1.00±0.59)
+  arrows    jump             2-4   simulator:   0.68 (-0.17±0.51) | K1_smoke:   1.48 (+0.64±0.36) | K2_smoke:   0.59 (-0.25±0.22) | K4_smoke:   0.85 | K8_smoke:   0.63 (-0.21±0.15)
+  arrows    jump             5-8   simulator:   0.26 (-0.29±0.18) | K1_smoke:   1.11 (+0.55±0.32) | K2_smoke:   0.32 (-0.23±0.18) | K4_smoke:   0.55 | K8_smoke:   0.45 (-0.10±0.13)
+  arrows    jump             9-16  simulator:   0.48 (-0.06±0.31) | K1_smoke:   0.66 (+0.12±0.32) | K2_smoke:   0.34 (-0.20±0.14) | K4_smoke:   0.54 | K8_smoke:   0.44 (-0.10±0.10)
+  arrows    vanish_paired    1     simulator:   0.00 (-2.88±0.99) | K1_smoke:   4.75 (+1.88±1.00) | K2_smoke:   2.50 (-0.37±0.48) | K4_smoke:   2.88 | K8_smoke:   2.00 (-0.87±0.45)
+  arrows    vanish_paired    2-4   simulator:   0.68 (-0.55±0.51) | K1_smoke:   2.03 (+0.81±0.57) | K2_smoke:   0.89 (-0.34±0.26) | K4_smoke:   1.23 | K8_smoke:   0.80 (-0.42±0.19)
+  arrows    vanish_paired    5-8   simulator:   0.29 (-0.49±0.23) | K1_smoke:   1.53 (+0.75±0.38) | K2_smoke:   0.49 (-0.29±0.18) | K4_smoke:   0.78 | K8_smoke:   0.75 (-0.03±0.18)
+  arrows    vanish_paired    9-16  simulator:   0.60 (-0.10±0.37) | K1_smoke:   0.76 (+0.07±0.31) | K2_smoke:   0.59 (-0.10±0.17) | K4_smoke:   0.69 | K8_smoke:   0.59 (-0.10±0.13)
+  arrows    vanish_unpaired  1     simulator:   5.62 (-17.25±6.07) | K1_smoke:  21.00 (-1.87±1.59) | K2_smoke:  23.88 (+1.00±0.88) | K4_smoke:  22.88 | K8_smoke:  23.88 (+1.00±0.62)
+  arrows    vanish_unpaired  2-4   simulator:   7.88 (-10.90±2.11) | K1_smoke:  23.16 (+4.37±2.72) | K2_smoke:  16.12 (-2.66±1.22) | K4_smoke:  18.78 | K8_smoke:  12.06 (-6.73±1.07)
+  arrows    vanish_unpaired  5-8   simulator:   8.76 (-6.09±1.64) | K1_smoke:  15.65 (+0.80±1.64) | K2_smoke:  11.40 (-3.45±0.56) | K4_smoke:  14.85 | K8_smoke:  10.91 (-3.94±0.61)
+  arrows    vanish_unpaired  9-16  simulator:   9.54 (-2.33±1.84) | K1_smoke:  10.88 (-0.99±0.96) | K2_smoke:   7.91 (-3.96±0.65) | K4_smoke:  11.87 | K8_smoke:   8.91 (-2.96±0.60)
+start mobs: hazard per step (deaths / at risk), by depth
+  zombies   1     simulator: 0.020 (-0.028±0.009) n=1519 | K1_smoke: 0.068 (+0.019±0.007) n=1520 | K2_smoke: 0.059 (+0.010±0.004) n=1520 | K4_smoke: 0.049 n=1520 | K8_smoke: 0.045 (-0.003±0.002) n=1520
+  zombies   2-4   simulator: 0.007 (-0.032±0.007) n=3831 | K1_smoke: 0.050 (+0.011±0.005) n=3507 | K2_smoke: 0.042 (+0.003±0.002) n=3573 | K4_smoke: 0.039 n=3612 | K8_smoke: 0.033 (-0.006±0.002) n=3633
+  zombies   5-8   simulator: 0.007 (-0.012±0.003) n=3830 | K1_smoke: 0.033 (+0.014±0.004) n=3222 | K2_smoke: 0.027 (+0.009±0.003) n=3408 | K4_smoke: 0.018 n=3488 | K8_smoke: 0.016 (-0.002±0.002) n=3584
+  zombies   9-16  simulator: 0.003 (-0.012±0.002) n=4546 | K1_smoke: 0.021 (+0.005±0.003) n=3450 | K2_smoke: 0.023 (+0.008±0.003) n=3799 | K4_smoke: 0.016 n=3981 | K8_smoke: 0.015 (-0.001±0.003) n=4072
+  cows      1     simulator: 0.008 (-0.069±0.010) n=2672 | K1_smoke: 0.091 (+0.014±0.006) n=2672 | K2_smoke: 0.082 (+0.005±0.004) n=2674 | K4_smoke: 0.077 n=2674 | K8_smoke: 0.065 (-0.012±0.002) n=2673
+  cows      2-4   simulator: 0.004 (-0.053±0.005) n=6531 | K1_smoke: 0.096 (+0.038±0.005) n=5760 | K2_smoke: 0.064 (+0.006±0.002) n=5958 | K4_smoke: 0.058 n=5992 | K8_smoke: 0.050 (-0.008±0.002) n=6103
+  cows      5-8   simulator: 0.004 (-0.047±0.004) n=6532 | K1_smoke: 0.075 (+0.024±0.003) n=4494 | K2_smoke: 0.056 (+0.005±0.002) n=5145 | K4_smoke: 0.051 n=5204 | K8_smoke: 0.044 (-0.007±0.002) n=5361
+  cows      9-16  simulator: 0.002 (-0.048±0.004) n=8254 | K1_smoke: 0.081 (+0.031±0.005) n=4095 | K2_smoke: 0.056 (+0.006±0.003) n=5289 | K4_smoke: 0.050 n=5342 | K8_smoke: 0.040 (-0.010±0.003) n=5904
+  skeletons 1     simulator: 0.000 (-0.109±0.025) n=384 | K1_smoke: 0.349 (+0.240±0.057) n=384 | K2_smoke: 0.164 (+0.055±0.018) n=384 | K4_smoke: 0.109 n=384 | K8_smoke: 0.102 (-0.008±0.004) n=384
+  skeletons 2-4   simulator: 0.003 (-0.141±0.019) n=759 | K1_smoke: 0.285 (+0.141±0.026) n=383 | K2_smoke: 0.183 (+0.039±0.016) n=546 | K4_smoke: 0.144 n=611 | K8_smoke: 0.113 (-0.031±0.010) n=628
+  skeletons 5-8   simulator: 0.011 (-0.094±0.025) n=553 | K1_smoke: 0.128 (+0.022±0.017) n=141 | K2_smoke: 0.148 (+0.043±0.020) n=256 | K4_smoke: 0.105 n=323 | K8_smoke: 0.113 (+0.008±0.013) n=354
+  skeletons 9-16  simulator: 0.013 (-0.111±0.022) n=383 | K1_smoke: 0.343 (+0.219±0.139) n=35 | K2_smoke: 0.188 (+0.063±0.069) n=80 | K4_smoke: 0.124 n=129 | K8_smoke: 0.096 (-0.028±0.030) n=146
+  arrows    1     simulator: 0.137 (-0.491±0.113) n=328 | K1_smoke: 0.628 (+0.000±0.029) n=328 | K2_smoke: 0.643 (+0.015±0.020) n=328 | K4_smoke: 0.628 n=328 | K8_smoke: 0.631 (+0.003±0.010) n=328
+  arrows    2-4   simulator: 0.222 (-0.158±0.088) n=415 | K1_smoke: 0.416 (+0.036±0.042) n=185 | K2_smoke: 0.384 (+0.004±0.040) n=203 | K4_smoke: 0.380 n=221 | K8_smoke: 0.351 (-0.029±0.041) n=222
+  arrows    5-8   simulator: 0.263 (-0.090±0.167) n=38 | K1_smoke: 0.441 (+0.088±0.084) n=34 | K2_smoke: 0.442 (+0.089±0.085) n=43 | K4_smoke: 0.353 n=51 | K8_smoke: 0.304 (-0.049±0.080) n=69
+  arrows    9-16  simulator: 0.333 (-0.333±0.360) n=3 | K1_smoke: 0.000 (-0.667±0.304) n=0 | K2_smoke: 0.400 (-0.267±0.262) n=5 | K4_smoke: 0.667 n=3 | K8_smoke: 0.250 (-0.417±0.350) n=16
+model-born mobs: death within 1 / 2 / 4 steps of birth (product of per-step hazards), births at risk
+  zombies   edge   simulator: 0.13/0.14/0.17 n=95 | K1_smoke: 0.76/0.76/0.76 n=42 | K2_smoke: 0.41/0.45/0.45 n=54 | K4_smoke: 0.45/0.51/0.64 n=44 | K8_smoke: 0.39/0.41/0.44 n=59
+  zombies   spawn  simulator: 0.16/0.21/0.29 n=403 | K1_smoke: 0.48/0.53/0.61 n=414 | K2_smoke: 0.42/0.51/0.55 n=337 | K4_smoke: 0.36/0.42/0.50 n=282 | K8_smoke: 0.34/0.40/0.49 n=253
+  zombies   jump   simulator: 0.05/0.08/0.11 n=92 | K1_smoke: 0.09/0.15/0.15 n=33 | K2_smoke: 0.12/0.21/0.26 n=49 | K4_smoke: 0.07/0.12/0.15 n=45 | K8_smoke: 0.07/0.15/0.20 n=54
+  cows      edge   simulator: 0.14/0.21/0.27 n=379 | K1_smoke: 0.46/0.52/0.62 n=116 | K2_smoke: 0.36/0.47/0.55 n=96 | K4_smoke: 0.19/0.31/0.46 n=135 | K8_smoke: 0.18/0.25/0.35 n=139
+  cows      spawn  simulator: 0.15/0.17/0.21 n=536 | K1_smoke: 0.33/0.44/0.60 n=592 | K2_smoke: 0.34/0.44/0.57 n=648 | K4_smoke: 0.24/0.36/0.49 n=726 | K8_smoke: 0.22/0.32/0.44 n=665
+  cows      jump   simulator: 0.09/0.14/0.16 n=90 | K1_smoke: 0.19/0.36/0.51 n=54 | K2_smoke: 0.23/0.35/0.48 n=66 | K4_smoke: 0.17/0.29/0.43 n=82 | K8_smoke: 0.16/0.24/0.40 n=74
+  skeletons edge   simulator: 0.19/0.31/0.40 n=47 | K1_smoke: 0.75/0.82/0.86 n=67 | K2_smoke: 0.44/0.53/0.83 n=34 | K4_smoke: 0.15/0.22/0.54 n=47 | K8_smoke: 0.14/0.25/0.55 n=36
+  skeletons spawn  simulator: 0.30/0.37/0.53 n=73 | K1_smoke: 0.46/0.61/0.77 n=395 | K2_smoke: 0.38/0.50/0.65 n=254 | K4_smoke: 0.34/0.44/0.59 n=236 | K8_smoke: 0.36/0.46/0.60 n=198
+  skeletons jump   simulator: 0.17/0.27/0.42 n=12 | K1_smoke: 0.38/0.61/1.00 n=21 | K2_smoke: 0.07/0.14/0.54 n=15 | K4_smoke: 0.13/0.21/0.65 n=15 | K8_smoke: 0.39/0.46/0.53 n=18
+  arrows    edge   simulator: 0.25/0.59/0.80 n=32 | K1_smoke: 0.90/0.98/0.98 n=127 | K2_smoke: 0.93/0.98/1.00 n=73 | K4_smoke: 0.74/0.88/0.90 n=54 | K8_smoke: 0.88/0.92/0.92 n=25
+  arrows    spawn  simulator: 0.16/0.33/0.53 n=1222 | K1_smoke: 0.72/0.87/0.98 n=1390 | K2_smoke: 0.80/0.91/0.96 n=1005 | K4_smoke: 0.73/0.85/0.93 n=1409 | K8_smoke: 0.69/0.82/0.92 n=1006
+  arrows    jump   simulator: 0.57/0.64/0.87 n=49 | K1_smoke: 0.56/0.77/0.95 n=131 | K2_smoke: 0.68/0.86/0.88 n=56 | K4_smoke: 0.67/0.84/0.92 n=86 | K8_smoke: 0.61/0.77/0.90 n=62

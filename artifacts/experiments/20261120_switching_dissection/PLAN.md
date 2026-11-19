@@ -206,3 +206,30 @@ From a perfect history, P1.5 loses 9.5% of the start's cows at step 1 (simulator
   - Reading: crop coverage of entities by kind, HUD changes, terrain edits, entering map and the counters' attempts,
     against paired uniform draws, by day and night. Also dwell and the logged C / S / entropy.
   - Check: the F2 rerun reproduces the archived `20261104_p1f2_review/TRACE.json`.
+
+## The eye's checks (user 11-20: "agreed for the checks; scope them out")
+
+- **C1: why P1.5's chooser predicts better.**
+  - The facts: its head error runs 0.031 → 0.015 over training, where F2 / F4 / F6 / F6.1 run 0.013 → 0.03, at a
+    similar token scale. Its surprise score runs 4.95 → 2.0, where the others run 2.1 → 4.1.
+  - Suspect: route by role. Since P1.5, only G1, TSP and reconstruction train the encoder; in F6 the reward heads'
+    gradient on the encoder was 6-11x TSP's.
+  - Reading, on the same DEV frames encoded by F6, F6.1 and P1.5, each with its own final chooser head:
+    - frame-to-frame token change and the head's surprise, by region: mob cells, HUD cells at a digit flip, terrain
+      entering the view, static map; day and night;
+    - each policy's coverage.
+  - Separates: whether the tokens' own dynamics changed (encoder) or the head did, and where the surprise mass moved.
+- **C2: where a memory-informed eye would look.**
+  - The world's own zero-signal error used as surprise. Same window logic, S-only shape.
+  - A first read from B2's saved errors on the monitor windows (no labels for night): it covers a mob 57.4% of the time
+    when one is present (uniform 21.2%, argmax 75.8%), and the HUD at uniform (29.1% against 28.6%).
+  - Full version on DEV with labels:
+    - day / night (night static is irreducible: the noisy-TV risk);
+    - entering terrain;
+    - the cows the world deletes at step 1: is its surprise high where its own prediction lost the cow?
+- **C3: the cheap memory read.**
+  - The chooser head refit offline on frozen DEV tokens with a per-cell read of the record (like `record_in`), against
+    the same head without it.
+  - Reading: where its surprise moves, and whether HUD-flip surprise drops.
+  - Compared with C2, this separates "the eye has the world's memory" from "the eye has the world's own model".
+- **Order:** C1, C2, C3, one GPU job at a time. Each is committed as code before it runs.

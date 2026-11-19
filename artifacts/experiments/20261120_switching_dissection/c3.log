@@ -1,0 +1,33 @@
+/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/.venv/lib/python3.12/site-packages/mamba_ssm/utils/determinism.py:73: UserWarning: Deterministic mode: set TRITON_CACHE_AUTOTUNING=1 for cached autotuning.
+  warnings.warn(msg)
+episodes 320 fit / 80 held out
+/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/artifacts/experiments/20261120_switching_dissection/c3.py:117: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  row[n] = float(loss)
+{'update': 0, 'plain': 0.0142461396753788, 'record': 0.0142461396753788}
+{'update': 500, 'plain': 0.017740773037075996, 'record': 0.017649218440055847}
+{'update': 1000, 'plain': 0.013843819499015808, 'record': 0.01357162557542324}
+{'update': 1499, 'plain': 0.014016697183251381, 'record': 0.013846291229128838}
+held-out surprise per cell (share) by region
+  mob           plain: 4.4123 (0.272) | record: 4.3983 (0.273)
+  changed_hud   plain: 7.9457 (0.122) | record: 7.9705 (0.124)
+  hud_static    plain: 0.0113 (0.011) | record: 0.0112 (0.011)
+  entering_map  plain: 1.8801 (0.264) | record: 1.8767 (0.265)
+  terrain_edit  plain: 2.0550 (0.011) | record: 1.9226 (0.011)
+  map_static    plain: 0.1010 (0.320) | record: 0.0991 (0.317)
+held-out coverage when present: learned (uniform)
+  any_entity|all       plain: 0.476 (0.198) | record: 0.476 (0.198)
+  any_entity|day       plain: 0.535 (0.184) | record: 0.535 (0.184)
+  any_entity|night     plain: 0.360 (0.227) | record: 0.361 (0.227)
+  cows|all             plain: 0.414 (0.141) | record: 0.414 (0.141)
+  cows|day             plain: 0.478 (0.139) | record: 0.478 (0.139)
+  cows|night           plain: 0.262 (0.148) | record: 0.263 (0.148)
+  zombies|all          plain: 0.330 (0.162) | record: 0.330 (0.162)
+  zombies|day          plain: 0.389 (0.156) | record: 0.390 (0.156)
+  zombies|night        plain: 0.256 (0.169) | record: 0.256 (0.169)
+  changed_hud|all      plain: 0.432 (0.114) | record: 0.430 (0.114)
+  changed_hud|day      plain: 0.439 (0.116) | record: 0.438 (0.116)
+  changed_hud|night    plain: 0.414 (0.107) | record: 0.410 (0.107)
+  entering_map|all     plain: 0.438 (0.216) | record: 0.438 (0.216)
+  entering_map|day     plain: 0.518 (0.217) | record: 0.517 (0.217)
+  entering_map|night   plain: 0.278 (0.214) | record: 0.279 (0.214)

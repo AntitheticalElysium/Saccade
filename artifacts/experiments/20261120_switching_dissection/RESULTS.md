@@ -355,3 +355,26 @@ the chooser's policy with contingency off, against P1.5's chooser.
   | 5 passes stale | 0.250 | 0.43 | 0.302 |
 
   A cache refreshed every 1-2 passes is close to fresh; 5 passes is not. All of these are late-training checkpoints.
+
+## C3: the cheap memory read, inconclusive at this budget (`c3.py`, `c3.json`, `c3.log`)
+
+The setup: P1.5's final chooser head, fine-tuned on 320 DEV episodes (120 frames each) and read on 80 held-out
+episodes. Both arms continue the chooser's own AdamW at its final rate 1e-4. The record arm adds a zero-initialised
+per-cell read of the record (Linear 1,024 -> 64) in its own group. 1,500 updates, batch 256.
+
+| Held-out | Plain | + record read |
+| :--- | ---: | ---: |
+| Training loss, last log | 0.01402 | 0.01385 |
+| HUD-flip surprise per cell | 7.95 | 7.97 |
+| Mob surprise per cell | 4.41 | 4.40 |
+| Entity coverage | 0.476 | 0.476 |
+| HUD-flip coverage | 0.432 | 0.430 |
+
+- **The record arm is indistinguishable from the plain one;** its loss is 1.2% lower.
+- **This is not evidence that the record cannot help the eye.** A zero-initialised read at the head's final 1e-4 for
+  1,500 updates has little room to form. The information is there: P1.5's denoiser times the clocks from this record,
+  and on 11-16 elapsed time was linearly readable from rotating bases (0.90).
+- **A decisive version:**
+  - First, a CPU readability probe: does a linear read of the HUD cells' record predict the next flip?
+  - Then, if it does, the new read's own group at the chooser's peak 1e-3 (fresh parameters, so no re-warm of trained
+    ones), with the trained head kept at 1e-4, for about 6,000 updates.

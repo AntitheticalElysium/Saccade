@@ -378,3 +378,31 @@ per-cell read of the record (Linear 1,024 -> 64) in its own group. 1,500 updates
   - First, a CPU readability probe: does a linear read of the HUD cells' record predict the next flip?
   - Then, if it does, the new read's own group at the chooser's peak 1e-3 (fresh parameters, so no re-warm of trained
     ones), with the trained head kept at 1e-4, for about 6,000 updates.
+
+## C3, decisive version: the record anticipates flips, but a memory-equipped chooser still looks the same
+
+- **Probe (`c3_probe.py`, `c3_probe.json`).** Held-out AP for "this digit flips at t", from the state through t - 1:
+
+  | Feature set | Food | Drink | Energy |
+  | :--- | ---: | ---: | ---: |
+  | Record | 0.275 | 0.260 | 0.455 |
+  | Chooser's last 8 frames | 0.041 | 0.072 | 0.048 |
+  | Base rate | 0.035 | 0.048 | 0.034 |
+
+  The record carries the anticipation linearly; the chooser's own view does not.
+- **Rerun (`c3.py 4000 1e-3`, `c3_lr0.001_4000.json`).** The new read at the chooser's peak 1e-3 (warm-up 100), the
+  trained head at its final 1e-4, 4,000 updates.
+
+  | Held-out | Plain | + record read |
+  | :--- | ---: | ---: |
+  | Training loss, last log | 0.01395 | 0.01357 (-2.7%) |
+  | HUD-flip surprise per cell | 7.75 | 7.60 (-2%) |
+  | Static map surprise per cell | 0.099 | 0.106 |
+  | HUD-flip coverage | 0.435 | 0.432 |
+  | Entity coverage | 0.476 | 0.476 |
+
+- **Reading.** The eye's surprise is the squared error of its predicted next token. A flip anticipated at an AP of
+  0.26-0.45 stays mostly unpredictable at one step: the squared-error-optimal prediction is the expected change, so the
+  surprise at the flip barely falls. A cheap memory read therefore does not take the eye off the HUD flips.
+- **The world-eye does** (HUD-flip coverage 0.224). The world's own prediction times the flips sharply, from the same
+  record through the denoiser's read, trained by the whole of P1.

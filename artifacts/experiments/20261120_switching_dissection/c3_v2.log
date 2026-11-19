@@ -1,0 +1,38 @@
+/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/.venv/lib/python3.12/site-packages/mamba_ssm/utils/determinism.py:73: UserWarning: Deterministic mode: set TRITON_CACHE_AUTOTUNING=1 for cached autotuning.
+  warnings.warn(msg)
+episodes 320 fit / 80 held out
+/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/artifacts/experiments/20261120_switching_dissection/c3.py:121: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  row[n] = float(loss)
+{'update': 0, 'plain': 0.0142461396753788, 'record': 0.0142461396753788}
+{'update': 500, 'plain': 0.017740773037075996, 'record': 0.017791157588362694}
+{'update': 1000, 'plain': 0.013843819499015808, 'record': 0.013487397693097591}
+{'update': 1500, 'plain': 0.014152448624372482, 'record': 0.014092330820858479}
+{'update': 2000, 'plain': 0.013999244198203087, 'record': 0.013804213143885136}
+{'update': 2500, 'plain': 0.013134123757481575, 'record': 0.013062079437077045}
+{'update': 3000, 'plain': 0.015247630886733532, 'record': 0.01507591176778078}
+{'update': 3500, 'plain': 0.012650319375097752, 'record': 0.012493884190917015}
+{'update': 3999, 'plain': 0.01394820399582386, 'record': 0.013574779964983463}
+held-out surprise per cell (share) by region
+  mob           plain: 4.3986 (0.273) | record: 4.4971 (0.271)
+  changed_hud   plain: 7.7470 (0.120) | record: 7.6037 (0.114)
+  hud_static    plain: 0.0132 (0.013) | record: 0.0149 (0.014)
+  entering_map  plain: 1.8862 (0.267) | record: 1.9182 (0.263)
+  terrain_edit  plain: 2.0706 (0.011) | record: 2.1327 (0.011)
+  map_static    plain: 0.0990 (0.316) | record: 0.1055 (0.327)
+held-out coverage when present: learned (uniform)
+  any_entity|all       plain: 0.476 (0.198) | record: 0.476 (0.198)
+  any_entity|day       plain: 0.535 (0.184) | record: 0.535 (0.184)
+  any_entity|night     plain: 0.361 (0.227) | record: 0.360 (0.227)
+  cows|all             plain: 0.417 (0.141) | record: 0.418 (0.141)
+  cows|day             plain: 0.481 (0.139) | record: 0.481 (0.139)
+  cows|night           plain: 0.265 (0.148) | record: 0.266 (0.148)
+  zombies|all          plain: 0.329 (0.162) | record: 0.327 (0.162)
+  zombies|day          plain: 0.387 (0.156) | record: 0.384 (0.156)
+  zombies|night        plain: 0.255 (0.169) | record: 0.255 (0.169)
+  changed_hud|all      plain: 0.435 (0.114) | record: 0.432 (0.114)
+  changed_hud|day      plain: 0.443 (0.116) | record: 0.442 (0.116)
+  changed_hud|night    plain: 0.414 (0.107) | record: 0.405 (0.107)
+  entering_map|all     plain: 0.438 (0.216) | record: 0.433 (0.216)
+  entering_map|day     plain: 0.518 (0.217) | record: 0.511 (0.217)
+  entering_map|night   plain: 0.278 (0.214) | record: 0.276 (0.214)

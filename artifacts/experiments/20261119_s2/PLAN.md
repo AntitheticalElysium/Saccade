@@ -107,3 +107,14 @@ The readings stage 1 lacked, on P1.5 (frozen), with stage 1's readers and readin
   Read: mobs per frame at steps 1 / 4 / 8 / 16 per arm and kind, paired changes against free running, survival. No
   threshold: it chooses between the denoiser-only fine-tune (the record's read is denoiser parameters) and training
   Mamba too (switching plan, variant 5).
+- **The two readers of the record (11-19, after the switching arm; user: run before its rerun).** record_real fed the
+  recorded frames to both readers of the record at once: the denoiser's per-cell read (`denoiser.record_read`) and
+  Mamba's (`belief.record_in`); the record itself has no parameters. My switching plan took its 94% for the denoiser's
+  read alone, which the arm never separated. Two more arms on the same 1,000 starts, seeds and fixation schedule, each
+  reader keeping its own record state, paired against free running (first generated frame identical):
+  - dread_real: only the denoiser's read takes the record of recorded frames (Mamba reads the record of generated ones);
+  - mread_real: only Mamba's read takes it (and the outcome heads, which read through Mamba's path, as in record_real).
+  Read, fixed now: a reader carries the loss if its arm recovers at least two thirds of record_real's step-16 gain in
+  all mobs (+0.43); then the rerun trains that reader. Neither alone (or both): the rerun trains both readers.
+  Identity check before the run, in one process: the committed code and this one give bitwise-equal free and
+  record_real arms on a 16-start smoke.

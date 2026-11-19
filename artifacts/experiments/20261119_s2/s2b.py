@@ -152,7 +152,9 @@ def rollout(model, cfg, R, head, pol, enc, sub, grids, rows, plans, mode="free",
     """s2.model_futures' loop for one bank. mode (recorded banks only): which routes read the recorded frame instead of
     the generated one while the recording lives: ctx_real (the denoiser's cache), mem_real (Mamba and the record),
     teacher (both); the split (11-19): record_real (the record alone: the denoiser's per-cell read and Mamba's read of
-    it), mamba_real (Mamba's percept input alone); every arm feeds the belief the world's own sampled reward and termination, so the arms differ in
+    it), mamba_real (Mamba's percept input alone); the readers (11-19): dread_real (only the denoiser's per-cell read
+    of the record reads the recorded frames), mread_real (only Mamba's read of it, record_in); there the two readers
+    keep their own record states, otherwise one record (rm is rs); every arm feeds the belief the world's own sampled reward and termination, so the arms differ in
     frames only (Codex's review). gaze: "chooser" (S2's contract) or "recorded" (the recording's own fixation schedule,
     so a recorded glimpse and a generated one sit at the same crop: the route arms)."""
     win, centres, Hh = C.WIN.to(DEV), C.CENTRES.to(DEV), pol["history"]
@@ -182,6 +184,8 @@ def rollout(model, cfg, R, head, pol, enc, sub, grids, rows, plans, mode="free",
         carry = tuple(type(cs[0][l])(*(rep(torch.cat([getattr(c[l], f.name) for c in cs])) for f in dataclasses.fields(cs[0][l])))
                       for l in range(len(cs[0])))
         bp, rs = rep(torch.cat(bps)), rep(torch.cat(rl))
+        rm = rs                                                          # Mamba's record state (scan never writes in place)
+        split = mode in ("dread_real", "mread_real")
         rin = S.window(model, enc, rr, P - 1)
         g = torch.Generator(device=DEV).manual_seed(20261119 + seed + bi); gg = torch.Generator(device=DEV).manual_seed(30261119 + seed + bi)
         cache = model.denoiser.new_cache()
@@ -227,15 +231,17 @@ def rollout(model, cfg, R, head, pol, enc, sub, grids, rows, plans, mode="free",
                 real = lives[:, j] if mode != "free" else torch.zeros(Bn, dtype=torch.bool, device=DEV)
                 actual = tuple(rep(at(k, j)).float() for k in ("p", "g", "v")) if mode != "free" else parts
                 mix = lambda use: tuple(torch.where(use.view(-1, *([1] * (a.dim() - 1))), a, b) for a, b in zip(actual, parts))
-                rec_ev = mix(real & torch.tensor(mode in ("mem_real", "teacher", "record_real"), device=DEV))
+                rec_ev = mix(real & torch.tensor(mode in ("mem_real", "teacher", "record_real", "dread_real"), device=DEV))
+                mrec_ev = mix(real & torch.tensor(mode in ("mem_real", "teacher", "record_real", "mread_real"), device=DEV))
                 mam_ev = mix(real & torch.tensor(mode in ("mem_real", "teacher", "mamba_real"), device=DEV))
                 cx = mix(real & torch.tensor(mode in ("ctx_real", "teacher"), device=DEV))
-                reads0, _, _ = S.history(model, parts[0], state=rs)
+                reads0, _, _ = S.history(model, parts[0], state=rm)
                 h = model.outcome.features(bp, S.embed(model, M.Percept(*parts, fix), reads0)).float()
                 r = model.outcome.sample_reward(h, g)
                 done = torch.rand(Bn, device=DEV, generator=g) > torch.sigmoid(model.outcome.cont_logit(h, r).float())
                 r_in, d_in = r, done
-                reads, _, next_rs = S.history(model, rec_ev[0], state=rs)
+                reads, _, next_rm = S.history(model, mrec_ev[0], state=rm)
+                next_rs = S.history(model, rec_ev[0], state=rs)[2] if split else next_rm
                 emb = S.embed(model, M.Percept(*mam_ev, fix), reads)
                 nxt = plan[:, j] if j < H else torch.zeros_like(pa)
                 yy, carry = model.belief(model.belief.tokens(emb[:, None], r_in[:, None], d_in[:, None], nxt[:, None]), carry)
@@ -245,7 +251,7 @@ def rollout(model, cfg, R, head, pol, enc, sub, grids, rows, plans, mode="free",
             rec["reward"].append(r.float()); rec["done"].append(~alive); rec["fix"].append(fix)
             rec["bhud"].append(ob["hud"].reshape(Bn, 16, 10).argmax(-1)); rec["bsleep"].append(ob["sleep"].argmax(-1).bool())
             ps.append(parts[0]); vs.append(parts[2])
-            bp, rs = yy[:, 1].float(), next_rs
+            bp, rs, rm = yy[:, 1].float(), next_rs, next_rm
             for k, x in (("p", cx[0]), ("v", cx[2]), ("prev_action", pa), ("reward", r_in.float()), ("terminated", d_in.float())):
                 hist[k] = torch.cat([hist[k][:, 1:], x[:, None].to(hist[k].dtype)], 1)
             ok = torch.cat([ok[:, 1:], torch.ones_like(ok[:, :1])], 1)
@@ -377,6 +383,8 @@ def gates(n=None):
     L = dict(np.load(S.LABELS / "s0_dev_labels.npz"))
     res = {}
     # 1. the route localisation (stage 1's bank)
+    if not (HERE / f"routes{S2.TAG}{tag}.npz").exists():               # another world read without the route test
+        return gates_competent(n, rng, tag, L, res)
     zr = dict(np.load(HERE / f"routes{S2.TAG}{tag}.npz"))
     oz = dict(np.load(HERE / "oracle.npz"))
     k = len(zr["free_m_grid"])
@@ -393,6 +401,10 @@ def gates(n=None):
         res["routes_paired_vs_free"][m] = {"mobs_diff_by_step": np.round(d, 4)[[1, 4, 8, 16]].tolist(), "se": np.round(se, 4)[[1, 4, 8, 16]].tolist(),
                                            "alive_by_step": (dm.sum(0) / (4 * k)).round(4)[[1, 4, 8, 16]].tolist()}
     res["routes_paired_vs_free"]["free_alive_by_step"] = (df.sum(0) / (4 * k)).round(4)[[1, 4, 8, 16]].tolist()
+    return gates_competent(n, rng, tag, L, res)
+
+
+def gates_competent(n, rng, tag, L, res):
     # 2. competent starts
     z = dict(np.load(HERE / f"oracle_competent{tag}.npz")); z.update(np.load(HERE / f"model_competent{S2.TAG}{tag}.npz"))
     pz = np.load(HERE / f"prefix_competent{tag}.npz")
@@ -477,19 +489,21 @@ def gates(n=None):
     res["spread_stage1_bank"] = {"model_vs_B": spread(sp("m", slice(None)), sp("rd", slice(8, 16)), rng),
                                  "null_A_vs_B": spread(sp("rd", slice(0, 8)), sp("rd", slice(8, 16)), rng)}
     (HERE / f"gates_1b{S2.TAG}{tag}.json").write_text(json.dumps(res, indent=1) + "\n")
-    print(json.dumps({k: res[k] for k in ("routes_counts_by_step", "holds_effect_of_DO")}, indent=1), flush=True)
+    print(json.dumps({k: res[k] for k in ("routes_counts_by_step", "holds_effect_of_DO") if k in res}, indent=1), flush=True)
 
 
-def split_gates():
+def split_gates(name="routes_split", modes=("record_real", "mamba_real")):
     """Mamba against the record (11-19): the two split arms paired against stage 1b's free arm (the same starts, seeds and
-    fixation schedule: the first generated frame must agree exactly), beside mem_real and teacher."""
+    fixation schedule: the first generated frame must agree exactly), beside mem_real and teacher; name / modes: the
+    readers split (routes_readers: dread_real, mread_real), beside record_real as well."""
     rng = np.random.default_rng(20261121)
-    zr, zs = dict(np.load(HERE / "routes.npz")), dict(np.load(HERE / "routes_split.npz"))
+    zr, zs = dict(np.load(HERE / "routes.npz")), dict(np.load(HERE / f"{name}.npz"))
     k = len(zr["free_m_grid"])
     rows1, _ = S2.bank(k)
-    for m in ("record_real", "mamba_real"):
+    for m in modes:
         assert np.array_equal(zs[f"{m}_m_grid"][:, :, :2], zr["free_m_grid"][:, :, :2]), "the first frame differs from free running"
-    z = {**zr, **zs}
+    z = {**zr, **dict(np.load(HERE / "routes_split.npz")), **zs}
+    modes = tuple(dict.fromkeys((*modes, "record_real", "mamba_real")))
     alive = lambda dn: np.concatenate([np.ones(dn.shape[:-1] + (1,), bool), ~np.maximum.accumulate(dn.astype(bool), -1)], -1)
     per = lambda m, kind=None: ((((z[f"{m}_m_grid"] > 0) if kind is None else (z[f"{m}_m_grid"] == kind)).sum((-1, -2))
                                  * alive(z[f"{m}_m_done"])).sum(1), alive(z[f"{m}_m_done"]).sum(1).astype(float))
@@ -497,13 +511,13 @@ def split_gates():
     for kind, kn in ((None, "all"), *enumerate(G.KINDS, 1)):
         nf, df = per("free", kind)
         res[kn] = {"free": (nf.sum(0) / df.sum(0)).round(4)[[1, 4, 8, 16]].tolist()}
-        for m in ("record_real", "mamba_real", "mem_real", "teacher"):
+        for m in (*modes, "mem_real", "teacher"):
             nm, dm = per(m, kind)
             d, se = O.paired_diff(nm, dm, nf, df, rows1[:, 0], rng)
             res[kn][m] = {"level": (nm.sum(0) / dm.sum(0)).round(4)[[1, 4, 8, 16]].tolist(),
                           "diff": np.round(d, 4)[[1, 4, 8, 16]].tolist(), "se": np.round(se, 4)[[1, 4, 8, 16]].tolist()}
-    res["alive_at_16"] = {m: float(alive(z[f"{m}_m_done"])[..., 16].mean()) for m in ("free", "record_real", "mamba_real", "mem_real", "teacher")}
-    (HERE / "routes_split.json").write_text(json.dumps(res, indent=1) + "\n")
+    res["alive_at_16"] = {m: float(alive(z[f"{m}_m_done"])[..., 16].mean()) for m in ("free", *modes, "mem_real", "teacher")}
+    (HERE / f"{name}.json").write_text(json.dumps(res, indent=1) + "\n")
     print(json.dumps(res["all"], indent=1), json.dumps(res["alive_at_16"]), flush=True)
 
 
@@ -511,4 +525,6 @@ if __name__ == "__main__":
     stage, n = sys.argv[1], (int(sys.argv[2]) if len(sys.argv) > 2 else None)
     {"bank": build_bank, "oracle": lambda: oracle(n), "model": lambda: model_competent(n), "routes": lambda: routes(n),
      "routes_split": lambda: routes(n, ("record_real", "mamba_real"), "routes_split"), "split_gates": split_gates,
+     "routes_readers": lambda: routes(n, ("dread_real", "mread_real"), "routes_readers"),
+     "readers_gates": lambda: split_gates("routes_readers", ("dread_real", "mread_real")),
      "gates": lambda: gates(n)}[stage]()

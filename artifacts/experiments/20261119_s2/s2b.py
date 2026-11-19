@@ -492,18 +492,20 @@ def gates_competent(n, rng, tag, L, res):
     print(json.dumps({k: res[k] for k in ("routes_counts_by_step", "holds_effect_of_DO") if k in res}, indent=1), flush=True)
 
 
-def split_gates(name="routes_split", modes=("record_real", "mamba_real")):
+def split_gates(name="routes_split", modes=("record_real", "mamba_real"), own=False):
     """Mamba against the record (11-19): the two split arms paired against stage 1b's free arm (the same starts, seeds and
-    fixation schedule: the first generated frame must agree exactly), beside mem_real and teacher; name / modes: the
-    readers split (routes_readers: dread_real, mread_real), beside record_real as well."""
+    fixation schedule: the first generated frame must agree exactly), beside mem_real and teacher. own: the file holds
+    its own free arm, made in the same process, and only its arms are read (the readers split: a later process drew 5 of
+    4,000 first frames differently from routes.npz's, identical in both of its arms)."""
     rng = np.random.default_rng(20261121)
-    zr, zs = dict(np.load(HERE / "routes.npz")), dict(np.load(HERE / f"{name}.npz"))
+    zs = dict(np.load(HERE / f"{name}.npz"))
+    zr = zs if own else dict(np.load(HERE / "routes.npz"))
     k = len(zr["free_m_grid"])
     rows1, _ = S2.bank(k)
     for m in modes:
         assert np.array_equal(zs[f"{m}_m_grid"][:, :, :2], zr["free_m_grid"][:, :, :2]), "the first frame differs from free running"
-    z = {**zr, **dict(np.load(HERE / "routes_split.npz")), **zs}
-    modes = tuple(dict.fromkeys((*modes, "record_real", "mamba_real")))
+    z = zs if own else {**zr, **zs}
+    beside = () if own else ("mem_real", "teacher")
     alive = lambda dn: np.concatenate([np.ones(dn.shape[:-1] + (1,), bool), ~np.maximum.accumulate(dn.astype(bool), -1)], -1)
     per = lambda m, kind=None: ((((z[f"{m}_m_grid"] > 0) if kind is None else (z[f"{m}_m_grid"] == kind)).sum((-1, -2))
                                  * alive(z[f"{m}_m_done"])).sum(1), alive(z[f"{m}_m_done"]).sum(1).astype(float))
@@ -511,12 +513,12 @@ def split_gates(name="routes_split", modes=("record_real", "mamba_real")):
     for kind, kn in ((None, "all"), *enumerate(G.KINDS, 1)):
         nf, df = per("free", kind)
         res[kn] = {"free": (nf.sum(0) / df.sum(0)).round(4)[[1, 4, 8, 16]].tolist()}
-        for m in (*modes, "mem_real", "teacher"):
+        for m in (*modes, *beside):
             nm, dm = per(m, kind)
             d, se = O.paired_diff(nm, dm, nf, df, rows1[:, 0], rng)
             res[kn][m] = {"level": (nm.sum(0) / dm.sum(0)).round(4)[[1, 4, 8, 16]].tolist(),
                           "diff": np.round(d, 4)[[1, 4, 8, 16]].tolist(), "se": np.round(se, 4)[[1, 4, 8, 16]].tolist()}
-    res["alive_at_16"] = {m: float(alive(z[f"{m}_m_done"])[..., 16].mean()) for m in ("free", *modes, "mem_real", "teacher")}
+    res["alive_at_16"] = {m: float(alive(z[f"{m}_m_done"])[..., 16].mean()) for m in ("free", *modes, *beside)}
     (HERE / f"{name}.json").write_text(json.dumps(res, indent=1) + "\n")
     print(json.dumps(res["all"], indent=1), json.dumps(res["alive_at_16"]), flush=True)
 
@@ -525,6 +527,6 @@ if __name__ == "__main__":
     stage, n = sys.argv[1], (int(sys.argv[2]) if len(sys.argv) > 2 else None)
     {"bank": build_bank, "oracle": lambda: oracle(n), "model": lambda: model_competent(n), "routes": lambda: routes(n),
      "routes_split": lambda: routes(n, ("record_real", "mamba_real"), "routes_split"), "split_gates": split_gates,
-     "routes_readers": lambda: routes(n, ("dread_real", "mread_real"), "routes_readers"),
-     "readers_gates": lambda: split_gates("routes_readers", ("dread_real", "mread_real")),
+     "routes_readers": lambda: routes(n, ("free", "record_real", "dread_real", "mread_real"), "routes_readers"),
+     "readers_gates": lambda: split_gates("routes_readers", ("record_real", "dread_real", "mread_real"), own=True),
      "gates": lambda: gates(n)}[stage]()

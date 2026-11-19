@@ -118,3 +118,7 @@ The readings stage 1 lacked, on P1.5 (frozen), with stage 1's readers and readin
   all mobs (+0.43); then the rerun trains that reader. Neither alone (or both): the rerun trains both readers.
   Identity check before the run, in one process: the committed code and this one give bitwise-equal free and
   record_real arms on a 16-start smoke.
+  Run 1 (22:26) stopped at the scorer's first-frame assert: 5 of 4,000 first generated frames differ from routes.npz's
+  free arm (made in another process at 15:05), identically in both reader arms, so a cross-process drift, not an arm
+  effect. The readers file now carries its own free and record_real arms from the same process and is scored against
+  them only.

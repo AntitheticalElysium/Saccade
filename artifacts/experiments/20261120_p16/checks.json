@@ -1,0 +1,64 @@
+{
+ "units": {
+  "record_dim": 2048,
+  "periphery_group_equals_test2": 0.0,
+  "fovea_zero_where_never_looked": true,
+  "terms_finite": true,
+  "encoder_norms": {
+   "reward_forecast_1": 0.0,
+   "reward_forecast_2": 0.0,
+   "reward_forecast_3": 0.0,
+   "reward_forecast_4": 0.0,
+   "reward_forecast_5": 0.0,
+   "reward_forecast_6": 0.0,
+   "reward_forecast_7": 0.0,
+   "reward_forecast_8": 0.0,
+   "reward_forecast": 0.0,
+   "cont_forecast": 0.0,
+   "gaze_forecast": 0.0,
+   "g1": 0.0025139811914414167,
+   "tsp": 0.01821063458919525,
+   "rec": 0.060457345098257065,
+   "reward": 0.0,
+   "cont": 0.0,
+   "noise": 0.0
+  },
+  "route_by_role_ok": true,
+  "fovea_columns_grad": {
+   "denoiser_read_g1": 0.007228612434118986,
+   "belief_in_g1": 6.661391671514139e-05,
+   "belief_in_reward": 0.01227742712944746
+  },
+  "record_state_shape": [
+   2,
+   81,
+   2048
+  ],
+  "adapter_window_vs_contiguous": 7.413947605527937e-05
+ },
+ "throughput": {
+  "steps_64": {
+   "sec_per_update": 2.084330161412557,
+   "peak_gib": 3.6596179008483887,
+   "g1": 0.30881987512111664
+  },
+  "steps_256": {
+   "sec_per_update": 7.942897707223892,
+   "peak_gib": 3.5566186904907227,
+   "g1": 0.30866003036499023
+  }
+ },
+ "criteria": {
+  "periphery_group_exact": true,
+  "fovea_writes_only_where_looked": true,
+  "terms_finite": true,
+  "route_by_role_ok": true,
+  "fovea_columns_reached": true,
+  "adapters_match": true,
+  "peak_under_budget": true,
+  "projected_hours": 14.132133986869897,
+  "projected_hours_p15_same_estimate": 13.695700663245386,
+  "time_within_17h_estimate": true
+ },
+ "passed": true
+}

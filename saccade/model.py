@@ -302,7 +302,7 @@ class Belief(nn.Module):
             with torch.random.fork_rng(devices=[]):                      # user 11-16): per cell to a token's width, then
                 torch.random.default_generator.manual_seed(r["init_seed"])   # beside the flattened percept
                 c = pc["periphery"]["token_dim"]
-                self.record_in = nn.Sequential(nn.Linear(2 * c * r["modes"], c), nn.Flatten(-2), nn.Linear(N * c, W))
+                self.record_in = nn.Sequential(nn.Linear(Record.size(cfg), c), nn.Flatten(-2), nn.Linear(N * c, W))
 
     def initial(self, batch: int, device=None):
         return tuple(m.initial(batch, device) for m in self.mixers)
@@ -511,7 +511,7 @@ class Denoiser(nn.Module):
             assert r["read"] == "mlp", "the MLP read (test 3, 20261116_temporal_memory; the user's choice 11-16)"   # MLP:
             with torch.random.fork_rng(devices=[]):                      # its own draws; the last layer zero-initialised
                 torch.random.default_generator.manual_seed(r["read_init_seed"])   # (inert at the start, as in test 3)
-                self.record_read = nn.Sequential(nn.Linear(2 * dims[0] * r["modes"], W), nn.GELU(), nn.Linear(W, W))
+                self.record_read = nn.Sequential(nn.Linear(Record.size(cfg), W), nn.GELU(), nn.Linear(W, W))
             nn.init.zeros_(self.record_read[2].weight), nn.init.zeros_(self.record_read[2].bias)
 
     def conds(self, code, prev_action):
@@ -959,33 +959,58 @@ class Record(nn.Module):
     """Spatial history (P1.5, user 11-16; 20261116_temporal_memory, tests 2-3): per periphery cell, a fixed S4D-Lin
     record of every channel of its own coarse token (Gu et al. 2022, S4D: A_n = -1/2 + i pi n for n < modes, B = 1,
     the S4D listing's bilinear step at dt), reset at episode starts; features = real then imaginary parts (channel-major,
-    then mode). Built from stop-gradient tokens: a denoiser input (LOSSES principle 7a). No parameters."""
+    then mode). Built from stop-gradient tokens: a denoiser input (LOSSES principle 7a). No parameters.
+    P1.6 (user 11-20, G1: "write where you look"): with `fovea_modes`, a second group records the glimpse canvas the
+    belief reads (each fixated cell's fine token, zero elsewhere) on the first fovea_modes modes of the same basis; the
+    input is the periphery token and the canvas side by side (`input`), the features the two groups' in turn."""
 
     def __init__(self, cfg):
         super().__init__()
-        r, n = cfg["record"], torch.arange(cfg["record"]["modes"], dtype=torch.float64)
-        A, dt = torch.complex(torch.full_like(n, -0.5), math.pi * n), r["dt"]
-        self.register_buffer("a", ((1 + dt * A / 2) / (1 - dt * A / 2)).to(torch.complex64), persistent=False)
-        self.register_buffer("b", (dt / (1 - dt * A / 2)).to(torch.complex64), persistent=False)
+        r = cfg["record"]
+        for name, m in (("", r["modes"]), ("_f", r.get("fovea_modes", 0))):
+            n = torch.arange(m, dtype=torch.float64)
+            A, dt = torch.complex(torch.full_like(n, -0.5), math.pi * n), r["dt"]
+            self.register_buffer("a" + name, ((1 + dt * A / 2) / (1 - dt * A / 2)).to(torch.complex64), persistent=False)
+            self.register_buffer("b" + name, (dt / (1 - dt * A / 2)).to(torch.complex64), persistent=False)
         self.channels = cfg["perception"]["periphery"]["token_dim"]
-        self.dim = 2 * self.channels * r["modes"]
+        self.fovea = cfg["perception"]["fovea"]["token_dim"] if r.get("fovea_modes") else 0   # the canvas's channels
+        self.dim = self.size(cfg)
+
+    @staticmethod
+    def size(cfg) -> int:
+        r, pc = cfg["record"], cfg["perception"]
+        return 2 * (pc["periphery"]["token_dim"] * r["modes"] + pc["fovea"]["token_dim"] * r.get("fovea_modes", 0))
 
     def zero(self, batch: int, device=None) -> Tensor:
         return torch.zeros(batch, N, self.dim, device=device or self.a.device)
 
+    def input(self, p: Tensor, g: Tensor | None = None, fix: Tensor | None = None) -> Tensor:
+        """The record's input per cell: the periphery tokens p [.., 81, C]; with the fovea group, the glimpse tokens g
+        [.., 9, Cg] placed at their fixation's window beside them (zero elsewhere) -> [.., 81, C + Cg]."""
+        if not self.fovea:
+            return p
+        assert g is not None and fix is not None, "a record with the fovea group reads the glimpse and its fixation"
+        cells = window(fix)
+        canvas = g.new_zeros(*g.shape[:-2], N, g.shape[-1]).scatter(-2, cells[..., None].expand_as(g), g)
+        return torch.cat([p, canvas.to(p.dtype)], -1)
+
     @torch.no_grad()
     def scan(self, p: Tensor, first: Tensor, state: Tensor):
-        """p [B, L, 81, C] tokens, first [B, L] episode starts, state [B, 81, dim] after the frame before frame 0 ->
-        (the record through the previous frame, for every frame: the denoiser's input; the state after every frame:
-        Mamba's input, the last one carried), both [B, L, 81, dim] fp32."""
-        h = self.dim // 2
-        s = torch.complex(state[..., :h], state[..., h:]).unflatten(-1, (self.channels, -1))
-        feat = lambda z: torch.cat([z.real.flatten(-2), z.imag.flatten(-2)], -1)
+        """p [B, L, 81, C (+ Cg)] the record's input (`input`), first [B, L] episode starts, state [B, 81, dim] after the
+        frame before frame 0 -> (the record through the previous frame, for every frame: the denoiser's input; the state
+        after every frame: Mamba's input, the last one carried), both [B, L, 81, dim] fp32."""
+        C, hp = self.channels, self.channels * len(self.a)
+        assert p.shape[-1] == C + self.fovea, "the record's input is Record.input's"
+        part = lambda z, h, c: torch.complex(z[..., :h], z[..., h:2 * h]).unflatten(-1, (c, -1))
+        s = [part(state[..., :2 * hp], hp, C)] + ([part(state[..., 2 * hp:], self.fovea * len(self.a_f), self.fovea)] if self.fovea else [])
+        ab = [(self.a, self.b, slice(0, C)), (self.a_f, self.b_f, slice(C, None))][:len(s)]
+        feat = lambda zs: torch.cat([torch.cat([z.real.flatten(-2), z.imag.flatten(-2)], -1) for z in zs], -1)
         inp, st = [], []
         for i in range(p.shape[1]):
-            s = torch.where(first[:, i, None, None, None], torch.zeros_like(s), s)
+            s = [torch.where(first[:, i, None, None, None], torch.zeros_like(z), z) for z in s]
             inp.append(feat(s))
-            s = self.a * s + self.b * p[:, i].float()[..., None]
+            x = p[:, i].float()
+            s = [a * z + b * x[..., c, None] for z, (a, b, c) in zip(s, ab)]
             st.append(feat(s))
         return torch.stack(inp, 1), torch.stack(st, 1)
 

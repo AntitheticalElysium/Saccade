@@ -149,7 +149,8 @@ def p1_losses(model: M.M0, chunk: dict, carry, cache, targets, cfg, bootstrap=No
             Pp = model.perception(t["frames"][:, :P], fix[:, :P])
         rin = rst = new_record = None
         if model.record is not None:
-            rin, rst = model.record.scan(torch.cat([Pp.p, Pc.p.detach()], 1), first, record)
+            rin, rst = model.record.scan(torch.cat([model.record.input(Pp.p, Pp.g, Pp.fix),       # P1.6: with the glimpse
+                                                    model.record.input(Pc.p, Pc.g, Pc.fix).detach()], 1), first, record)
             new_record, rst = rst[:, L - P - 1], rst[:, P:]              # carried; Mamba reads the state after each new frame
         emb = model.belief.percept_embed(Pc, rst)
         x = model.belief.tokens(emb, t["reward"][:, P:], t["terminated"][:, P:], t["action"][:, P:])
@@ -312,7 +313,7 @@ def _monitor(model: M.M0, cfg, episodes, n_windows=None) -> dict:
             rin = rst = None                                             # P1.5: the spatial history from the episode's start
             if model.record is not None:
                 start = torch.zeros(Pe.p.shape[:2], dtype=torch.bool, device=dev); start[:, 0] = True
-                rin, rst = model.record.scan(Pe.p, start, model.record.zero(1, dev))
+                rin, rst = model.record.scan(model.record.input(Pe.p, Pe.g, Pe.fix), start, model.record.zero(1, dev))
             x = model.belief.tokens(model.belief.percept_embed(Pe, rst), c["reward"], c["terminated"], c["action"])
             y, _ = model.belief(x, model.belief.initial(1, dev))
             b_pred = torch.cat([torch.zeros_like(y[:, :1]), y[:, 1::2][:, :-1]], 1)

@@ -340,3 +340,20 @@ measures that sampling distribution directly, at the deletion.
     learned, so training (length, capacity, data exposure) is the lever.
   - Flat from 5 on: built into the recipe or objective.
 - **Prediction:** it falls early and flattens (most of P1.5's other skills did), so flat from 5 on.
+
+## C7: does P1.5's belief track zombies? (user 11-20: "if it tracks zombies that's fine; those matter for the actor")
+
+- **Already measured** (P1.5's evaluation, `20261116_p15/readings/belief_probe.json`): given a zombie next to the
+  player, the predicted belief anticipates a hit at AP 0.952 (base rate 0.16; the percept and action alone 0.46).
+  That measures the hidden cooldown, not whether the belief knows a zombie is there.
+- **Targets** (DEV labels, frame t): a zombie in the 8 cells around the player; within 2 cells; anywhere on the screen;
+  and per cell on the 24 cells within 2 (pooled).
+- **Inputs:**
+  - the corrected belief b_t (what the actor reads);
+  - the predicted belief bp_t (the denoiser's memory);
+  - as references, the S1 reader's mob probabilities on frame t (for b_t) and on frame t - 1 (for bp_t).
+    Fitted by the same probe, and unfitted (the reader's own P(zombie)); the unfitted reference was added after the
+    smoke, where 40 episodes starved the fitted per-cell probe.
+- **Data and probe:** all DEV episodes (C3's order), 120 frames each, 80% / 20% by episode, `s1.encode`; C5's
+  per-output logistic probe; held-out AP against the base rate.
+- **Reading:** b_t near its reference means the actor's input knows where zombies are; far below means it does not.

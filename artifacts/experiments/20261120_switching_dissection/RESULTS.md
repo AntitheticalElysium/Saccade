@@ -855,3 +855,35 @@ term's training form; (b) is the K = 8 sampler's own path. Both start from pure 
   - right that the conditional loses mobs at low levels (levels 1-3 for the estimate-keeps units);
   - wrong that the losses would sit only there: the sampler commits most of them at steps 4-6;
   - wrong that mobs are a small share of the objective (30%).
+
+## C14: the day coin is not the learning rate running out (`c14_lr.py`, `c14_readings.json`, `c14_calib_ckpt{10,11}.npz`)
+
+P1.5 was continued from checkpoint 10 for one checkpoint interval (625 updates of 256 steps, 1.6 h) at checkpoint 5's
+learning-rate factor (0.579, a rate of 5.8e-5), held constant. Checkpoints 10 and 11 were each read with their own S1
+reader, on the same 2,079 units with the same 8 draws per unit.
+
+| | Units | Deletion, checkpoint 10 | Checkpoint 11 | Paired change (95%) | Real-frame floor 10 / 11 |
+| :--- | ---: | ---: | ---: | :--- | :--- |
+| Cows, day | 929 | 0.0600 | 0.0580 | -0.0020 (-0.0063, +0.0022) | 1.000 / 1.000 |
+| Cows, night | 262 | 0.2333 | 0.2090 | -0.0243 (-0.0339, -0.0153) | 0.977 / 0.973 |
+| Zombies, day | 372 | 0.0168 | 0.0144 | -0.0024 (-0.0060, +0.0013) | 1.000 / 1.000 |
+| Zombies, night | 235 | 0.1170 | 0.0989 | -0.0181 (-0.0266, -0.0101) | 0.983 / 0.979 |
+| Skeletons, day | 97 | 0.1469 | 0.1972 | +0.0503 (+0.0296, +0.0722) | 1.000 / 1.000 |
+| Skeletons, night | 38 | 0.4704 | 0.4704 | 0.0000 (-0.023, +0.023) | 0.895 / 0.921 |
+
+- **The day coin does not move:** -0.2 points, the interval covering zero. By the declared reading it is a floor
+  under this objective, not the rate running out.
+- **Night deletions fall by about a tenth** for both cows and zombies: night is still being learned. This fits C13,
+  where night is an evidence problem (the noise-free estimate omits the mob).
+- **Day skeletons worsen by 5 points.**
+- **The monitor's G1 is 4.3% worse at checkpoint 11** (0.001828 against 0.001753), at every level: the rate was
+  raised and never annealed again.
+- **Limit:** checkpoint 11 is not annealed, so its noise could mask a small gain. The day coin did not move even
+  while night improved, and 8 -> 10 was already flat at a low rate.
+- **Prediction:** "a small fall (about a point)". Right for night (2.4 points), wrong for day (0.2).
+- **For P1.6:** neither C13 nor C14 points to a change in its training.
+  - Night is an evidence problem, which G1 targets.
+  - The day coin is the sampler's path (exposure bias), whose candidate remedies are sampling-time and need no
+    retraining: guidance limited to the mid-chain interval (Kynkaanniemi et al. 2024), restart sampling (Xu et al.
+    2023) and epsilon scaling (Ning et al. 2024).
+  - Training-time input perturbation (Ning et al. 2023) is unproven here and stays out.

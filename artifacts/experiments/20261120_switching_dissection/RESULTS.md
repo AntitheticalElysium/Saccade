@@ -564,3 +564,38 @@ target.
   face to attack or flee.
 - **For the actor (P3):** b_t says "a zombie is next to me, and it can hit now", but not where. An actor reading b_t
   alone would need the current percept for direction. Not an issue for P1.6.
+
+## C8: belief change fails; it moves the eye onto entering terrain, not mobs (`c8_belief_change.py`, `c8_belief_change.json`)
+
+The data are C2's frames with t + 1 <= T: 2,983 windows. The Mamba re-run reproduces C2's belief within 0.041 (bf16),
+and both arms share that path.
+
+| Covered when present | Belief change | World-eye surprise | Chooser | Uniform |
+| :--- | ---: | ---: | ---: | ---: |
+| Any entity | 0.423 | 0.484 | 0.485 | 0.203 |
+| Any entity, day | 0.436 | 0.530 | 0.527 | 0.193 |
+| Any entity, night | 0.385 | 0.357 | 0.369 | 0.233 |
+| Zombies | 0.263 | 0.297 | 0.353 | 0.165 |
+| Changed HUD | 0.242 | 0.227 | 0.414 | 0.110 |
+| Entering terrain | 0.561 | 0.511 | 0.457 | 0.216 |
+
+| Share of the score | Mobs | Entering terrain | Static map | Changed HUD |
+| :--- | ---: | ---: | ---: | ---: |
+| Belief change, all / night | 0.10 / 0.11 | 0.43 / 0.26 | 0.39 / 0.49 | 0.05 / 0.08 |
+| World-eye surprise, all / night | 0.31 / 0.17 | 0.33 / 0.17 | 0.30 / 0.59 | 0.04 / 0.05 |
+
+**By the declared rule, belief change fails.**
+- Entity coverage falls (0.423 against 0.484). Only night rises a little (0.385 against 0.357).
+- Night static falls from 59% to 49% of the score, but stays the largest share.
+- Changed HUD stays near the world-eye's (0.242 against 0.227).
+
+**Why.**
+- **A mob's next position is uncertain, so its information washes out.** The world's zero-signal prediction of frame
+  t + 1 hedges where a mob will be. Knowing exactly where it is at t moves that blurred prediction little: mobs hold
+  10% of the score.
+- **Entering terrain persists and is new,** so it moves the prediction most (43%).
+- **Frame t's static still moves the prediction of t + 1** (49% at night), although the renderer redraws it every
+  frame. The world carries part of its context's noise forward.
+
+**Predictions:** right that night static falls and that HUD flips stay near the world-eye's. Wrong about "well below
+60%" and about entities.

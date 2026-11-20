@@ -36,8 +36,7 @@ def train():
     TR.p1(cfg, ck["world_seed"], RUN)
 
 
-@torch.no_grad()
-def calibrate(ck, tag):
+def calibrate(ck, tag):                                                 # no no_grad here: the reader's fit needs gradients
     """C5's draws and keep rule (8 draws of the default sampler per start mob, C4.samples) at checkpoint `ck`, read with
     its own S1 reader (C6's protocol); per-unit outcomes to c14_calib_{tag}.npz. C5's own files are untouched."""
     import numpy as np

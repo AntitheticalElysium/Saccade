@@ -196,7 +196,15 @@ Codex's review found two more problems:
      `routes`, `sleep`, `dissect`, `native_pairs`, `trace` and `trajectory`. P1.5's record ignores them.
    - The adapter check scans the record with the glimpse and checks that the generated glimpse moves the futures'
      read.
-   - Readings 2-7 are their own scripts, written during training and run after the queue.
+   - Readings 2 and 4-7 are in `readings.py` (written during training, 11-21; smoke-tested once the GPU is free):
+     - reliance (2) on C2's 3,000 labelled DEV frames, arms: intact, fovea zeroed in the denoiser's read, fovea zeroed
+       in both reads; by label region, light, camera, and looked in the last 1 / 8 frames;
+     - calibration (4, 6) on C5's units for P1.6 and for P1.5 (the control), split by whether the mob's cell was in
+       frame t - 1's window, plus spurious mobs per cell inside that window against outside. Those looks are the
+       monitor's random prior fixations, so the split is randomised;
+     - zombies (5) as C7, with each checkpoint's own reader;
+     - trace (7) as C11b, for P1.6 and P1.5.
+   - Reading 3 (A5's paired look) runs on S2's machinery and waits on the S2 port.
    - **Smoke, before launch** (`checks/smoke/`): on a real P1.6 checkpoint (two updates, checkpoints and a fill), the
      adapter check passes. The futures' Mamba read equals a glimpse-written scan exactly, and zeroing the glimpse moves
      it; for the check, Mamba's fovea columns are briefly made non-zero, because they start at zero. Every smoke step

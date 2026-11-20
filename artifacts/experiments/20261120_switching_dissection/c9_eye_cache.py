@@ -41,7 +41,7 @@ def episode_at(model, cfg, dl, e, fix):
         for a in range(0, T + 1, 512):
             sl = slice(a, min(T + 1, a + 512))
             first = torch.zeros(1, sl.stop - a, dtype=torch.bool, device=DEV); first[:, 0] = a == 0
-            ri, si = model.record.scan(Pe.p[:, sl], first, state); state = si[:, -1]
+            ri, si = model.record.scan(model.record.input(Pe.p[:, sl], Pe.g[:, sl], Pe.fix[:, sl]), first, state); state = si[:, -1]   # P1.6: with the glimpse
             y, carry = model.belief(model.belief.tokens(model.belief.percept_embed(M.Percept(Pe.p[:, sl], Pe.g[:, sl], Pe.v[:, sl], Pe.fix[:, sl]), si),
                                                         c["reward"][:, sl], c["terminated"][:, sl], c["action"][:, sl]), carry)
             rins.append(ri.to(torch.bfloat16)); ys.append(y[:, 1::2])

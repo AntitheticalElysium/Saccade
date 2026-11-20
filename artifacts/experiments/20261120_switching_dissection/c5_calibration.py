@@ -9,7 +9,9 @@
   through `memory_out`), from the reader's mob probabilities on the previous real frame (fitted, and unfitted as a
   copy), and from both; every DEV episode without units, 80 / 20 by episode. Then the units' deletion rate by the belief probe's P(entity in the neighbourhood).
 
-    MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_switching_dissection.c5_calibration [smoke]
+    MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_switching_dissection.c5_calibration [smoke] [ckpt N]
+
+C6 (PLAN.md): `ckpt N` runs the draws and readings at P1.5's checkpoint N with its own S1 kind reader (no probe).
 """
 import importlib, json, sys
 from math import comb
@@ -44,6 +46,14 @@ def kind_probs(R, p, v):
     return pr
 
 
+def reader(model, cfg, smoke):
+    """S1's kind reader for this checkpoint's encoder, by S1's own protocol (train400 cells, token_probe seed 0)."""
+    Ltr = S.first_episodes(dict(np.load(S.LABELS / "s0_train400_labels.npz")), 40 if smoke else None)
+    Ldv = S.first_episodes(dict(np.load(S.LABELS / "s0_dev_labels.npz")), 4)           # token_probe's argmax only
+    tr, dv = S.cell_table(S.encode(model, Ltr, cfg), Ltr), S.cell_table(S.encode(model, Ldv, cfg), Ldv)
+    return S.token_probe(tr, dv, 0)[0]
+
+
 def fit_multi(Xtr, Ytr, Xte, epochs=30, lr=1e-2, wd=1e-4):
     """c3_probe.fit_probe with one logistic output per map cell (its own positive weight)."""
     mu, sd = Xtr.mean(0, keepdim=True), Xtr.std(0, keepdim=True) + 1e-4
@@ -68,10 +78,10 @@ def auc(pos, neg):
     return float((r[:len(pos)].sum() - len(pos) * (len(pos) + 1) / 2) / max(len(pos) * len(neg), 1))
 
 
-def main(smoke=False):
-    model, cfg = AI.load(CK)
+def main(smoke=False, ck=10):
+    model, cfg = AI.load(CK.parent / f"ckpt_{ck:02d}.pt")
     model.requires_grad_(False).eval()
-    R = S2.load_readers(model, cfg)
+    R = S2.load_readers(model, cfg) if ck == 10 else {"kind": reader(model, cfg, smoke)}
     L = dict(np.load(S.LABELS / "s0_dev_labels.npz"))
     _, _, lookup, loff, cover = C1.semantics(L)
     dl = S.episodes(L)
@@ -151,6 +161,11 @@ def main(smoke=False):
                                                                                      ">=0.2": float((fin >= .2).mean())} if len(fin) else None,
                                      "own_cell_class_deleted": dict(zip(KINDS, np.bincount(own[m].reshape(-1)[~km], minlength=5).tolist())),
                                      "real_frame_P_kind": float(np.mean([rec[i]["real_P"] for i in np.nonzero(m)[0]]))}
+    tag = ("_smoke" if smoke else "") + ("" if ck == 10 else f"_ckpt{ck:02d}")
+    if ck != 10:                                                            # C6: no probe
+        print(json.dumps(res, indent=1), flush=True)
+        (HERE / f"c5_calibration{tag}.json").write_text(json.dumps(res, indent=1) + "\n")
+        return
     # ---- Mamba probe -----------------------------------------------------------------------------------------------
     rng = np.random.default_rng(20261121)                                   # C3's order; every DEV episode without units
     eps = [e for e in rng.permutation(len(L["ep_T"])) if L["ep_T"][e] >= 10 and e not in all_unit_eps][:24 if smoke else None]
@@ -185,7 +200,6 @@ def main(smoke=False):
         res["mamba_probe"][tname] = out
         print(tname, json.dumps(out), flush=True)
     print(json.dumps({k: v for k, v in res.items()}, indent=1), flush=True)
-    tag = "_smoke" if smoke else ""
     np.savez_compressed(HERE / f"c5_units{tag}.npz", P=P, kept=kept, kinds=kinds, night=night,
                         e=np.array([x["e"] for x in rec]), t=np.array([x["t"] for x in rec]),
                         real_P=np.array([x["real_P"] for x in rec]), real_own_P=np.array([x["real_own_P"] for x in rec]))
@@ -193,4 +207,5 @@ def main(smoke=False):
 
 
 if __name__ == "__main__":
-    main(len(sys.argv) > 1 and sys.argv[1] == "smoke")
+    a = sys.argv[1:]
+    main("smoke" in a, int(a[a.index("ckpt") + 1]) if "ckpt" in a else 10)

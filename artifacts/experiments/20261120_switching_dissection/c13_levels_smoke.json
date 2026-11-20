@@ -1,0 +1,195 @@
+{
+ "units": 60,
+ "draws": 8,
+ "checkpoint": "/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/artifacts/experiments/20261116_p15/run/ckpt_10.pt",
+ "reader": "own",
+ "by_group": {
+  "cows|day": {
+   "units": 29,
+   "real_frame_kept": 1.0,
+   "real_path_kept_by_level": [
+    0.9267,
+    0.8966,
+    0.9267,
+    0.9698,
+    0.9784,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "sampler_kept_by_step": [
+    0.9224,
+    0.9095,
+    0.9181,
+    0.9397,
+    0.9612,
+    0.9526,
+    0.9483,
+    0.944,
+    0.944
+   ],
+   "zero_signal_at_own_cell_stayed": {
+    "units": 19,
+    "spread_over_draws": 0.014185257574641391,
+    "mean_to_real": 2.6231867043595565,
+    "level0_lost": 0.0
+   },
+   "corr_unit_level0_loss_vs_final_deletion": 0.6156761621315724
+  },
+  "cows|night": {
+   "units": 1,
+   "real_frame_kept": 1.0,
+   "real_path_kept_by_level": [
+    1.0,
+    0.875,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "sampler_kept_by_step": [
+    1.0,
+    1.0,
+    0.75,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "corr_unit_level0_loss_vs_final_deletion": null
+  },
+  "zombies|day": {
+   "units": 7,
+   "real_frame_kept": 1.0,
+   "real_path_kept_by_level": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.9821,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "sampler_kept_by_step": [
+    1.0,
+    1.0,
+    0.9821,
+    0.9821,
+    0.9643,
+    0.9643,
+    0.9643,
+    0.9643,
+    0.9643
+   ],
+   "zero_signal_at_own_cell_stayed": {
+    "units": 6,
+    "spread_over_draws": 0.015242637833580375,
+    "mean_to_real": 0.32111464875439805,
+    "level0_lost": 0.0
+   },
+   "corr_unit_level0_loss_vs_final_deletion": null
+  },
+  "zombies|night": {
+   "units": 3,
+   "real_frame_kept": 1.0,
+   "real_path_kept_by_level": [
+    1.0,
+    0.9583,
+    0.9167,
+    0.9583,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "sampler_kept_by_step": [
+    0.9583,
+    0.7917,
+    0.6667,
+    0.8333,
+    0.9583,
+    0.9583,
+    0.9583,
+    0.9583,
+    0.9583
+   ],
+   "zero_signal_at_own_cell_stayed": {
+    "units": 3,
+    "spread_over_draws": 0.011971153939763704,
+    "mean_to_real": 0.9017322957515717,
+    "level0_lost": 0.0
+   },
+   "corr_unit_level0_loss_vs_final_deletion": null
+  },
+  "skeletons|day": {
+   "units": 13,
+   "real_frame_kept": 1.0,
+   "real_path_kept_by_level": [
+    0.0,
+    0.0481,
+    0.1827,
+    0.6827,
+    0.9135,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "sampler_kept_by_step": [
+    0.0,
+    0.0481,
+    0.2115,
+    0.5673,
+    0.8365,
+    0.8846,
+    0.8846,
+    0.8846,
+    0.8846
+   ],
+   "zero_signal_at_own_cell_stayed": {
+    "units": 2,
+    "spread_over_draws": 0.005062500946223736,
+    "mean_to_real": 3.2358986735343933,
+    "level0_lost": 1.0
+   },
+   "corr_unit_level0_loss_vs_final_deletion": null
+  }
+ },
+ "objective": {
+  "entity_share_of_error_by_level": [
+   0.22109398668320665,
+   0.20635799056467244,
+   0.4820936938843508,
+   0.42168279827914407,
+   0.351882034537465,
+   0.4015333075486428,
+   0.1838060859601174,
+   0.10417183748063166
+  ],
+  "ramp_weight": [
+   0.1,
+   0.21250000000000002,
+   0.325,
+   0.4375,
+   0.55,
+   0.6625,
+   0.775,
+   0.8875
+  ],
+  "level_share_of_weighted_objective": [
+   0.20235390118043747,
+   0.40824353639139077,
+   0.17966117616888677,
+   0.11991684819625785,
+   0.05814906215579959,
+   0.014457165374523668,
+   0.009093488075360484,
+   0.008124822457343292
+  ],
+  "entity_share_of_weighted_objective": 0.29494839860258554
+ }
+}

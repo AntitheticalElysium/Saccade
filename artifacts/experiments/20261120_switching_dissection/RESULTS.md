@@ -343,9 +343,9 @@ the chooser's policy with contingency off, against P1.5's chooser.
   - by surprise quartile, deletion is 0.13 / 0.20 / 0.17 / 0.09 (correlation -0.12);
   - deleted mobs show surprise 4.13, never-deleted mobs 4.40.
 
-  So the world's mean prediction keeps the cow, and the deletion happens in sampling from noise to a sample. This
-  refines the stage-B reading ("in the denoiser's prediction"): the conditional mean is right, and the flow to a
-  sample drops the cow.
+  This surprise reading suggested that the world's mean prediction keeps the cow. C13 (below) corrects it: read
+  directly, the noise-free estimate omits 5.4% of day cows fully and 8.7% partly, and 22.9% of night cows. By day,
+  most deletions (85%) still arise along the sampler's path from an estimate that shows the cow.
 - **Staleness (cache quality)** against the fresh eye, whose distance to the chooser is a TV of 0.237:
 
   | Cache age | TV to fresh | Argmax agreement | Entity coverage (fresh 0.484) |
@@ -800,3 +800,58 @@ least 87.5% of the time, and one with four free neighbours 50%.
   - the objective's emphasis at the low-signal levels where presence is decided (ramp w = 0.9 tau + 0.1: weight 0.1
     at tau = 0 against 0.89 at 7/8);
   - a mob being 1 cell of 81 in the per-frame mean.
+
+## C13: by day, early under-confidence carried forward and committed by the sampler; at night, a context that doesn't establish the mob (`c13_levels.py`, `c13_levels.json`, `c13_units.npz`)
+
+C5's 2,079 units, P1.5 checkpoint 10, S2's readers. (a) is the real frame noised to each finest level, the flow
+term's training form; (b) is the K = 8 sampler's own path. Both start from pure noise at level 0.
+
+**Day cows (929 units; real-frame floor 1.000):**
+
+| Signal level (/8) | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | Final |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| (a) real path keeps | 0.904 | 0.903 | 0.903 | 0.936 | 0.974 | 0.994 | 0.999 | 1.000 | |
+| (b) sampler keeps | 0.904 | 0.898 | 0.900 | 0.921 | 0.942 | 0.948 | 0.949 | 0.949 | 0.949 |
+
+- **The noise-free estimate is nearly independent of its noise** (spread over draws 0.014 against 2.1 from the real
+  token, day cows that stayed). By day it omits the cow on every draw for 5.4% of units, keeps it on every draw for
+  85.9%, and varies for 8.7%.
+- **The two components:**
+
+  | | Estimate omits the mob | Their final deletion | Estimate keeps it | Their final deletion | Deletions from the omitted |
+  | :--- | ---: | ---: | ---: | ---: | ---: |
+  | Cows, day | 5.4% | 0.142 | 85.9% | 0.042 | 15% |
+  | Cows, night | 22.9% | 0.660 | 61.5% | 0.066 | 70% |
+  | Zombies, day | 2.4% | 0.014 | 93.3% | 0.011 | 3% |
+  | Zombies, night | 14.5% | 0.467 | 73.6% | 0.032 | 63% |
+
+- **At night, most deletions are mobs the noise-free estimate already omits:** the context does not establish them
+  (static, darkness). This is what G1's fine evidence targets.
+- **By day, the coin lives where the estimate shows the cow** (798 units):
+
+  | Signal level (/8) | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | Final |
+  | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | (a) real path keeps | 1.000 | 0.981 | 0.968 | 0.973 | 0.990 | 0.999 | 1.000 | 1.000 | |
+  | (b) sampler keeps | 0.998 | 0.981 | 0.970 | 0.969 | 0.966 | 0.961 | 0.958 | 0.958 | 0.958 |
+
+  - At levels 1-3 the conditional is under-confident. With the real frame's weak signal and a context that shows the
+    cow, noise removes it in 2-3% of draws.
+  - At levels 4-6 the real path recovers as real signal grows; the sampler keeps losing, because its input is built
+    from its own weakened estimates.
+  - Among draws that end without the cow, the first loss is at steps 2-8 in 21 / 36 / 45 / 71 / 60 / 31 / 3 draws:
+    mostly steps 4-6.
+  - Of 498 draws that lose the cow at some step, 229 regain it by the end.
+  - This is exposure bias in its literature sense (Ning et al. 2023, 2024): the sampler's inputs drift from training's
+    as its own errors accumulate.
+- **Not a hedge over movement:** cows that stayed and cows that moved are omitted alike at level 0 (9.0% against
+  10.7%), and deleted alike (5.2% against 4.8%), as in C12.
+- **Not rarity in the objective:**
+  - entity cells carry 40-42% of the target's periphery error at levels 0-2 and 30% of the ramp-weighted objective;
+  - levels 1-3 together are 57% of that objective.
+  - The low levels are not starved and mobs are not a negligible share.
+- **Skeletons:** the noise-free estimate shows them for only 15% of units by day. They appear only once the real
+  signal is present (level 3 and above) or along the sampler's path (final 0.87).
+- **Predictions:**
+  - right that the conditional loses mobs at low levels (levels 1-3 for the estimate-keeps units);
+  - wrong that the losses would sit only there: the sampler commits most of them at steps 4-6;
+  - wrong that mobs are a small share of the objective (30%).

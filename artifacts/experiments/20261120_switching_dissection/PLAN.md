@@ -569,3 +569,33 @@ measures that sampling distribution directly, at the deletion.
   - window evaluations (C4's form, which reproduces S2's step-1 deletion, C5).
 - **The same readings at the learning-rate test's checkpoint** (C14) show whether more training moves the curve, and
   at which levels.
+
+## C14: is the day coin still being learned when the learning rate runs out? (user 11-20: "run both")
+
+- **Question.** C6: day cows kept 0.25 / 0.88 / 0.94 / 0.94 at checkpoints 2 / 5 / 8 / 10. The rate was 5.8e-5 at
+  checkpoint 5, 1.9e-5 at 8 and 1e-5 at 10 (cosine to 0.1, `TR.lr_factor`). Is the flat 8 -> 10 the coin's floor
+  under this objective, or the rate running out?
+- **Run.** P1.5 continued from checkpoint 10 for one checkpoint interval (2.56M frames, 625 updates of 256 steps, as
+  its last passes) at checkpoint 5's learning-rate factor (0.580), held constant. Everything else is P1.5's: its
+  optimizer state, streams, carry, record, chooser and seed.
+  - The run folder holds copies of P1.5's checkpoint 10, gaze trace and logs, never links, because the trainer
+    overwrites `latest.pt`.
+  - The driver overrides the schedule and the budget check (`TR.lr_factor`, `TR.validate_resume`) for this
+    continuation only. The saved checkpoint is 11.
+  - The current `saccade/` code runs P1.5's recipe on P1.5's path: the P1.6 changes are inert without `fovea_modes` and
+    `world_eye`, and the training forward is bit-equal.
+  - Holding the rate deliberately breaks the fine-tune rule (continue at the final rate): the rate is what is tested.
+    The 8 -> 10 stretch, two passes at a decaying low rate, already serves as the low-rate control.
+- **Readings.**
+  1. C5's calibration at checkpoints 10 and 11, both with their own S1 readers (C6's protocol), on the same units and
+     draws. The paired change in day cows' deletion is bootstrapped over units.
+  2. C13's levels at checkpoint 11 (own reader): at which levels anything moved.
+  3. The trainer's monitor (G1 by level) at 11 against 10: whether the rest of the world got better or worse.
+- **Declared reading.**
+  - **The schedule is implicated** if day cows' deletion falls by at least a quarter (for example 6.0% -> 4.5% or
+    lower), with the interval excluding zero, the real-frame floor unchanged and the monitor's G1 no worse.
+  - **A floor under this objective** if the change is within about a point.
+  - Anything between is unresolved, and I would say so.
+- **Prediction:** a small fall (about a point). The 5 -> 8 stretch moved 6 points over three passes at falling rates,
+  and C12 says the coin is uniform, which an under-trained rare feature would give.
+- **Cost:** about 1.6 h of training, then about 15 min of readings.

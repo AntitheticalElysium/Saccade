@@ -716,3 +716,57 @@ outcomes exactly (match 1.000).
   - Frame guidance at w = 3 cuts night deletions inside the ring by more than half (cows 14.9% -> 6.3%), and at the
     edge only by a quarter (29.6% -> 22.3%). The night static at the edge stays the main loss.
   - The rerun matches the full run within one draw in 1,880 for zombies (batch composition changes bf16 kernels).
+
+## C11: a cache is as good as the world that filled it; fill late, not often (`c11_schedule.py`, `c11_schedule.json`)
+
+Entity coverage on C2's 3,000 DEV frames, deployed (checkpoint j's chooser C). Rows: the cache filled at checkpoint
+i. Columns: read at checkpoint j.
+
+| | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Cache from 1 | 0.383 | 0.383 | 0.381 | 0.382 | 0.384 | 0.386 | 0.381 | 0.380 | 0.384 |
+| Cache from 2 | | 0.451 | 0.448 | 0.448 | 0.450 | 0.452 | 0.448 | 0.447 | 0.450 |
+| Cache from 3 | | | 0.470 | 0.469 | 0.472 | 0.474 | 0.471 | 0.469 | 0.472 |
+| Cache from 5 | | | | | 0.490 | 0.492 | 0.489 | 0.488 | 0.490 |
+| Cache from 6 | | | | | | 0.514 | 0.511 | 0.510 | 0.512 |
+| Fresh world-eye at j | 0.452 | 0.473 | 0.468 | 0.488 | 0.512 | 0.514 | 0.512 | 0.509 | 0.514 |
+| Chooser at j | 0.454 | 0.459 | 0.466 | 0.473 | 0.483 | 0.480 | 0.479 | 0.481 | 0.484 |
+
+(Fresh at checkpoint 1: 0.361; chooser at 1: 0.402.)
+
+- **A cache's coverage is set by the checkpoint that filled it, not by its age.** Each row is flat to within 0.006.
+  C9's "staleness" was the gap between the filler's world and today's, not decay.
+- **Early worlds make poor eyes.**
+  - At checkpoint 1 even the fresh world-eye is worse than the chooser (0.361 against 0.402); at 2 they tie.
+  - A cache filled at checkpoint 1 stays at 0.383, below the chooser at every later checkpoint.
+- **The world-eye jumps at checkpoint 6** (0.488 -> 0.512), the first pass with 256-step chunks, and then plateaus.
+  After that, refreshing adds nothing measurable.
+- **Zombies:** fresh and chooser are within 0.015 of each other at every checkpoint. **Changed HUD:** the world-eye
+  looks 7-13 points less at every checkpoint.
+- **Schedules,** each pass read at its end (mean over ten passes):
+
+  | Schedule | Entities | Zombies | Cows | Changed HUD | Fills |
+  | :--- | ---: | ---: | ---: | ---: | ---: |
+  | Chooser throughout | 0.466 | 0.341 | 0.403 | 0.407 | 0 |
+  | Refresh after 1 and 5 (early and stale) | 0.438 | 0.320 | 0.385 | 0.343 | 2 |
+  | Refresh after 2 and 5 | 0.465 | 0.338 | 0.406 | 0.358 | 2 |
+  | Refresh after 6 | 0.478 | 0.342 | 0.420 | 0.366 | 1 |
+  | **Refresh after 5 and 6 (chosen by the rule)** | **0.479** | **0.341** | **0.422** | **0.359** | 2 |
+  | Fresh throughout | 0.481 | 0.337 | 0.426 | 0.305 | in-loop (+12.2 h) |
+
+  The chosen schedule recovers 90% of the fresh eye's entity gain over the chooser at two fills. An early, stale
+  world-eye is worse than the chooser.
+
+## C11b: the chooser beats uniform from its first updates (`c11_trace.py`, `c11_trace.json`)
+
+P1.5's own training looks (the 400 labelled training episodes) against the paired uniform window:
+
+| Updates | Entities: chooser / uniform | Zombies | Cows | Changed HUD | Entering terrain |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 0-250 | 0.296 / 0.218 | 0.213 / 0.164 | 0.228 / 0.148 | 0.284 / 0.117 | 0.226 / 0.215 |
+| 1,000-1,250 | 0.317 / 0.194 | 0.231 / 0.166 | 0.288 / 0.138 | 0.322 / 0.108 | 0.227 / 0.226 |
+| 2,250-2,500 | 0.335 / 0.203 | 0.232 / 0.162 | 0.300 / 0.136 | 0.430 / 0.114 | 0.329 / 0.210 |
+| 10,000-12,500 | 0.431 / 0.209 | 0.329 / 0.170 | 0.351 / 0.146 | 0.447 / 0.119 | 0.424 / 0.219 |
+
+The chooser covers entities, zombies and cows above uniform from the first 250 updates. Uniform would only remove its
+HUD over-looking. This is coverage, not what the world learns from it.

@@ -391,13 +391,14 @@ class Block(nn.Module):
         a, b = self.gate_up(h).chunk(2, -1)
         return self.down(F.silu(a) * b)
 
-    def forward(self, x, c, ang, mask=None, cache=None, phys=None, pkv=None):
+    def forward(self, x, c, ang, mask=None, cache=None, phys=None, pkv=None, ctx=None):
         """x [B, T, n, W]. c = the (physical, glimpse) conditionings [B, T, W], applied to their token groups (glimpse
         tokens N:N+G, the rest physical; TEACHING 10 / 10a), or one conditioning in a glimpse-only pass (x = the 9
         glimpse tokens). Spatial: ang [B, T, n, hd/2]; with phys (the physical token indices) the physical queries attend
         only to physical keys, whose keys / values are returned; pkv (glimpse-only pass): those keys / values, around
         which the glimpse's own are placed in the full frame's order. Temporal: dense_time (mask = its window, cache =
-        streaming, pkv = this frame's full keys / values in a glimpse-only pass)."""
+        streaming, pkv = this frame's full keys / values in a glimpse-only pass, ctx = another stream's keys / values
+        for the earlier frames: Denoiser.estimate)."""
         if isinstance(c, tuple):
             (sh1, sc1, g1, sh2, sc2, g2), mg = (self.mod(F.silu(z)).unsqueeze(2).chunk(6, -1) for z in c)
             grp = lambda t, f: torch.cat([f(t[:, :, :N], 0), f(t[:, :, N:N + G], 1), f(t[:, :, N + G:], 0)], 2)
@@ -419,21 +420,22 @@ class Block(nn.Module):
                 ap, ag = self.attn.attend(sel(q), *new), self.attn.attend(q[..., N:N + G, :], k, v)
                 a = torch.cat([ap[:, :, :N], ag, ap[:, :, N:]], 2)
         else:
-            a, new = self.dense_time(h, ang, mask, cache, phys, pkv)
+            a, new = self.dense_time(h, ang, mask, cache, phys, pkv, ctx)
         if isinstance(c, tuple):
             x = x + grp(a, lambda t, j: t * pick(2, j))
             return x + grp(self.mlp(grp(self.n2(x), lambda t, j: t * (1 + pick(4, j)) + pick(3, j))), lambda t, j: t * pick(5, j)), new
         x = x + g1 * a
         return x + g2 * self.mlp(self.n2(x) * (1 + sc2) + sh2), new
 
-    def dense_time(self, h, ang, win=None, cache=None, phys=None, cur=None):
+    def dense_time(self, h, ang, win=None, cache=None, phys=None, cur=None, ctx=None):
         """Dense temporal attention (P1-F4): Dreamer 4's long-context layers before its "time factorized long context"
         step (2509.24527 Table 2, FVD 71 -> 91 when factorised): every token of a frame attends every token of its own
         frame and of the window's earlier frames, with 1D RoPE over frame positions; physical queries read physical keys
         only (decision 1, as in the spatial layers). h [B, T, n, W], ang [B, T, hd/2]. Chunked: win = (frame index
         [T, w + 1] oldest first, allowed [B, T, w + 1]). Streaming (T = 1): cache = this layer's (k, v) of the committed
         frames [B, F, H, n, hd] (or None); this frame's (k, v) is returned to commit. Glimpse-only pass (h = the 9
-        glimpse tokens): cur = this frame's full (k, v) from the full step, its glimpse rows replaced."""
+        glimpse tokens): cur = this frame's full (k, v) from the full step, its glimpse rows replaced. Chunked with ctx
+        (Denoiser.estimate): the window's earlier slots read ctx's (k, v) [B, T, H, n, hd], the frame's own slot its own."""
         q, k, v = self.attn.project(h, ang[:, :, None].expand(-1, -1, h.shape[2], -1))   # [B, T, H, n, hd]
         if cur is not None:
             k, v = (torch.cat([c[..., :N, :], t, c[..., N + G:, :]], -2) for c, t in zip(cur, (k, v)))
@@ -442,7 +444,11 @@ class Block(nn.Module):
             idx, ok = win                                                # the front-padded frames (slot j = frame t - (w - j)):
             w, T = idx.shape[1] - 1, idx.shape[0]                        # an index gather's backward would accumulate the
             pad = lambda t: F.pad(t.transpose(1, 2), (0, 0, 0, 0, w, 0))  # repeated frames with atomics (not bitwise)
-            kw, vw = (torch.stack([p[:, :, j:j + T] for j in range(w + 1)], 3).flatten(3, 4) for p in (pad(k), pad(v)))
+            if ctx is None:
+                kw, vw = (torch.stack([p[:, :, j:j + T] for j in range(w + 1)], 3).flatten(3, 4) for p in (pad(k), pad(v)))
+            else:                                                        # Denoiser.estimate: slot w the frame itself,
+                kw, vw = (torch.stack([(po if j == w else ps)[:, :, j:j + T] for j in range(w + 1)], 3).flatten(3, 4)
+                          for po, ps in ((pad(k), pad(ctx[0])), (pad(v), pad(ctx[1]))))   # earlier slots ctx's frames
             allowed = ok[:, None, :, None].repeat_interleave(n, -1)         # [B, 1, T, 1, (w + 1) n]: broadcast, never expanded
         else:
             if cache is not None and cache[0] is not None:
@@ -555,14 +561,7 @@ class Denoiser(nn.Module):
         sees itself and the previous `window` frames of its own episode (valid ones)."""
         tok, ang = self.embed(x, memory, fix)
         c = self.conds(code, prev_action)
-        T = tok.shape[1]
-        t = torch.arange(T, device=tok.device)
-        lag = t[:, None] - t[None, :]
-        ok = (lag >= 0) & (lag <= self.window) & (episode[:, :, None] == episode[:, None, :]) & valid[:, None, :]
-        allowed = ok | torch.eye(T, dtype=torch.bool, device=tok.device)
-        idx = t[:, None] - torch.arange(self.window, -1, -1, device=tok.device)   # the rule per window slot, oldest first
-        win = (idx.clamp(min=0), (idx >= 0) & allowed.gather(2, idx.clamp(min=0).expand(len(allowed), -1, -1)))
-        ang_t = t.float()[:, None] * self.f_time
+        win, ang_t = self._window(tok.shape[1], episode, valid, tok.device)
         for blk in self.blocks:
             a = (ang_t.expand(tok.shape[0], -1, -1), win, None, self.phys) if blk.temporal else (ang, None, None, self.phys)
             if self.checkpoint and self.training:
@@ -570,6 +569,35 @@ class Denoiser(nn.Module):
             else:
                 tok = blk(tok, c, *a)[0]
         return self.head(tok, c)
+
+    def _window(self, T, episode, valid, device):
+        """The chunked temporal rule: (frame index per window slot [T, w + 1] oldest first, allowed [B, T, w + 1]) and the
+        frames' 1D RoPE angles [T, hd / 2]."""
+        t = torch.arange(T, device=device)
+        lag = t[:, None] - t[None, :]
+        ok = (lag >= 0) & (lag <= self.window) & (episode[:, :, None] == episode[:, None, :]) & valid[:, None, :]
+        allowed = ok | torch.eye(T, dtype=torch.bool, device=device)
+        idx = t[:, None] - torch.arange(self.window, -1, -1, device=device)   # the rule per window slot, oldest first
+        win = (idx.clamp(min=0), (idx >= 0) & allowed.gather(2, idx.clamp(min=0).expand(len(allowed), -1, -1)))
+        return win, t.float()[:, None] * self.f_time
+
+    @torch.no_grad()
+    def estimate(self, xc, xq, code, prev_action, memory, fix, episode, valid):
+        """Every frame's output given its real past in one chunked pass (P1.6's world-eye, C9-C11): stream c is the chunk
+        in its context role, as forward() sees it; stream q holds each frame's own input at code[1], and its temporal
+        window reads stream c's keys / values for the earlier frames and its own for the frame itself. Equal to forward()
+        on each frame's window [xc's earlier frames, xq's frame] (tests); stream q's outputs."""
+        (tc, ang), (tq, _) = self.embed(xc, memory, fix), self.embed(xq, memory, fix)
+        cc, cq = self.conds(code[0], prev_action), self.conds(code[1], prev_action)
+        win, ang_t = self._window(tc.shape[1], episode, valid, tc.device)
+        ang_t = ang_t.expand(tc.shape[0], -1, -1)
+        for blk in self.blocks:
+            if blk.temporal:
+                tc, kv = blk(tc, cc, ang_t, win, None, self.phys)
+                tq = blk(tq, cq, ang_t, win, None, self.phys, ctx=kv)[0]
+            else:
+                tc, tq = blk(tc, cc, ang, None, None, self.phys)[0], blk(tq, cq, ang, None, None, self.phys)[0]
+        return self.head(tq, cq)
 
     def step(self, x, code, prev_action, memory, fix, cache: dict, keep=None):
         """Streaming form for one frame per stream (T = 1) at frame position cache["t"]; cache["kv"] holds, per temporal

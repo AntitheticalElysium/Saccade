@@ -783,3 +783,29 @@ def test_fovea_record_writes_where_it_looks(cfg):
     a_, b_ = R1.scan(x[:, :5], first[:, :5], R1.zero(B))
     c_, d_ = R1.scan(x[:, 5:], first[:, 5:], b_[:, -1])
     assert torch.allclose(torch.cat([a_, c_], 1), i1, atol=1e-6) and torch.allclose(torch.cat([b_, d_], 1), s1, atol=1e-6)
+
+
+def test_two_stream_estimate_equals_per_frame_windows(cfg):
+    """P1.6's world-eye (Denoiser.estimate): each frame's output from the two-stream pass equals forward() on that
+    frame's own window [the context stream's earlier frames, the query stream's frame], across an episode reset, an
+    invalid frame and beyond the temporal window, under different context and query codes."""
+    c, den = _f4(cfg)
+    B, T, w = 2, 13, den.window
+    xc, mem, _, act, fix, _ = _den_inputs(c, B, T, 3)
+    xq = _den_inputs(c, B, T, 4)[0]
+    cc, cq = _codes(B, T, 5), _codes(B, T, 6)
+    episode = torch.zeros(B, T, dtype=torch.long)
+    episode[1, 7:] = 1
+    valid = torch.ones(B, T, dtype=torch.bool)
+    valid[0, 4] = False
+    with torch.no_grad():
+        out = den.estimate(xc, xq, (cc, cq), act, mem, fix, episode, valid)
+        for b in range(B):
+            for t in range(T):
+                a = max(0, t - w)
+                sl = lambda z: torch.cat([z[b:b + 1, a:t], z[b:b + 1, t:t + 1]], 1)
+                xs = tuple(torch.cat([u[b:b + 1, a:t], q[b:b + 1, t:t + 1]], 1) for u, q in zip(xc, xq))
+                code = torch.cat([cc[b:b + 1, a:t], cq[b:b + 1, t:t + 1]], 1)
+                ref = den(xs, code, sl(act), sl(mem), sl(fix), sl(episode), sl(valid))
+                for o, r in zip(out, ref):
+                    assert torch.allclose(o[b, t], r[0, -1], atol=1e-4), (b, t)

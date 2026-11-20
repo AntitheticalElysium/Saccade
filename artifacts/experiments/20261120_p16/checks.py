@@ -2,9 +2,12 @@
 
     MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_p16.checks units       record groups, routes, adapters
     MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_p16.checks throughput  run-scale cost and memory
+    MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_p16.checks eye         the world-eye: fill, trainer, cost
     python -m artifacts.experiments.20261120_p16.checks criteria                           the gate (checks.json passed)
 """
+import copy
 import importlib
+import time
 import json
 import shutil
 import sys
@@ -94,6 +97,105 @@ def units():
     print(json.dumps(res, indent=1), flush=True)
 
 
+def _model(cfg):
+    torch.manual_seed(1)
+    model = M.M0(cfg).to(DEV)
+    for m in (*model.denoiser.out, model.denoiser.final_mod, model.denoiser.record_read[2]):   # zero-initialised outputs
+        torch.nn.init.normal_(m.weight, std=0.02)                       # would make every estimate 0
+    for blk in model.denoiser.blocks:
+        for n, p_ in blk.named_parameters():
+            if p_.abs().sum() == 0 and p_.dim() == 2:
+                torch.nn.init.normal_(p_, std=0.02)
+    return model.eval()
+
+
+@torch.no_grad()
+def eye():
+    """P1.6's world-eye. (1) The fill equals forward() on each frame's own window from the same draws, looks, record and
+    belief (first frames, segment boundaries, beyond the window). (2) Segmentation does not change it. (3) The trainer
+    refreshes at the listed checkpoints, then scores S with the cache, and a resumed controller reopens it (digest
+    checked, a changed file refused). (4) The fill's throughput on training episodes, projected to the whole split."""
+    cfg = P16.recipe(); res = {}
+    model = _model(cfg)
+    split = D.load_split(cfg); eps = split["train"][:3]; off = D.frame_offsets(eps)
+    tmp = Path(tempfile.mkdtemp()); seed = 7
+    looks = np.full(int(off[-1]), -1, np.int16)
+    C.world_errors(model, cfg, eps, off, looks, tmp / "a.npy", seed, segment=64)
+    C.world_errors(model, cfg, eps, off, looks, tmp / "b.npy", seed, segment=4096)
+    A, B = np.load(tmp / "a.npy").astype(np.float32), np.load(tmp / "b.npy").astype(np.float32)
+    res["episodes_T"] = [int(e.T) for e in eps]
+    res["segmentation_rel"] = float(np.abs(A - B).max() / np.abs(B).max())
+    sc, P = cfg["edm"]["shortcut"], cfg["data"]["context_prefix"]
+    k, tc = sc["k_max"], sc["context_signal"]
+    pc = cfg["perception"]
+    dims = ((M.N, pc["periphery"]["token_dim"]), (M.G, pc["fovea"]["token_dim"]), (pc["lighting"]["dim"],))
+    rng, worst = np.random.default_rng(seed), []
+    for i, ep in enumerate(eps):                                         # the reference, frames < 300 (causal)
+        fix = D.fixation_prior(rng, (ep.T + 1,))
+        gen = torch.Generator(device=DEV).manual_seed(seed * 1_000_003 + i)
+        nc = [torch.randn((1, ep.T + 1, *d), device=DEV, generator=gen) for d in dims]
+        nq = [torch.randn((1, ep.T + 1, *d), device=DEV, generator=gen) for d in dims[::2]]
+        T1 = min(ep.T + 1, 300)
+        c = TR.tensors(D.gather(eps, [[(i, 1, t, *map(int, fix[t])) for t in range(T1)]]), DEV)
+        with TR.autocast(DEV, cfg):
+            X = model.perception(c["frames"], c["fixation"])
+            rin, rst = model.record.scan(model.record.input(X.p, X.g, X.fix), c["first"], model.record.zero(1, DEV))
+            y, _ = model.belief(model.belief.tokens(model.belief.percept_embed(X, rst), c["reward"], c["terminated"], c["action"]), model.belief.initial(1, DEV))
+            y = y[:, 1::2]; bp = torch.cat([torch.zeros_like(y[:, :1]), y[:, :-1]], 1)
+            for t in [t for t in (0, 1, 5, 8, 9, 63, 64, 65, 127, 128, 200, 299) if t < T1]:
+                a = max(0, t - P); sl = lambda z: z[:, a:t + 1]
+                xs = tuple(torch.cat([(1 - tc / k) * nz[:, a:t] + tc / k * z[:, a:t].float(), q], 1)
+                           for nz, z, q in zip(nc, X.parts(), (nq[0][:, t:t + 1], torch.zeros_like(X.g[:, t:t + 1], dtype=torch.float), nq[1][:, t:t + 1])))
+                code = torch.full((1, t + 1 - a), M.shortcut_code(tc, k.bit_length() - 1, k), device=DEV); code[:, -1] = M.shortcut_code(0, k.bit_length() - 1, k)
+                o = model.denoiser(xs, code, sl(c["prev_action"]), (model.belief.memory(sl(bp)), sl(rin)), sl(X.fix), sl(c["episode"]), sl(c["valid"]))
+                ref = (X.p[0, t].float() - o[0][0, -1].float()).square().sum(-1).cpu().numpy()
+                worst.append(float(np.abs(A[off[i] + t] - ref).max() / max(np.abs(ref).max(), 1e-12)))
+    res["fill_vs_window_forward_rel"] = max(worst)
+    # (3) the trainer: refreshes after checkpoints 1 and 2 of a short run on 40 episodes
+    c2 = copy.deepcopy(cfg)
+    c2["p1"] = dict(c2["p1"], frames=16 * 64 * 8, checkpoint_every_fraction=0.25)
+    c2["fixation"]["world_eye"] = dict(c2["fixation"]["world_eye"], refresh_after=[1, 2])
+    run = tmp / "run"
+    torch.cuda.reset_peak_memory_stats()
+    with torch.enable_grad():
+        TR.p1(c2, P16.WORLD_SEED, run, n_episodes=40)
+    res["run_peak_gib_with_fills"] = torch.cuda.max_memory_allocated() / 2 ** 30
+    log = [json.loads(l) for l in (run / "log.jsonl").read_text().splitlines()]
+    res["refreshes_logged"] = [r["world_eye_refresh"] for r in log if "world_eye_refresh" in r]
+    res["refresh_seconds_40_episodes"] = [r["seconds"] for r in log if "world_eye_refresh" in r]
+    ck = torch.load(run / "latest.pt", map_location="cpu", weights_only=False)
+    st = ck["fixation_controller"]; res["latest_eye"] = st["eye"]["file"] if st["eye"] else None
+    tr = np.fromfile(run / "gaze.bin", dtype=C.TRACE)
+    per = 16 * 64                                                         # rows per 64-step update; refresh 1 after update 2
+    match = []
+    for name, rows in (("eye_cache_01.npy", tr[2 * per:4 * per]),):
+        cache = np.load(run / name).astype(np.float32); ok = rows["target"] >= 0
+        S = cache[rows["target"][ok]][:, C.WIN.numpy()].sum(-1)
+        match.append(float((S.argmax(-1) == rows["S"][ok]).mean()))
+    before = tr[:2 * per]; okb = before["target"] >= 0
+    Sb = np.load(run / "eye_cache_01.npy").astype(np.float32)[before["target"][okb]][:, C.WIN.numpy()].sum(-1)
+    res["trace_S_is_cache_argmax_after_refresh"] = match[0]
+    res["trace_S_is_cache_argmax_before_refresh"] = float((Sb.argmax(-1) == before["S"][okb]).mean())
+    ctl = C.Controller(model, c2, run, DEV); ctl.load_state(st)
+    res["resumed_controller_has_eye"] = ctl.eye is not None
+    data = (run / st["eye"]["file"]).read_bytes(); (run / st["eye"]["file"]).write_bytes(data[:-2] + bytes([data[-2] ^ 1, data[-1]]))
+    try:
+        C.Controller(model, c2, run, DEV).load_state(st); res["changed_cache_refused"] = False
+    except RuntimeError:
+        res["changed_cache_refused"] = True
+    # (4) throughput on 60 training episodes
+    eps60 = split["train"][:60]; off60 = D.frame_offsets(eps60)
+    torch.cuda.synchronize(); t0 = time.time(); torch.cuda.reset_peak_memory_stats()
+    C.world_errors(model, cfg, eps60, off60, np.full(int(off60[-1]), -1, np.int16), tmp / "c.npy", seed)
+    torch.cuda.synchronize(); dt = time.time() - t0
+    frames_all = int(D.frame_offsets(split["train"])[-1])
+    res["fill"] = {"frames": int(off60[-1]), "seconds": dt, "ms_per_frame": 1000 * dt / int(off60[-1]), "peak_gib": torch.cuda.max_memory_allocated() / 2 ** 30,
+                   "split_frames": frames_all, "projected_hours_per_fill": dt / int(off60[-1]) * frames_all / 3600}
+    shutil.rmtree(tmp)
+    OUT["eye"] = res
+    print(json.dumps(res, indent=1), flush=True)
+
+
 def throughput(updates=30):
     """Run-scale cost: the trainer itself for `updates` updates at 64 and 256 steps (route by role on, the recipe);
     seconds per update and peak GiB from the trainer's own log."""
@@ -122,13 +224,21 @@ def criteria():
          "peak_under_budget": max(v["peak_gib"] for v in t.values()) < 4.5,
          "projected_hours": hours, "projected_hours_p15_same_estimate": hours15,
          "time_within_17h_estimate": hours * (15.4 / hours15) < 17}           # scaled by P1.5's measured run / its estimate
+    if "eye" in r:                                                       # the world-eye (P1.6, 11-20 evening)
+        e = r["eye"]
+        c.update(eye_fill_matches_window_forward=e["fill_vs_window_forward_rel"] < 3e-2, eye_segmentation_invariant=e["segmentation_rel"] < 3e-2,
+                 eye_refreshes_at_listed=e["refreshes_logged"] == [1, 2], eye_scores_with_cache=e["trace_S_is_cache_argmax_after_refresh"] > 0.99,
+                 eye_resume_digest=e["resumed_controller_has_eye"] and e["changed_cache_refused"],
+                 eye_peak_under_budget=max(e["run_peak_gib_with_fills"], e["fill"]["peak_gib"]) < 5.0,
+                 projected_hours_with_fills=hours * (15.4 / hours15) + 2 * e["fill"]["projected_hours_per_fill"])
+        c["eye_time_within_19h"] = c["projected_hours_with_fills"] < 19
     passed = all(v for k, v in c.items() if not k.startswith("projected"))
     OUT.update(criteria=c, passed=passed)
     print(json.dumps(c, indent=1), "passed", passed, flush=True)
 
 
 if __name__ == "__main__":
-    {"units": units, "throughput": throughput, "criteria": criteria}[sys.argv[1]]()
+    {"units": units, "throughput": throughput, "eye": eye, "criteria": criteria}[sys.argv[1]]()
     f = HERE / "checks.json"
     prev = json.loads(f.read_text()) if f.exists() else {}
     f.write_text(json.dumps({**prev, **OUT}, indent=1) + "\n")

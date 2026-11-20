@@ -431,6 +431,11 @@ def p1(cfg, world_seed, out_dir: Path, updates=None, steps=None, n_episodes=None
             print(json.dumps(rec), flush=True)
             t0, u0 = time.time(), st["update"]
         if checkpoints and st["frames"] >= st["next_ckpt"] * every:
+            if st["next_ckpt"] in (cfg["fixation"].get("world_eye") or {}).get("refresh_after", ()):   # P1.6's world-eye
+                tf = time.time()
+                controller.refresh(eps, offsets, st["next_ckpt"])
+                log.write(json.dumps({"update": st["update"], "world_eye_refresh": st["next_ckpt"], "seconds": time.time() - tf}) + "\n")
+                log.flush(); t0, u0 = time.time(), st["update"]
             ck = {"model": model.state_dict(), "opt": opt.state_dict(), "streams": streams.state(), "carry": carry,
                   "cache": cache, "record": record, "state": dict(st, next_ckpt=st["next_ckpt"] + 1), "cfg": cfg, "world_seed": world_seed,
                   "provenance": provenance,

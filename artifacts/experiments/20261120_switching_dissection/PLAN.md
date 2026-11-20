@@ -323,3 +323,20 @@ measures that sampling distribution directly, at the deletion.
   first (C2's mean), and the draws part at steps 2-3; the belief probe well below the copy reference (P1-F1.6: the
   global projection loses spatial detail), but not marking the deleted units.
 - **Not in C5:** no inference-time fix (record guidance, other K), and no training. Those wait for the cause.
+
+## C6: is the persistence coin still being learned? (user 11-20: "proceed with those checks")
+
+- **Question.** C5: a visible mob by day vanishes on 6% of draws (cows) while the data keep it. Is the learned
+  conditional still converging on persistence, or is the coin flat over training?
+- **What runs.** C5's draws and readings (all 2,079 units, 8 draws, the same seeds) at P1.5's checkpoints 2, 5 and 8
+  (5.1M, 12.8M and 20.5M of 25.6M frames), beside C5's checkpoint 10. The Mamba probe is not rerun.
+- **Reader.** The encoder trains jointly (relative weight change against checkpoint 10: 44% at 2, 7% at 5, 1.7% at 8),
+  so each checkpoint gets its own S1 kind reader, fitted by S1's own protocol (`s1.encode` on train400,
+  `cell_table`, `token_probe` seed 0). Checkpoint 10 keeps S1's saved reader, fitted by the same protocol. Each
+  checkpoint's real-frame keep rate is its reader's floor.
+- **Readings.** Keep rate by kind and light against that floor; day cows' dispersion; the ladder's step-1 AUC.
+- **What separates.**
+  - The day coin falls from 5 to 8 to 10 by more than its noise (about 0.3 points per checkpoint): still being
+    learned, so training (length, capacity, data exposure) is the lever.
+  - Flat from 5 on: built into the recipe or objective.
+- **Prediction:** it falls early and flattens (most of P1.5's other skills did), so flat from 5 on.

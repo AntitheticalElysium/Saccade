@@ -435,3 +435,85 @@ two draws per frame.
   of its samples drop it. The deletion is a property of the world's sampling distribution (its calibration at mob
   cells), and no single-frame comparison between reality and the world singles it out. An eye cannot find it in
   training; a score over many of the world's samples can.
+
+## C5: the deletion is the denoiser's sampling with the information present, decided at its first step; Mamba's belief barely holds mob positions (`c5_calibration.py`, `c5_calibration.json`, `c5_units.npz`)
+
+The data are C4's 2,079 S2 start mobs, with 8 draws each of the default sampler (16,632 draws). The draws share the
+context, record and belief; only the target's noise differs.
+
+**Calibration.**
+
+| | Real frame keeps (reader) | World keeps (C5) | S2 step-1 deletion |
+| :--- | ---: | ---: | ---: |
+| Cows, day | 1.000 | 0.940 | 0.062 |
+| Cows, night | 0.977 | 0.767 | 0.227 |
+| Zombies, day | 1.000 | 0.983 | 0.023 |
+| Zombies, night | 0.983 | 0.883 | 0.147 |
+| Skeletons, day | 1.000 | 0.853 | 0.153 |
+| Skeletons, night | 0.895 | 0.530 | 0.447 |
+
+- The window form reproduces S2's streaming step-1 deletion (cows 6.0% vs 6.2% by day, 23.3% vs 22.7% at night).
+- Arrows are left out: under the 3 x 3 rule the real frame keeps only 0.795 of them (they fly faster), so the
+  instrument does not hold.
+
+**Concentration.**
+- **By day, close to a binomial.**
+  - Cows: dispersion 1.38. 64.9% are never deleted (binomial 61.0%), units deleted in at least 4 of 8 draws hold 6.7%
+    of the deletions, and none is deleted in all 8.
+  - Zombies: dispersion 1.57. Skeletons: 1.50.
+  - Neither the ring (cows: inner 5.2%, edge 6.6%) nor the camera (still 6.1%, moved 5.1%) changes it much.
+  - Every visible mob by day carries about the same coin per draw.
+- **At night, concentrated (dispersion 4.2-4.8) and at the edge ring** (post hoc split; edge was predicted).
+  - Cows: 40.8% are never deleted (binomial 11.9%), the 19.1% deleted in at least 4 of 8 draws hold 65.6% of the
+    deletions, and 16 are deleted in all 8.
+  - Edge ring against inner cells: cows 29.7% vs 14.9%, zombies 32.4% vs 4.8%.
+  - 27 of the 29 mobs deleted in all 8 draws sit on the edge ring, where the night static is strongest (Stage B).
+
+**Where on the ladder:** the reader's P(kind), max over the neighbourhood, on each step's clean estimate.
+
+| Step | 1 | 2 | 3 | 4 (= the sample) |
+| :--- | ---: | ---: | ---: | ---: |
+| Deleted draws | 0.31 | 0.20 | 0.08 | 0.01 |
+| Kept draws | 0.86 | 0.90 | 0.98 | 0.998 |
+| AUC for the final outcome | 0.84 | 0.92 | 0.99 | 1.00 |
+
+- The first clean estimate already separates the draws, so the target's noise decides at the first step and the later
+  steps commit to it.
+- The same holds by day (AUC 0.77 at step 1) and at night (0.88).
+
+**The deleted cell's form:** a well-formed absence, not a blend.
+- In 94% of deleted draws P(kind) is below 0.05 over the whole neighbourhood.
+- The mob's own cell reads "no entity" in 95% of them.
+
+**Does Mamba know where the mobs are?** Linear probe per map cell, held-out AP; 611 / 153 unit-free DEV episodes.
+
+| Target (base rate) | Belief | Previous frame, fitted | Copy, unfitted | Both |
+| :--- | ---: | ---: | ---: | ---: |
+| Any entity (0.017) | 0.048 | 0.255 | 0.195 | 0.249 |
+| Cows (0.0075) | 0.012 | 0.230 | 0.170 | 0.212 |
+
+- The belief holds little of where mobs are, and adds nothing to the previous frame.
+- **On the units, neither probe marks the deleted mobs.**
+  - By the belief probe's quartile, deletion is 0.095 / 0.158 / 0.235 / 0.076 (correlation 0.01).
+  - By the previous-frame probe's quartile, it is 0.154 / 0.102 / 0.087 / 0.221 (-0.08).
+- A linear probe is a lower bound on what the denoiser's attention could extract from the memory tokens.
+
+**Predictions against outcome.**
+- Over-dispersed, mostly night and edge: **right at night** (edge), **wrong by day** (near binomial).
+- Every step's estimate keeps the mob at first, and the draws part at steps 2-3: **wrong**. They part at the first step.
+- The belief probe well below the copy and not marking deleted units: **right**.
+
+**What C5 establishes.**
+- The deletion happens in the denoiser's sampling, with the information present.
+  - The real past shows the mob, and most draws keep it.
+  - The target's noise decides at the first step which draws lose it, and they end in clean terrain.
+- By day it is one small, uniform coin per visible mob (cows 6% per step against a real-frame floor of 0-0.5%). The
+  conditional is under-confident about persistence everywhere, not in particular contexts.
+- At night, concentrated losses at the edge ring come on top: some mobs there are lost in nearly every draw.
+- Mamba's predicted belief barely holds where mobs are. That does not decide which mobs are lost, but nothing in the
+  belief could restore a mob once a generated frame has dropped it.
+
+**What it does not establish:** why the learned conditional gives a visible mob a 6% absence by day.
+- The data do not teach it: the reader on the real next frame keeps 100% by day.
+- K = 8, the finest trained step, removes only about 15% (Stage B), so the cause lies more in the learned conditional
+  than in the coarse steps.

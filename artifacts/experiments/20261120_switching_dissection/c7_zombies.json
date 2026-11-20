@@ -1,0 +1,49 @@
+{
+ "fit_episodes": 807,
+ "held_episodes": 202,
+ "held_frames": 22113,
+ "base_rate": {
+  "adjacent": 0.13033057477501922,
+  "within_2": 0.19716908605797495,
+  "on_screen": 0.28557861891195224,
+  "per_cell_within_2": 0.009279986131837984
+ },
+ "ap": {
+  "belief_b_t": {
+   "adjacent": 0.9213038110505655,
+   "within_2": 0.8318959920098756,
+   "on_screen": 0.7882701584038924,
+   "per_cell_within_2": 0.11603150139596742
+  },
+  "predicted_belief_bp_t": {
+   "adjacent": 0.8316066580343703,
+   "within_2": 0.791891879852268,
+   "on_screen": 0.7686628258385904,
+   "per_cell_within_2": 0.07107841068456562
+  },
+  "reader_frame_t": {
+   "adjacent": 1.0,
+   "within_2": 0.9996490089939796,
+   "on_screen": 0.9973856504451816,
+   "per_cell_within_2": 0.9890672561848315
+  },
+  "reader_frame_t_minus_1": {
+   "adjacent": 0.8852753607814016,
+   "within_2": 0.9448644198929766,
+   "on_screen": 0.960719439750615,
+   "per_cell_within_2": 0.34289819549362055
+  },
+  "reader_frame_t_unfitted": {
+   "adjacent": 1.0,
+   "within_2": 0.9999295748221311,
+   "on_screen": 0.998713081758084,
+   "per_cell_within_2": 0.9994919735763276
+  },
+  "reader_frame_t_minus_1_unfitted": {
+   "adjacent": 0.8023304826878606,
+   "within_2": 0.8866954089351613,
+   "on_screen": 0.9322458773571783,
+   "per_cell_within_2": 0.32931952125005726
+  }
+ }
+}

@@ -542,3 +542,25 @@ checkpoint).
 - **What it does establish:** the persistence coin is learned (from 75% deletion at checkpoint 2 to 6%), with
   diminishing returns. It is not a fixed property of the sampler, and the form (near-binomial by day, decided at the
   first step) is stable from checkpoint 5 on.
+
+## C7: the belief knows a zombie is next to the player, not which cell it is in (`c7_zombies.py`, `c7_zombies.json`)
+
+The data are all DEV episodes, 807 to fit and 202 held out (22,113 held-out frames). The probe is linear, per
+target.
+
+| Held-out AP | Adjacent | Within 2 | On screen | Per cell, within 2 |
+| :--- | ---: | ---: | ---: | ---: |
+| Base rate | 0.130 | 0.197 | 0.286 | 0.0093 |
+| Corrected belief b_t (the actor's input) | **0.921** | 0.832 | 0.788 | 0.116 |
+| Predicted belief bp_t (the denoiser's memory) | 0.832 | 0.792 | 0.769 | 0.071 |
+| Reader on frame t, fitted / unfitted | 1.000 / 1.000 | 1.000 / 1.000 | 0.997 / 0.999 | 0.989 / 0.999 |
+| Reader on frame t - 1, fitted / unfitted | 0.885 / 0.802 | 0.945 / 0.887 | 0.961 / 0.932 | 0.343 / 0.329 |
+
+- **Presence, yes.** The actor's input knows whether a zombie is adjacent (0.921 against the frame's 1.000) and near
+  (0.832).
+- **Timing, yes.** P1.5's evaluation already showed the cooldown: given an adjacent zombie, bp anticipates a hit at
+  AP 0.952.
+- **Position, no.** Which cell it is in is weak: 0.116 against the current frame's 0.99. That covers the direction to
+  face to attack or flee.
+- **For the actor (P3):** b_t says "a zombie is next to me, and it can hit now", but not where. An actor reading b_t
+  alone would need the current percept for direction. Not an issue for P1.6.

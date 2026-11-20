@@ -506,3 +506,32 @@ measures that sampling distribution directly, at the deletion.
   against the paired uniform window. Bins of 250 updates over the first 2,500 updates (pass 1), then one bin per pass.
 - **What it answers:** whether the chooser's looks while it is still learning are better or worse than uniform, by
   where they land. It does not measure what the world learns from either.
+
+## C12: is the day coin a hedge over where a mob goes next? (user 11-20: "We don't have a fix for the sampling issue? Why not? Did we dig enough? Do we know what the cause is?")
+
+- **The candidate.** Craftax-Classic moves a cow each step to a random choice of 8 directions: 4 are moves, 4 are
+  "stay", and a move into a blocked cell becomes a stay (`craftax_classic/game_logic.py`, `_move_cow`;
+  `is_position_in_bounds_not_in_wall_not_in_mob_not_in_lava`).
+  - A cow with every neighbour free has its next cell spread over five cells: stay 0.5, each neighbour 0.125. A cow
+    with no free neighbour stays with certainty.
+  - If the world's conditional hedges over these cells, a sample can fail to commit any of them, and the cow vanishes.
+  - This would fit three earlier observations: C8 (the world's next position for a mob is hedged), C10 (whole-history
+    guidance cut deletions while cows moved less), and the kinds' order (cows and skeletons, random walkers, are
+    deleted more than zombies, which head toward a nearby player).
+- **The competing explanation.** A uniform under-confidence about persistence, from the objective or the learning-rate
+  schedule (C6 unresolved), predicts the same coin whatever the mob's freedom to move.
+- **Test (CPU, C5's draws, no new sampling).**
+  - C5's 2,079 units and their 8 draws (`c5_units.npz`), rebuilt in C5's order and asserted equal.
+  - Per unit: the number of free 4-neighbours of the mob's cell at t0, by Craftax's rule on the labelled view and
+    entity grid: in view, not a solid block (water, stone, tree, coal, iron, diamond, table, furnace, plant, ripe plant),
+    not lava or out of bounds, no entity, not the player's cell.
+  - Deletion rate (1 - keep over draws) by kind, day / night and free count 0-4, with unit-level standard errors.
+  - A bootstrap over units of day cows' deletion at 4 free against at most 1 free.
+- **Reading.**
+  - The hedge is supported if day cows' deletion rises with free neighbours (ratio of 4 free to at most 1 free of at
+    least 2, bootstrap interval above 1) and nears the real floor when boxed in.
+  - Uniform under-confidence is supported if the rate is flat (ratio interval covering 1).
+- **Accuracy limits.**
+  - Free count correlates with terrain (open grass against forest edges) and with other mobs nearby.
+  - Mob positions at t0 approximate the simulator's sequential update (zombies move before cows).
+  - Units are inner cells (rows 1-5, columns 1-7), so every neighbour is in view.

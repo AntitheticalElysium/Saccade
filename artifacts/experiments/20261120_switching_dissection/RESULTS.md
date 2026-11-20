@@ -658,3 +658,61 @@ training: the chooser's own contingency C with the world's S. Coverage when pres
   estimate cache chases drift;
 - right that the proxy belief is within the 1-pass staleness (0.007 against 0.038);
 - wrong that the cheaper route costs under a third of the fresh eye: it costs 54%.
+
+## C10: history guidance does not cleanly fix the coin (`c10_history_guidance.py`, `c10_history_guidance.json`)
+
+The data are C5's 2,079 start mobs, with 8 draws per arm and C5's noise seeds. The unguided arm reproduces C5's
+outcomes exactly (match 1.000).
+
+| World keeps (real frame) | Unguided | Frames masked, w 1.5 | Frames masked, w 3 | All history, w 1.5 |
+| :--- | ---: | ---: | ---: | ---: |
+| Cows, day (1.000) | 0.940 | 0.942 | 0.941 | **0.976** |
+| Cows, night (0.977) | 0.767 | 0.797 | **0.848** | 0.819 |
+| Zombies, day (1.000) | 0.983 | 0.983 | 0.982 | 0.996 |
+| Zombies, night (0.983) | 0.883 | 0.898 | 0.916 | 0.918 |
+
+| Side effects | Unguided | Frames, 1.5 | Frames, 3 | All, 1.5 |
+| :--- | ---: | ---: | ---: | ---: |
+| Cows staying put, share of kept draws (real 0.603) | 0.686 | 0.695 | 0.712 | 0.762 |
+| Zombies staying put (real 0.599) | 0.671 | 0.664 | 0.656 | 0.694 |
+| Spurious mobs per frame | 0.841 | 0.852 | 0.886 | 0.872 |
+| Token error: static HUD | 0.039 | 0.040 | 0.043 | **0.388** |
+| Token error: changed HUD | 5.42 | 5.46 | 5.61 | 6.96 |
+| Token error: static map | 0.246 | 0.249 | 0.258 | 0.294 |
+| Token error: mob cells | 5.49 | 5.47 | 5.45 | 5.00 |
+| Token error: entering terrain | 3.73 | 3.73 | 3.78 | 3.51 |
+| Spread over draws: mob cells | 1.56 | 1.56 | 1.56 | 1.35 |
+| Spread over draws: entering terrain | 1.63 | 1.63 | 1.66 | 1.29 |
+
+- **Masking only the frames (DFoT's form) leaves the day coin untouched** (0.940 -> 0.942 -> 0.941), even at w = 3.
+  It helps at night: night cows go from 0.767 to 0.848 at w = 3, with little damage elsewhere.
+- **Masking the whole history cuts the day deletion by 60%** (cows 6.0% -> 2.4%), but it damages the rest:
+  - the static HUD error rises tenfold, the changed HUD by 29% and the static map by 20%;
+  - mobs stay put more often (cows 0.762, against 0.686 unguided and 0.603 real);
+  - diversity falls (mob spread -14%, entering terrain -21%).
+- **Reading.** Guidance acts only where the conditional and unconditional predictions differ.
+  - With only the frames masked, the record and belief still carry the day cow, so both predictions keep it and
+    nothing changes. At night the frames add more.
+  - With everything masked, the unconditional is an episode's first frame. Wherever the history is decisive (the HUD
+    digits, the static map), w > 1 extrapolates past the conditional prediction. This is classifier-free guidance's
+    known overshoot, and it is also DFoT's static-video failure in mild form.
+  - That the record rather than the belief carries the day cow is likely (C5: the belief barely holds positions), but
+    not measured.
+- **The world already under-moves its mobs** (0.686 against 0.603 real) before any guidance.
+- **Predictions:**
+  - wrong that frames at 1.5 halves the day coin (no effect);
+  - right that "all" does more at a cost in fidelity;
+  - only weakly right that w = 3 raises staying put (cows +2.6 points, zombies -1.5).
+- **Night, by C5's edge ring** (`night` rerun, 580 night units, `c10_history_guidance_night.json`; the full run's ring
+  definition held no units, my error). World keeps, with the real frame in brackets:
+
+  | | Unguided | Frames, 1.5 | Frames, 3 | All, 1.5 |
+  | :--- | ---: | ---: | ---: | ---: |
+  | Cows, edge (0.966) | 0.704 | 0.724 | 0.777 | 0.763 |
+  | Cows, inner (0.991) | 0.851 | 0.889 | 0.937 | 0.894 |
+  | Zombies, edge (0.966) | 0.676 | 0.699 | 0.725 | 0.737 |
+  | Zombies, inner (0.989) | 0.951 | 0.965 | 0.978 | 0.979 |
+
+  - Frame guidance at w = 3 cuts night deletions inside the ring by more than half (cows 14.9% -> 6.3%), and at the
+    edge only by a quarter (29.6% -> 22.3%). The night static at the edge stays the main loss.
+  - The rerun matches the full run within one draw in 1,880 for zombies (batch composition changes bf16 kernels).

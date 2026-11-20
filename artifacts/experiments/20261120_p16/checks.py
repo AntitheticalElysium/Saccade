@@ -317,7 +317,7 @@ def criteria():
          "terms_finite": u["terms_finite"], "route_by_role_ok": u["route_by_role_ok"],
          "fovea_columns_reached": all(v > 0 for v in u["fovea_columns_grad"].values()),
          "adapters_match": u["adapter_window_vs_contiguous"] < 1e-2,
-         "peak_under_budget": max(v["peak_gib"] for v in t.values()) < 4.5,
+         "peak_under_budget": max(v["peak_gib"] for v in t.values() if isinstance(v, dict)) < 4.5,
          "projected_hours": hours, "projected_hours_p15_same_estimate": hours15,
          "projected_hours_scaled_by_p15_ratio": hours * (15.4 / hours15)}       # reported only: the ratio is the GPU's slower
     # state measured since (A/B 11-20 evening, `throughput_ab`: same code 2.25 s / update at 64 steps, P1.5's run 2.284), so

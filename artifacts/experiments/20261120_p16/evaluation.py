@@ -178,7 +178,7 @@ def check(model, cfg, enc, L, dev):
     return res
 
 
-def run_check(checkpoint):
+def run_check(checkpoint, out=HERE / "eval_checks.json"):
     IF = importlib.import_module("artifacts.experiments.20261030_actor_interface.interface")
     model, cfg = IF.load(str(checkpoint))
     L = dict(np.load(S.LABELS / "s0_dev_labels.npz"))
@@ -187,7 +187,8 @@ def run_check(checkpoint):
     res = check(model, cfg, S.encode(model, L, cfg), L, S.DEV)
     res["episodes"] = eps
     res.update(checkpoint=str(checkpoint), checkpoint_sha256=TR.file_sha256(checkpoint))
-    (HERE / "eval_checks.json").write_text(json.dumps(res, indent=1) + "\n")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(res, indent=1) + "\n")
     print(json.dumps(res, indent=1), flush=True)
     if not res["passed"]:
         raise RuntimeError("record adapter check failed (eval_checks.json)")
@@ -211,9 +212,9 @@ if __name__ == "__main__":
     elif sys.argv[1] == "--check":
         run_check(Path(sys.argv[2]).resolve())
     elif sys.argv[1] == "--smoke":
-        ck = Path(sys.argv[2]).resolve()
-        run_check(ck)
-        queue(ck, Path(sys.argv[3]).resolve(), True)
+        ck, out = Path(sys.argv[2]).resolve(), Path(sys.argv[3]).resolve()
+        run_check(ck, out / "eval_checks.json")
+        queue(ck, out, True)
     else:
         ck = Path(sys.argv[1]).resolve()
         run_check(ck)

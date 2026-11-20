@@ -99,6 +99,10 @@ def check(model, cfg, enc, L, dev):
     IF = importlib.import_module("artifacts.experiments.20261030_actor_interface.interface")
     res, P = {}, IF.P
     zero = lambda n: torch.zeros(1, n, dtype=torch.bool, device=dev)
+    wr, n0 = model.belief.record_in[0].weight, M.Record.size(cfg, coarse=True)   # P1.6: Mamba's read of the fovea group
+    saved = wr.data[:, n0:].clone()                                       # starts at zero (Codex's init), so for this check
+    wr.data[:, n0:] = 0.02 * torch.randn(saved.shape, generator=torch.Generator().manual_seed(0)).to(wr)   # only it is
+    # made non-zero: a dropped glimpse then shows in every read compared below; restored at the end
     full = {}
     gf = lambda i: (enc[i]["g"][None].to(dev).float(), enc[i]["fix"][None].to(dev))  # P1.6: the glimpse and its fixation
     for e, rec in enumerate(enc):
@@ -171,6 +175,7 @@ def check(model, cfg, enc, L, dev):
              "futures_generated_frame_is_drawn", "futures_head_generated_read", "futures_head_recorded_read", "futures_recorded_frame_is_t")
     stored = ("encode_states_vs_stored_tokens", "before", "window", "futures_context_record", "futures_draw_record")
     res["tolerances"] = {"exact": [list(exact), 1e-5], "against stored fp16 tokens (a wrong frame is O(1))": [list(stored), 1e-2]}
+    wr.data[:, n0:] = saved
     res["passed"] = bool(all(res[k] < 1e-5 for k in exact) and all(res[k] < 1e-2 for k in stored)
                          and res["window_zero_before_episode"] == 0 and res["dependence_denoiser_record_at_t_unchanged"] == 0
                          and res["dependence_read_after_t_changed"] > 0 and res["guard_refuses_tokens_alone"]

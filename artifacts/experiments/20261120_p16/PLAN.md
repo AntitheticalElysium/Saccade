@@ -1,9 +1,11 @@
 # P1.6 (2026-11-20; the user: "let's bundle it for tonight's overnight run - P1.6"; "Bundle the world-eye into P1.6, two refreshes are fine")
 
 From scratch, with P1.5's recipe, schedule (25.6M frames) and world seed, plus two changes: G1, the foveal record, and
-the world-eye from pass 6. A monitor fix found by the checks comes with them.
+the world-eye from pass 7 (one fill after checkpoint 6). Fixes found by the checks and by Codex's review (11-20 evening)
+come with them: the checkpoint monitor's memory, its resume, and the widened reads' initialisation.
 - **Launcher:** `run.py`, P1.5's one-shot worker. It is gated by `checks.json`, its sources are sealed by
-  `pin_sources.py`, and it runs `evaluation.py` (written during training) on the selected checkpoint.
+  `pin_sources.py`, and it runs `evaluation.py` on the selected checkpoint. The evaluation is written and smoked before
+  launch (Codex: P1.5's evaluation failed three times after training).
 - **Status:** checks passed on the final code (`checks.json`); not launched; it waits for the user's review of this plan
   and the code.
 
@@ -28,6 +30,12 @@ the world-eye from pass 6. A monitor fix found by the checks comes with them.
   and the monitor's record input; the `s1` helpers (`history`, `before`, `window`) carry the glimpse. Without
   `fovea_modes` every path is P1.5's, bit for bit: the periphery group equals test 2's record exactly, P1.5's
   checkpoint loads strictly, and the 78 earlier CPU tests pass.
+- **Initialisation (Codex's review):** both reads are built exactly as in P1.5 (their own seeded draws, bias and
+  Mamba's downstream layer), then widened with the fovea group's columns at zero (`model.widen`). The initial world
+  is P1.5's: every shared parameter is bit-equal, and on a real episode with glimpses written, Mamba's belief equals
+  P1.5's (RMS 0.0) and the denoiser's read 2.4e-8 against a scale of 0.066. Before the fix, widening redrew the
+  coarse columns and the downstream layer (the belief moved by 0.161 RMS, Codex). The first passes now isolate what
+  the new route learns.
 
 **Why (measured).**
 - **11-02, F1.5** (`20261102_foveal_information`):
@@ -62,9 +70,9 @@ the world-eye from pass 6. A monitor fix found by the checks comes with them.
   - There is no remapping: a scroll rule would be Craftax-specific. The brain remaps with a copy of the motor command
     (Duhamel, Colby & Goldberg 1992); a learned remap is a later option.
 - **Fixed decay:** a trace fades whether or not its content changed. G2's learned write and hold is the later fix.
-- **Until pass 6 it stores what P1.5's chooser looks at;** afterwards, what the world-eye looks at.
-- **The world-eye's schedule comes from P1.5's checkpoints.** P1.6's world (G1, and the eye's own looks after pass 5)
-  may mature at a different pass.
+- **Through pass 6 it stores what P1.5's chooser looks at;** afterwards, what the world-eye looks at.
+- **The world-eye's schedule comes from P1.5's checkpoints.** P1.6's world (G1) may mature at a different pass. C11
+  also leaves open how the foveal record changes which looks are useful (Codex).
 - **The world-eye has no form in imagination yet:** it needs a real frame. The evaluation's imagination keeps the
   chooser, as P1.5's did.
 - **G1 and the eye change together.** In P1.5 the two eyes differ by TV 0.13 (deployed). Readings 2-3 isolate G1's use;
@@ -77,16 +85,16 @@ the world-eye from pass 6. A monitor fix found by the checks comes with them.
 
 **Not changed by G1:** the sampler, the schedule, the data, the seed.
 
-## The world-eye (from pass 6)
+## The world-eye (from pass 7)
 
 **What it is.**
-- Passes 1-5 keep P1.5's chooser.
-- Right before checkpoints 5 and 6 are saved, a fill writes every training frame's per-cell error under the world's own
+- Passes 1-6 keep P1.5's chooser.
+- Right before checkpoint 6 is saved, a fill writes every training frame's per-cell error under the world's own
   estimate: ||p_t - x_hat_t||^2, with x_hat_t the flow estimate at signal 0 (the conditional mean, C2's) given the real
   past (8 context frames at the context signal, the record, the predicted belief).
   - The belief and the foveal record are built through each frame's most recent actual look in the gaze trace.
-  - The fills are `eye_cache_05.npy` and `eye_cache_06.npy` in the run directory.
-- After a fill, the chooser's S is replaced by the cached error, summed per window. Unchanged: the head's contingency
+  - The fill is `eye_cache_06.npy` in the run directory.
+- After the fill, the chooser's S is replaced by the cached error, summed per window. Unchanged: the head's contingency
   C, the policy (0.8 softmax(0.5 C + 0.5 S) + 0.2 uniform), the head's own training, and the gaze forecast, whose
   teacher becomes this distribution.
 - **Code** (`saccade/`):
@@ -102,12 +110,15 @@ the world-eye from pass 6. A monitor fix found by the checks comes with them.
   on P1.5's checkpoint 10: entities 0.514 against 0.484, cows +4.4, zombies tie, and changed-HUD looks 0.299 against
   0.409. An estimate cache chases encoder drift; a score cache (the error stored in its own tokens) does not.
 - **C11:** a cache's coverage is set by the checkpoint that filled it, not by its age, and early worlds make poor eyes.
-  The rule declared before the run picked the fills after passes 5 and 6: entities 0.479 against the chooser's 0.466
-  and the fresh eye's 0.481 over the ten passes, zombies equal.
+  - The rule declared for two fills picked passes 5 and 6: entities 0.4790 over the ten passes.
+  - One fill after 6 gives 0.4784, against the chooser's 0.4660 and the fresh eye's 0.4805; zombies 0.342 against
+    0.341.
+  - One fill was adopted after Codex's review: it gives up 0.07 points of entity coverage to save 47 minutes, under
+    the user's "privilege the smallest possible cost". It is one line in the recipe if two are wanted.
 - **C11b:** the chooser beats uniform from its first updates, so the early passes keep it.
 
-**Parameters:** `fixation.world_eye.refresh_after = [5, 6]`; the fills' own seed. **Cost:** two fills of 0.78 h each,
-measured on training episodes.
+**Parameters:** `fixation.world_eye.refresh_after = [6]`; the fill's own seed. **Cost:** one fill of 0.78 h, measured
+on training episodes.
 
 ## A fix found by the checks: the checkpoint monitor
 
@@ -116,6 +127,13 @@ The monitor scanned the record over whole monitor episodes at once. With G1's 2,
 even in a clean process. P1.6 as prepared this morning would have crashed there; its throughput check ran without
 checkpoints. The monitor now scans in 256-frame pieces and keeps the denoiser's read only for its windows' frames. On
 P1.5's checkpoint 10 it equals the old monitor within bf16 (g1 2.1e-4 relative, per level at most 1e-3).
+
+Codex's review found two more problems:
+- **The kept rows were views,** which keep their whole 256-frame chunk alive: up to 1.55 GiB retained in the worst
+  episode. They are now copies (216 MiB there). `s1.history`'s kept rows had the same pattern and are copies too.
+- **A monitor that fails after its checkpoint is saved would be skipped on resume,** because `latest.pt` has already
+  advanced the counter, while the selector needs every row. On resume, a missing row is now backfilled from that
+  checkpoint's own weights. The `resume` check injects one failure.
 
 ## Pre-launch checks (`checks.py` -> `checks.json`)
 
@@ -128,7 +146,12 @@ P1.5's checkpoint 10 it equals the old monitor within bf16 (g1 2.1e-4 relative, 
   - the carried state is [streams, 81, 2,048];
   - the evaluation adapters (`s1.encode`, `s1.window`) reproduce a contiguous scan within 7.4e-5 (fp16-stored
     tokens).
-- **CPU:** `test_fovea_record_writes_where_it_looks` and the 78 earlier tests pass.
+- **CPU:** `test_fovea_record_writes_where_it_looks`, `test_two_stream_estimate_equals_per_frame_windows` and the 78
+  earlier tests pass (80; Codex's CPU-only run: 72 passed and 8 skipped, those needing CUDA).
+- **init** (Codex): the initial world equals P1.5's, as above.
+- **resume** (Codex): the monitor fails right after checkpoint 1 is saved (injected). The resumed run backfills it,
+  rows 1-4 are present once and in order, the selector accepts them, and the backfilled value equals a fresh monitor
+  of checkpoint 1 exactly.
 - **throughput** (measured): the trainer itself, 30 updates each.
   - Morning (G1 only): 64 steps 2.08 s per update (P1.5 2.03, +2.6%), peak 3.66 GiB (P1.5 3.08); 256 steps 7.94 s
     (P1.5 7.65, +3.8%), peak 3.56 GiB (P1.5 3.02).
@@ -136,9 +159,12 @@ P1.5's checkpoint 10 it equals the old monitor within bf16 (g1 2.1e-4 relative, 
   - **A/B, same session, alternating:** the prepared P1.6 2.251 / 2.246 s against the final code 2.253 / 2.254 s. The
     code is not slower; the GPU is in a slower state than in the morning. P1.5's own run averaged 2.284, so the evening
     rate is what a long run gets.
-  - **Projection:** 15.2 h of training at the evening rate plus two fills of 0.78 h, 16.7 h in all. The old criterion
-    scaled the estimate by P1.5's run-over-estimate ratio (17.1 h); that ratio is this same slowdown, so it double-counts
-    and is reported only.
+  - **With bootstrap active** (Codex: the throughput runs stopped before update 5,000, where the shortcut bootstrap
+    starts): 2.44 s at 64 steps (2.19 without, +11%, as in P1.5's own log: 2.084 -> 2.312) and 9.21 s at 256 steps.
+    One checkpoint monitor takes 100 s.
+  - **Projection:** 5,000 updates at 2.19 s, 7,500 at 2.44 s and 3,125 at 9.21 s, plus ten monitors and one fill:
+    17.2 h. The earlier 16.7 h left out the bootstrap and the monitors. The old criterion's scaling by P1.5's
+    run-over-estimate ratio is reported only.
 - **eye** (measured):
   - the fill equals `forward` on each frame's own window within 0.2% (first frames, segment boundaries, beyond the
     window);
@@ -152,11 +178,29 @@ P1.5's checkpoint 10 it equals the old monitor within bf16 (g1 2.1e-4 relative, 
   - the periphery group exact, foveal writes only where looked, finite terms, routes, and foveal columns reached;
   - adapters within 1e-2;
   - peak under 4.5 GiB;
-  - the eye's checks as listed, peak with fills under 5 GiB, and the projection with fills under 19 h.
+  - the eye's checks as listed, peak with fills under 5 GiB, and the projection with fills under 19 h;
+  - init equal to P1.5's, and the resume backfill.
 
-## Readings (the evaluation, written during training; P1.6 against P1.5)
+## Readings (P1.6 against P1.5)
 
-1. **P1.5's evaluation, same scope** (S1, the S2 battery, the monitor), with the rollouts writing generated glimpses.
+1. **P1.5's evaluation, same scope** (`evaluation.py`: P1.5's queue with P1.5 as the comparison arm; the S2 battery
+   and the monitor), with the rollouts writing generated glimpses.
+   - Every record call on the evaluation path now passes the glimpse and its fixation: `s1`, `s2`, `interface`,
+     `routes`, `sleep`, `dissect`, `native_pairs`, `trace` and `trajectory`. P1.5's record ignores them.
+   - The adapter check scans the record with the glimpse and checks that the generated glimpse moves the futures'
+     read.
+   - Readings 2-7 are their own scripts, written during training and run after the queue.
+   - **Smoke, before launch** (`checks/smoke/`): on a real P1.6 checkpoint (two updates, checkpoints and a fill), the
+     adapter check passes. The futures' Mamba read equals a glimpse-written scan exactly, and zeroing the glimpse moves
+     it; for the check, Mamba's fovea columns are briefly made non-zero, because they start at zero. Every smoke step
+     completes: `s1`, `native_pairs`, `consequences`, `interface`, `recursion_4` and `natural_thirst`.
+   - The first smoke failed in `recursion_steps` and `natural_pair`, which the earlier search missed; both now pass
+     the glimpse, as does `s2/prefix_check`.
+   - `s2b` is left unpatched on purpose: its gaze and evidence modes vary independently, so a one-line patch could pair
+     a real glimpse with a chosen fixation. The guard makes it fail loudly if used.
+   - The full queue's stages (clocks, trajectory, movement, mining, sleep, entities, compare) cannot run on a smoke
+     checkpoint, which they require to be the run's own. They go through patched tools; a failure there stops only
+     the queue, and training and selection stand.
 2. **Does the world use the foveal record?** The G1 loss per region with the foveal features zeroed against intact
    (B2's reliance form), by day and night and by camera still or moved.
 3. **Does looking protect a mob?** A5's paired on / away intervention.
@@ -173,7 +217,7 @@ P1.5's checkpoint 10 it equals the old monitor within bf16 (g1 2.1e-4 relative, 
   already present).
 - (5): per-cell zombie AP rises modestly.
 - (6): no excess spawns at looked-at cells.
-- (7): passes 1-5 track P1.5's chooser. From pass 6, entity coverage rises by about 2-3 points over P1.5's at the same
+- (7): passes 1-6 track P1.5's chooser. From pass 7, entity coverage rises by about 2-3 points over P1.5's at the same
   passes, and changed-HUD coverage falls by about 7-11 points.
 
 ## Considered on 11-20 and not in P1.6
@@ -188,7 +232,7 @@ P1.5's checkpoint 10 it equals the old monitor within bf16 (g1 2.1e-4 relative, 
   - every part is learned (encoder, binding across frames, dynamics, a read path into the denoiser and the actor);
   - binding is fragile, and peers rely on pretrained slot encoders (SOLD, ICML 2025; ObjectZero, 2026).
   - G1 is the cheap test of glimpse-written memory; slots are the fuller version if (2) shows the world uses it.
-- **The eye's score:** C8's belief change failed. The world-eye is now in (above), from a score cache, at two fills.
+- **The eye's score:** C8's belief change failed. The world-eye is now in (above), from a score cache, at one fill.
 - **A uniform start** (user 11-20): the chooser beats uniform from its first 250 updates (C11b), and the deployed eye
   needs the head's contingency in any case. Removing the chooser entirely would need the world to supply C as well
   (its predicted effect of the action), at about 1.5 times the fill's cost; not measured.

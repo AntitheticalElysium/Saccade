@@ -16,7 +16,7 @@ def prefix(model, cfg, en, t, amp=True):
     ctx = TR.autocast(DEV, cfg) if amp else torch.autocast("cuda", enabled=False)
     with ctx:
         pp = M.Percept(*(en[k][:t + 1].to(DEV).float()[None] for k in ("p", "g", "v")), en["fix"][:t + 1].to(DEV)[None])
-        reads, _, _ = S.history(model, pp.p)
+        reads, _, _ = S.history(model, pp.p, g=pp.g, fix=pp.fix)
         y, _ = model.belief(model.belief.tokens(S.embed(model, pp, reads), en["reward"][:t + 1].to(DEV)[None],
                             en["terminated"][:t + 1].to(DEV)[None], en["action"][:t + 1].to(DEV)[None]), model.belief.initial(1, DEV))
     return y[0, -1].float()

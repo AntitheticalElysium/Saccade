@@ -1,0 +1,12 @@
+{
+  "identity": {
+    "checkpoint_sha256": "6a4bd96245b2f78742104fc7a14cac56ba3377f29d6ae9864f7a8dcd25c4c17a",
+    "smoke": true
+  },
+  "s1": "complete",
+  "native_pairs": "complete",
+  "consequences": "complete",
+  "interface": "complete",
+  "recursion_4": "complete",
+  "natural_thirst": "complete"
+}

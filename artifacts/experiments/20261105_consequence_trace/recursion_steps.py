@@ -71,7 +71,7 @@ def main():
             en=enc[new_of[e]]
             with TR.autocast(DEV,cfg):
                 pp=M.Percept(*(en[k][:t+1].to(DEV).float()[None] for k in ('p','g','v')),en['fix'][:t+1].to(DEV)[None])
-                reads,_,last=S.history(model,pp.p)   # P1.5: the record from the episode start, carried with Mamba's
+                reads,_,last=S.history(model,pp.p,g=pp.g,fix=pp.fix)   # P1.5: the record from the episode start, carried with Mamba's
                 emb=S.embed(model,pp,reads)
                 x=model.belief.tokens(emb, en['reward'][:t+1].to(DEV)[None],
                                       en['terminated'][:t+1].to(DEV)[None],en['action'][:t+1].to(DEV)[None])
@@ -104,7 +104,7 @@ def main():
                     parts=tuple(x[:,0].float() for x in M.sample(model.denoiser,dims,pa[:,None],
                         S.cond(model.belief.memory(bp)[:,None],S.at(rs,np.s_[:,None])),fix[:,None],cc,cfg,g))
                     actual=tuple(take(k,j).float() for k in ('p','g','v'))
-                    h=model.outcome.features(bp,S.embed(model,M.Percept(*parts,fix),S.history(model,parts[0],state=rs)[0])).float()
+                    h=model.outcome.features(bp,S.embed(model,M.Percept(*parts,fix),S.history(model,parts[0],state=rs,g=parts[1],fix=fix)[0])).float()
                     prob=model.outcome.bin_logp(h).exp()
                     d=T.marginal_death(model.outcome,h,prob)
                     r=model.outcome.sample_reward(h,g)
@@ -120,12 +120,12 @@ def main():
                     if mode=='teacher':
                         context_parts=actual
                         next_bp=take('bp',j+1).float() if j<16 else bp
-                        next_rs=S.history(model,actual[0],state=rs)[2]
+                        next_rs=S.history(model,actual[0],state=rs,g=actual[1],fix=fix)[2]
                     else:
                         evidence=actual if mode=='replay' else parts
                         r_in=take('reward',j).float() if mode=='replay' else r
                         d_in=take('terminated',j) if mode=='replay' else done
-                        reads,_,next_rs=S.history(model,evidence[0],state=rs)
+                        reads,_,next_rs=S.history(model,evidence[0],state=rs,g=evidence[1],fix=fix)
                         embed=S.embed(model,M.Percept(*evidence,fix),reads)[:,None]
                         yy,state=model.belief(model.belief.tokens(embed,r_in[:,None],d_in[:,None],take('action',j)[:,None]),state)
                         next_bp=yy[:,-1].float();context_parts=evidence

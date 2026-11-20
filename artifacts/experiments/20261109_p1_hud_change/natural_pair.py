@@ -74,7 +74,7 @@ def main(ckpt_path=None, out_path=None):
         prev = torch.cat([act.new_full((1, 1), -1), act[:, :-1]], 1)
         with TR.autocast(dev, cfg):
             P = model.perception(torch.as_tensor(frames[:t + 1], device=dev)[None], fix)
-            reads, rin, last = S.history(model, P.p, keep=range(t - 7, t + 1))   # P1.5: from the episode start
+            reads, rin, last = S.history(model, P.p, keep=range(t - 7, t + 1), g=P.g, fix=P.fix)   # P1.5: from the episode start
             y, _ = model.belief(model.belief.tokens(S.embed(model, P, reads), rw, td, act), model.belief.initial(1, dev))
             bp = torch.cat([torch.zeros_like(y[:, :1]), y[:, 1::2][:, :-1]], 1)
             cache = model.denoiser.new_cache()

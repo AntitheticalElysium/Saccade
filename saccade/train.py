@@ -320,7 +320,7 @@ def _monitor(model: M.M0, cfg, episodes, n_windows=None) -> dict:
                 for a in range(0, ep.T + 1, 256):
                     ri, rs = model.record.scan(xr[:, a:a + 256], start[:, a:a + 256], state)
                     embs.append(model.belief.percept_embed(M.Percept(*(z[:, a:a + 256] for z in Pe.parts()), Pe.fix[:, a:a + 256]), rs))
-                    rin.update({u: ri[:, u - a] for u in need if a <= u < a + 256})
+                    rin.update({u: ri[:, u - a].clone() for u in need if a <= u < a + 256})   # copies: a view keeps its chunk (Codex)
                     state = rs[:, -1]
                 emb = torch.cat(embs, 1)
             x = model.belief.tokens(emb, c["reward"], c["terminated"], c["action"])
@@ -386,7 +386,19 @@ def p1(cfg, world_seed, out_dir: Path, updates=None, steps=None, n_episodes=None
         controller.load_state(ck["fixation_controller"])
         print(f"resumed at update {st['update']}, frames {st['frames']}", flush=True)
     total, every = cfg["p1"]["frames"], cfg["p1"]["frames"] * cfg["p1"]["checkpoint_every_fraction"]
+    done = {r["checkpoint"] for r in map(json.loads, (out_dir / "log.jsonl").read_text().splitlines()) if "monitor" in r} \
+        if (out_dir / "log.jsonl").exists() else set()
     log = open(out_dir / "log.jsonl", "a")
+    for k in [k for k in range(1, st["next_ckpt"]) if k not in done]:  # a monitor that failed after its checkpoint was
+        ck_k = torch.load(out_dir / f"ckpt_{k:02d}.pt", weights_only=False, map_location="cpu")   # saved (Codex 11-20):
+        keep = {n: v.detach().cpu().clone() for n, v in model.state_dict().items()}   # backfilled from that checkpoint
+        model.load_state_dict(ck_k["model"])
+        mon = monitor(model, cfg, split["monitor"])
+        model.load_state_dict(keep)
+        log.write(json.dumps({"update": ck_k["state"]["update"], "frames": ck_k["state"]["frames"], "checkpoint": k,
+                              "monitor": mon, "encoder_grad_norms": None, "backfilled": True}) + "\n"), log.flush()
+        print("monitor (backfilled)", k, json.dumps(mon), flush=True)
+        del ck_k, keep
     t0, u0 = time.time(), st["update"]
     while st["frames"] < total and (updates is None or st["update"] < updates):
         S = steps or (d["chunk_steps"][0] if st["frames"] < total / 2 else d["chunk_steps"][1])

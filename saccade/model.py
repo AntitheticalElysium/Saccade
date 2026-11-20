@@ -26,6 +26,16 @@ def out_map(x: Tensor, s: float) -> Tensor:
     return s * torch.tanh(F.layer_norm(x.float(), x.shape[-1:]) / s)
 
 
+def widen(layer: nn.Linear, n: int) -> nn.Linear:
+    """Input columns appended at zero up to n (P1.6, Codex's review 11-20): a widened read starts as the narrower one,
+    whose own draws, bias and the module's later draws stay P1.5's; the new columns still receive gradients."""
+    if n > layer.in_features:
+        w = layer.weight.data
+        layer.weight = nn.Parameter(torch.cat([w, w.new_zeros(layer.out_features, n - layer.in_features)], 1))
+        layer.in_features = n
+    return layer
+
+
 def window(fix: Tensor) -> Tensor:
     """Fixation centres [..., 2] (row, col) -> the 9 cell indices of their 3 x 3 window, row-major [..., 9]."""
     d = torch.arange(-1, 2, device=fix.device)
@@ -302,7 +312,8 @@ class Belief(nn.Module):
             with torch.random.fork_rng(devices=[]):                      # user 11-16): per cell to a token's width, then
                 torch.random.default_generator.manual_seed(r["init_seed"])   # beside the flattened percept
                 c = pc["periphery"]["token_dim"]
-                self.record_in = nn.Sequential(nn.Linear(Record.size(cfg), c), nn.Flatten(-2), nn.Linear(N * c, W))
+                self.record_in = nn.Sequential(nn.Linear(Record.size(cfg, coarse=True), c), nn.Flatten(-2), nn.Linear(N * c, W))
+            widen(self.record_in[0], Record.size(cfg))                   # P1.6: the fovea group's columns, at zero
 
     def initial(self, batch: int, device=None):
         return tuple(m.initial(batch, device) for m in self.mixers)
@@ -517,8 +528,9 @@ class Denoiser(nn.Module):
             assert r["read"] == "mlp", "the MLP read (test 3, 20261116_temporal_memory; the user's choice 11-16)"   # MLP:
             with torch.random.fork_rng(devices=[]):                      # its own draws; the last layer zero-initialised
                 torch.random.default_generator.manual_seed(r["read_init_seed"])   # (inert at the start, as in test 3)
-                self.record_read = nn.Sequential(nn.Linear(Record.size(cfg), W), nn.GELU(), nn.Linear(W, W))
+                self.record_read = nn.Sequential(nn.Linear(Record.size(cfg, coarse=True), W), nn.GELU(), nn.Linear(W, W))
             nn.init.zeros_(self.record_read[2].weight), nn.init.zeros_(self.record_read[2].bias)
+            widen(self.record_read[0], Record.size(cfg))                 # P1.6: the fovea group's columns, at zero
 
     def conds(self, code, prev_action):
         """The (physical, glimpse) conditionings from a pair of codes; one code conditions both groups."""
@@ -1005,9 +1017,10 @@ class Record(nn.Module):
         self.dim = self.size(cfg)
 
     @staticmethod
-    def size(cfg) -> int:
+    def size(cfg, coarse=False) -> int:
+        """Features per cell: the periphery group's, plus the fovea group's unless `coarse`."""
         r, pc = cfg["record"], cfg["perception"]
-        return 2 * (pc["periphery"]["token_dim"] * r["modes"] + pc["fovea"]["token_dim"] * r.get("fovea_modes", 0))
+        return 2 * (pc["periphery"]["token_dim"] * r["modes"] + (0 if coarse else pc["fovea"]["token_dim"] * r.get("fovea_modes", 0)))
 
     def zero(self, batch: int, device=None) -> Tensor:
         return torch.zeros(batch, N, self.dim, device=device or self.a.device)

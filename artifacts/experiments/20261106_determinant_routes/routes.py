@@ -155,8 +155,8 @@ def pair_state(model, cfg, enc, r):
         Ps = model.perception(torch.as_tensor(r["successor"], device=dev), fx.expand(2, -1))
         rep = lambda z: z.to(dev)[None].expand(3, *z.shape)
         hist = M.Percept(*(rep(E[k][:t - 1]).float() for k in ("p", "g", "v")), rep(E["fix"][:t - 1]))
-        reads, _, last = S.history(model, hist.p)                        # P1.5: the record from the episode start, then
-        reads2, _, after = S.history(model, P2.p, state=S.at(last, np.s_[:2]))   # after each member's frame t - 1
+        reads, _, last = S.history(model, hist.p, g=hist.g, fix=hist.fix)                        # P1.5: the record from the episode start, then
+        reads2, _, after = S.history(model, P2.p, state=S.at(last, np.s_[:2]), g=P2.g, fix=P2.fix)   # after each member's frame t - 1
         e2 = S.embed(model, P2, reads2)                                  # members; the sham repeats the natural frame
         emb = torch.cat([S.embed(model, hist, reads), torch.cat([e2, e2[:1]])[:, None]], 1)
         act = rep(E["action"][:t]).clone()

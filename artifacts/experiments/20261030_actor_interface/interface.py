@@ -115,7 +115,7 @@ def futures(model, enc, L, tuples, K, cfg, gen, choose=None):
             for name, parts, fx, r_in in (("gen", tuple(a[:, 0] for a in xg), fix[:, 0], None),
                                           ("rec_head", tuple(take(k, 0).float() for k in ("p", "g", "v")), take("fix", 0),
                                            take("reward", 0).float())):
-                h = ob.features(bp, S.embed(model, M.Percept(*parts, fx), S.history(model, parts[0], state=ri(0))[0])).float()
+                h = ob.features(bp, S.embed(model, M.Percept(*parts, fx), S.history(model, parts[0], state=ri(0), g=parts[1], fix=fx)[0])).float()
                 p = ob.bin_logp(h).exp()
                 r = ob.sample_reward(h, gen) if r_in is None else r_in
                 for q, val in (("unlock_p", (p * (v > 0.5)).sum(-1)), ("exp_reward", (p * v).sum(-1)),

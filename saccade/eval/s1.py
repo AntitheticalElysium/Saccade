@@ -61,7 +61,7 @@ def history(model, p, first=None, state=None, keep=(), chunk=512, g=None, fix=No
     for a in range(0, T, chunk):
         rin, rst = model.record.scan(p[:, a:a + chunk], first[:, a:a + chunk], state)
         reads.append(model.belief.record_in(rst))
-        kept.update({j: rin[:, j - a] for j in keep if a <= j < a + chunk})
+        kept.update({j: rin[:, j - a].clone() for j in keep if a <= j < a + chunk})   # copies: a view keeps its chunk
         state = rst[:, -1]
     return torch.cat(reads, 1), torch.stack([kept[j] for j in keep], 1) if len(keep) else None, state
 
@@ -474,7 +474,7 @@ def one_step(model, enc, cfg, n_tuples, rng):
                     a[r] = b.float()
         Pg = M.Percept(x[0][:, 0], x[1][:, 0], x[2][:, 0], fix[:, -1])
         with TR.autocast(DEV, cfg):
-            h = model.outcome.features(bp[:, -1], embed(model, Pg, history(model, Pg.p, state=at(rin, np.s_[:, P]))[0]))
+            h = model.outcome.features(bp[:, -1], embed(model, Pg, history(model, Pg.p, state=at(rin, np.s_[:, P]), g=Pg.g, fix=Pg.fix)[0]))
             r = model.outcome.sample_reward(h.float(), gen)
             term = torch.rand(B, device=DEV, generator=gen) > torch.sigmoid(model.outcome.cont_logit(h, r).float())
         for k, v in zip(("p", "g", "v", "r", "term"), (Pg.p, Pg.g, Pg.v, r, term)):

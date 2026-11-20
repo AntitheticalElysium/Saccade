@@ -255,7 +255,7 @@ def model_futures(n=None):
             assert int(en["action"][t]) == int(plans[w, 0])
             with TR.autocast(DEV, cfg):
                 pp = M.Percept(*(en[k][:t + 1].to(DEV).float()[None] for k in ("p", "g", "v")), en["fix"][:t + 1].to(DEV)[None])
-                reads, _, last = S.history(model, pp.p)
+                reads, _, last = S.history(model, pp.p, g=pp.g, fix=pp.fix)
                 y, c = model.belief(model.belief.tokens(S.embed(model, pp, reads), en["reward"][:t + 1].to(DEV)[None],
                                     en["terminated"][:t + 1].to(DEV)[None], en["action"][:t + 1].to(DEV)[None]), model.belief.initial(1, DEV))
             err = float((y[0, -1].float() - en["bp"][t + 1].to(DEV).float()).square().mean().sqrt())
@@ -302,7 +302,7 @@ def model_futures(n=None):
                 mem = S.cond(model.belief.memory(bp)[:, None], rs[:, None])
                 parts, fx = M.sample(model.denoiser, dims, pa[:, None], mem, fix[:, None], cache, cfg, g, choose=choose)
                 parts = tuple(x[:, 0].float() for x in parts); fix = fx[:, 0]
-                reads, _, next_rs = S.history(model, parts[0], state=rs)
+                reads, _, next_rs = S.history(model, parts[0], state=rs, g=parts[1], fix=fix)
                 emb = S.embed(model, M.Percept(*parts, fix), reads)
                 h = model.outcome.features(bp, emb).float()
                 r = model.outcome.sample_reward(h, g)

@@ -16,10 +16,11 @@ FOVEA_MODES = 8          # the first 8 modes of the record's own S4D basis: 2 x 
                          # periphery record's size (its measured memory fits, P1.5 checks: 3.08 GiB); recency resolved to
                          # ~4.6 steps (mode 7 turns 7 pi / 32 = 0.69 rad per step) inside the basis's 64-step decay
 
-WORLD_EYE = {"refresh_after": [5, 6],   # 20261120_switching_dissection C11: the rule declared before the run picked the
-                                        # two fills after passes 5 and 6 (entities 0.479 vs chooser 0.466 vs fresh 0.481
-                                        # over the ten passes, zombies equal); a cache is as good as the world that filled
-                                        # it (C11's rows flat), and early worlds make poor eyes
+WORLD_EYE = {"refresh_after": [6],      # 20261120_switching_dissection C11: a cache is as good as the world that filled
+                                        # it (C11's rows flat) and early worlds make poor eyes. The rule declared for two
+                                        # fills picked passes 5 and 6 (entities 0.4790 over the ten passes); one fill after
+                                        # 6 gives 0.4784 (chooser 0.4660, fresh 0.4805; zombies 0.342 vs 0.341) at half
+                                        # the fill time (Codex's review 11-20; the user: "privilege the smallest cost")
              "seed": 2026112006}        # the fills' own draws (fixation prior where a frame has no look; noise)
 
 

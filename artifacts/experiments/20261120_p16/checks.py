@@ -3,6 +3,8 @@
     MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_p16.checks units       record groups, routes, adapters
     MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_p16.checks throughput  run-scale cost and memory
     MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_p16.checks eye         the world-eye: fill, trainer, cost
+    MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_p16.checks init        the initial world is P1.5's (Codex)
+    MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_p16.checks resume      a failed monitor is backfilled (Codex)
     python -m artifacts.experiments.20261120_p16.checks criteria                           the gate (checks.json passed)
 """
 import copy
@@ -22,6 +24,7 @@ from saccade.eval import s1 as S
 
 HERE = Path(__file__).resolve().parent
 P16 = importlib.import_module("artifacts.experiments.20261120_p16.train")
+P15 = importlib.import_module("artifacts.experiments.20261116_p15.train")
 DEV = torch.device("cuda", 0)
 OUT = {}
 
@@ -197,6 +200,83 @@ def eye():
     print(json.dumps(res, indent=1), flush=True)
 
 
+@torch.no_grad()
+def init():
+    """Codex's review: P1.6's initial world is P1.5's plus zero fovea columns. Every shared parameter bit for bit, the
+    widened reads' periphery columns and bias P1.5's and their fovea columns zero; Mamba's belief and the denoiser's
+    output on a real episode (glimpses written into the fovea group) equal P1.5's."""
+    c15, c16 = P15.recipe(), P16.recipe()
+    torch.manual_seed(P16.WORLD_SEED); m15 = M.M0(c15)
+    torch.manual_seed(P16.WORLD_SEED); m16 = M.M0(c16)
+    s15, s16 = m15.state_dict(), m16.state_dict()
+    wide = ("belief.record_in.0.weight", "denoiser.record_read.0.weight")
+    same = lambda a, b: torch.equal(a.isnan(), b.isnan()) and torch.equal(a.nan_to_num(), b.nan_to_num())   # harmoniser.mu starts NaN
+    res = {"same_names": list(s15) == list(s16), "shared_bit_equal": all(same(s15[k], s16[k]) for k in s15 if k not in wide)}
+    for k in wide:
+        n = s15[k].shape[1]
+        res[k] = {"periphery_columns_equal": torch.equal(s16[k][:, :n], s15[k]), "fovea_columns_zero": bool((s16[k][:, n:] == 0).all()),
+                  "fovea_columns": s16[k].shape[1] - n}
+    m15, m16 = m15.to(DEV).eval(), m16.to(DEV).eval()
+    L = dict(np.load(S.LABELS / "s0_dev_labels.npz")); dl = S.episodes(L)
+    T, e0 = 200, next(i for i, n in enumerate(L["ep_T"]) if n >= 200)
+    c = TR.tensors(D.gather([dl[e0]], [[(0, 1, t, *D.fixation_prior(np.random.default_rng([5, t]), ())) for t in range(T)]]), DEV)
+    out = {}
+    for name, m in (("p15", m15), ("p16", m16)):
+        with TR.autocast(DEV, c16):
+            X = m.perception(c["frames"], c["fixation"])
+            rin, rst = m.record.scan(m.record.input(X.p, X.g, X.fix), c["first"], m.record.zero(1, DEV))
+            y, _ = m.belief(m.belief.tokens(m.belief.percept_embed(X, rst), c["reward"], c["terminated"], c["action"]), m.belief.initial(1, DEV))
+            bp = torch.cat([torch.zeros_like(y[:, :1]), y[:, 1::2][:, :-1]], 1)
+            sl = slice(T - 9, T)
+        out[name] = (y.float(), m.denoiser.record_read[:2](rin[:, sl].float()).float(), rin)   # the read's hidden layer (its output
+                                                                         # layer and the denoiser's heads start at zero)
+    res["fovea_features_nonzero_in_p16"] = float(out["p16"][2][..., out["p15"][2].shape[-1]:].abs().max())
+    rms = lambda a, b: float((a - b).square().mean().sqrt())
+    res["belief_rms_vs_p15"] = rms(out["p16"][0], out["p15"][0]); res["belief_rms_scale"] = float(out["p15"][0].square().mean().sqrt())
+    res["denoiser_read_rms_vs_p15"] = rms(out["p16"][1], out["p15"][1]); res["denoiser_read_rms_scale"] = float(out["p15"][1].square().mean().sqrt())
+    OUT["init"] = res
+    print(json.dumps(res, indent=1), flush=True)
+
+
+def resume():
+    """Codex's review: the monitor fails once right after checkpoint 1 is saved (injected); the resumed run backfills it
+    from that checkpoint and every checkpoint's monitor row is present once and in order (the selector accepts)."""
+    AP = importlib.import_module("saccade.eval.after_p1")
+    c2 = copy.deepcopy(P16.recipe())
+    c2["p1"] = dict(c2["p1"], frames=16 * 64 * 4, checkpoint_every_fraction=0.25)
+    c2["fixation"]["world_eye"] = dict(c2["fixation"]["world_eye"], refresh_after=[2])
+    tmp = Path(tempfile.mkdtemp()); run = tmp / "run"; real = TR.monitor; calls = []
+
+    def failing(*a, **k):
+        calls.append(1)
+        if len(calls) == 1:
+            raise RuntimeError("injected monitor failure")
+        return real(*a, **k)
+    res = {}
+    TR.monitor = failing
+    try:
+        TR.p1(c2, P16.WORLD_SEED, run, steps=64, n_episodes=40)
+        res["first_run_failed"] = False
+    except RuntimeError as e:
+        res["first_run_failed"] = "injected" in str(e)
+    finally:
+        TR.monitor = real
+    TR.p1(c2, P16.WORLD_SEED, run, steps=64, n_episodes=40)
+    rows = [r for r in map(json.loads, (run / "log.jsonl").read_text().splitlines()) if "monitor" in r]
+    res["monitor_checkpoints"] = [r["checkpoint"] for r in rows]
+    res["backfilled"] = [r["checkpoint"] for r in rows if r.get("backfilled")]
+    try:
+        res["selector"] = AP.select_checkpoint(rows, c2)["checkpoint"]
+    except ValueError as e:
+        res["selector"] = f"refused: {e}"
+    ck1 = torch.load(run / "ckpt_01.pt", map_location="cpu", weights_only=False)
+    model, _ = importlib.import_module("artifacts.experiments.20261030_actor_interface.interface").load(str(run / "ckpt_01.pt"))
+    res["backfill_equals_monitor_of_ckpt1"] = abs(real(model, c2, D.load_split(c2)["monitor"])["g1"] - rows[0]["monitor"]["g1"])
+    shutil.rmtree(tmp)
+    OUT["resume"] = res
+    print(json.dumps(res, indent=1), flush=True)
+
+
 def throughput(updates=30):
     """Run-scale cost: the trainer itself for `updates` updates at 64 and 256 steps (route by role on, the recipe);
     seconds per update and peak GiB from the trainer's own log."""
@@ -209,6 +289,18 @@ def throughput(updates=30):
         res[f"steps_{steps}"] = {k: log[-1][k] for k in ("sec_per_update", "peak_gib", "g1")}
         print(json.dumps(res), flush=True)
         shutil.rmtree(tmp)
+    cb = copy.deepcopy(P16.recipe())                                     # Codex: the later updates, bootstrap active
+    cb["edm"]["shortcut"] = dict(cb["edm"]["shortcut"], bootstrap_start=0)
+    for steps in (64, 256):
+        tmp = Path(tempfile.mkdtemp())
+        TR.p1(cb, P16.WORLD_SEED, tmp, updates=updates, steps=steps, checkpoints=False)
+        log = [json.loads(l) for l in (tmp / "log.jsonl").read_text().splitlines()]
+        res[f"bootstrap_steps_{steps}"] = {k: log[-1][k] for k in ("sec_per_update", "peak_gib")}
+        print(json.dumps(res), flush=True)
+        shutil.rmtree(tmp)
+    cfg = P16.recipe(); torch.manual_seed(1); model = M.M0(cfg).to(DEV)  # one checkpoint monitor (cost only)
+    torch.cuda.synchronize(); t0 = time.time(); TR.monitor(model, cfg, D.load_split(cfg)["monitor"]); torch.cuda.synchronize()
+    res["monitor_seconds"] = time.time() - t0
     OUT["throughput"] = res
 
 
@@ -217,6 +309,9 @@ def criteria():
     u, t = r["units"], r["throughput"]
     p15 = json.loads((HERE.parent / "20261116_p15/checks.json").read_text())["throughput"]
     hours = (t["steps_64"]["sec_per_update"] * 12500 + t["steps_256"]["sec_per_update"] * 3125) / 3600   # P1.5's updates
+    bs = P16.recipe()["edm"]["shortcut"]["bootstrap_start"]              # Codex: bootstrap active after `bs` updates
+    hours_b = (t["steps_64"]["sec_per_update"] * bs + t["bootstrap_steps_64"]["sec_per_update"] * (12500 - bs)
+               + t["bootstrap_steps_256"]["sec_per_update"] * 3125 + 10 * t["monitor_seconds"]) / 3600
     hours15 = (p15["route_True_steps_64"]["sec_per_update"] * 12500 + p15["route_True_steps_256"]["sec_per_update"] * 3125) / 3600
     c = {"periphery_group_exact": u["periphery_group_equals_test2"] < 1e-5, "fovea_writes_only_where_looked": u["fovea_zero_where_never_looked"],
          "terms_finite": u["terms_finite"], "route_by_role_ok": u["route_by_role_ok"],
@@ -233,15 +328,24 @@ def criteria():
                  eye_refreshes_at_listed=e["refreshes_logged"] == [1, 2], eye_scores_with_cache=e["trace_S_is_cache_argmax_after_refresh"] > 0.99,
                  eye_resume_digest=e["resumed_controller_has_eye"] and e["changed_cache_refused"],
                  eye_peak_under_budget=max(e["run_peak_gib_with_fills"], e["fill"]["peak_gib"]) < 5.0,
-                 projected_hours_with_fills=hours + 2 * e["fill"]["projected_hours_per_fill"])
+                 projected_hours_with_fills=hours_b + len(P16.WORLD_EYE["refresh_after"]) * e["fill"]["projected_hours_per_fill"])
         c["eye_time_within_19h"] = c["projected_hours_with_fills"] < 19
+    if "init" in r:                                                      # Codex's review 11-20
+        i_ = r["init"]
+        c.update(init_shared_bit_equal=i_["same_names"] and i_["shared_bit_equal"],
+                 init_widened_reads=all(i_[k]["periphery_columns_equal"] and i_[k]["fovea_columns_zero"] for k in ("belief.record_in.0.weight", "denoiser.record_read.0.weight")),
+                 init_outputs_equal_p15=i_["belief_rms_vs_p15"] < 1e-3 * i_["belief_rms_scale"] and i_["denoiser_read_rms_vs_p15"] < 1e-3 * i_["denoiser_read_rms_scale"])
+    if "resume" in r:
+        q = r["resume"]; n = round(1 / 0.25)
+        c.update(resume_backfills_failed_monitor=q["first_run_failed"] and q["backfilled"] == [1] and q["monitor_checkpoints"] == list(range(1, n + 1))
+                 and isinstance(q["selector"], int) and q["backfill_equals_monitor_of_ckpt1"] < 1e-3)
     passed = all(v for k, v in c.items() if not k.startswith("projected"))
     OUT.update(criteria=c, passed=passed)
     print(json.dumps(c, indent=1), "passed", passed, flush=True)
 
 
 if __name__ == "__main__":
-    {"units": units, "throughput": throughput, "eye": eye, "criteria": criteria}[sys.argv[1]]()
+    {"units": units, "throughput": throughput, "eye": eye, "init": init, "resume": resume, "criteria": criteria}[sys.argv[1]]()
     f = HERE / "checks.json"
     prev = json.loads(f.read_text()) if f.exists() else {}
     f.write_text(json.dumps({**prev, **OUT}, indent=1) + "\n")

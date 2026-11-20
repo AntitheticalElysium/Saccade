@@ -1,0 +1,484 @@
+{
+ "units": 2079,
+ "draws": 8,
+ "calibration": {
+  "zombies|day": {
+   "units": 372,
+   "real_frame_kept": 1.0,
+   "world_kept": 0.2620967741935484,
+   "s2_step1_deleted": 0.0228494623655914
+  },
+  "zombies|night": {
+   "units": 235,
+   "real_frame_kept": 0.9829787234042553,
+   "world_kept": 0.017553191489361703,
+   "s2_step1_deleted": 0.14680851063829786
+  },
+  "zombies|all": {
+   "units": 607,
+   "real_frame_kept": 0.9934102141680395,
+   "world_kept": 0.16742174629324547,
+   "s2_step1_deleted": 0.07084019769357495
+  },
+  "cows|day": {
+   "units": 929,
+   "real_frame_kept": 1.0,
+   "world_kept": 0.2520182992465016,
+   "s2_step1_deleted": 0.06202906350914962
+  },
+  "cows|night": {
+   "units": 262,
+   "real_frame_kept": 0.9541984732824428,
+   "world_kept": 0.012881679389312978,
+   "s2_step1_deleted": 0.226940203562341
+  },
+  "cows|all": {
+   "units": 1191,
+   "real_frame_kept": 0.9899244332493703,
+   "world_kept": 0.19941225860621326,
+   "s2_step1_deleted": 0.09830674503218584
+  },
+  "skeletons|day": {
+   "units": 97,
+   "real_frame_kept": 1.0,
+   "world_kept": 0.03221649484536082,
+   "s2_step1_deleted": 0.15335051546391754
+  },
+  "skeletons|night": {
+   "units": 38,
+   "real_frame_kept": 0.9210526315789473,
+   "world_kept": 0.019736842105263157,
+   "s2_step1_deleted": 0.4473684210526316
+  },
+  "skeletons|all": {
+   "units": 135,
+   "real_frame_kept": 0.9777777777777777,
+   "world_kept": 0.028703703703703703,
+   "s2_step1_deleted": 0.2361111111111111
+  },
+  "arrows|day": {
+   "units": 101,
+   "real_frame_kept": 0.8415841584158416,
+   "world_kept": 0.6398514851485149,
+   "s2_step1_deleted": 0.7289603960396039
+  },
+  "arrows|night": {
+   "units": 45,
+   "real_frame_kept": 0.7111111111111111,
+   "world_kept": 0.09166666666666666,
+   "s2_step1_deleted": 0.9
+  },
+  "arrows|all": {
+   "units": 146,
+   "real_frame_kept": 0.8013698630136986,
+   "world_kept": 0.4708904109589041,
+   "s2_step1_deleted": 0.7816780821917808
+  }
+ },
+ "concentration": {
+  "zombies|day": {
+   "units": 372,
+   "pooled_deletion": 0.7379032258064516,
+   "dispersion_index": 3.9726495726495736,
+   "never_deleted": [
+    0.03763440860215054,
+    2.2268625238285913e-05
+   ],
+   "deleted_4_of_8_or_more": [
+    0.793010752688172,
+    0.9667050886322236
+   ],
+   "share_of_deletions_in_those_units": 0.9385245901639344,
+   "histogram": [
+    14,
+    15,
+    24,
+    24,
+    25,
+    26,
+    36,
+    49,
+    159
+   ]
+  },
+  "zombies|night": {
+   "units": 235,
+   "pooled_deletion": 0.9824468085106383,
+   "dispersion_index": 5.439910747977871,
+   "never_deleted": [
+    0.0,
+    9.012571536457568e-15
+   ],
+   "deleted_4_of_8_or_more": [
+    0.9829787234042553,
+    0.9999999107151458
+   ],
+   "share_of_deletions_in_those_units": 0.9962100703844071,
+   "histogram": [
+    0,
+    2,
+    1,
+    1,
+    1,
+    0,
+    1,
+    2,
+    227
+   ]
+  },
+  "cows|day": {
+   "units": 929,
+   "pooled_deletion": 0.7479817007534983,
+   "dispersion_index": 3.707972920110406,
+   "never_deleted": [
+    0.021528525296017224,
+    1.627258733642091e-05
+   ],
+   "deleted_4_of_8_or_more": [
+    0.813778256189451,
+    0.9717594061419931
+   ],
+   "share_of_deletions_in_those_units": 0.9424356898722792,
+   "histogram": [
+    20,
+    49,
+    41,
+    63,
+    69,
+    66,
+    103,
+    129,
+    389
+   ]
+  },
+  "cows|night": {
+   "units": 262,
+   "pooled_deletion": 0.987118320610687,
+   "dispersion_index": 3.084832536741679,
+   "never_deleted": [
+    0.0,
+    7.58193203008378e-16
+   ],
+   "deleted_4_of_8_or_more": [
+    0.9961832061068703,
+    0.999999980769387
+   ],
+   "share_of_deletions_in_those_units": 0.9985500241662639,
+   "histogram": [
+    0,
+    0,
+    0,
+    1,
+    2,
+    2,
+    1,
+    6,
+    250
+   ]
+  },
+  "skeletons|day": {
+   "units": 97,
+   "pooled_deletion": 0.9677835051546392,
+   "dispersion_index": 3.3295339547270313,
+   "never_deleted": [
+    0.0,
+    1.1604496431401382e-12
+   ],
+   "deleted_4_of_8_or_more": [
+    0.979381443298969,
+    0.9999982087709732
+   ],
+   "share_of_deletions_in_those_units": 0.9933422103861518,
+   "histogram": [
+    0,
+    0,
+    1,
+    1,
+    0,
+    1,
+    3,
+    5,
+    86
+   ]
+  },
+  "skeletons|night": {
+   "units": 38,
+   "pooled_deletion": 0.9802631578947368,
+   "dispersion_index": 3.2393736017897066,
+   "never_deleted": [
+    0.0,
+    2.3026150250525562e-14
+   ],
+   "deleted_4_of_8_or_more": [
+    1.0,
+    0.9999998404195828
+   ],
+   "share_of_deletions_in_those_units": 1.0,
+   "histogram": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    1,
+    0,
+    36
+   ]
+  },
+  "arrows|day": {
+   "units": 101,
+   "pooled_deletion": 0.36014851485148514,
+   "dispersion_index": 6.888272946619073,
+   "never_deleted": [
+    0.5445544554455446,
+    0.028095286073642606
+   ],
+   "deleted_4_of_8_or_more": [
+    0.37623762376237624,
+    0.3156046873638984
+   ],
+   "share_of_deletions_in_those_units": 0.9553264604810997,
+   "histogram": [
+    55,
+    5,
+    1,
+    2,
+    3,
+    2,
+    2,
+    4,
+    27
+   ]
+  },
+  "arrows|night": {
+   "units": 45,
+   "pooled_deletion": 0.9083333333333333,
+   "dispersion_index": 6.098415346121769,
+   "never_deleted": [
+    0.022222222222222223,
+    4.985302467386894e-09
+   ],
+   "deleted_4_of_8_or_more": [
+    0.9111111111111111,
+    0.9997142615835078
+   ],
+   "share_of_deletions_in_those_units": 0.9877675840978594,
+   "histogram": [
+    1,
+    2,
+    1,
+    0,
+    0,
+    0,
+    2,
+    1,
+    38
+   ]
+  }
+ },
+ "ladder": {
+  "all": {
+   "draws_deleted": 13338,
+   "draws_kept": 3294,
+   "mean_P_kind_by_step_deleted": [
+    0.20399999618530273,
+    0.3156000077724457,
+    0.20980000495910645,
+    0.08810000121593475,
+    0.08810000121593475
+   ],
+   "mean_P_kind_by_step_kept": [
+    0.38600000739097595,
+    0.5831999778747559,
+    0.6274999976158142,
+    0.8101000189781189,
+    0.8101000189781189
+   ],
+   "auc_step_predicts_deletion": [
+    0.6916036582096085,
+    0.7472936384833614,
+    0.8606078036621608,
+    0.999384846451283,
+    0.999384846451283
+   ]
+  },
+  "cows": {
+   "draws_deleted": 7628,
+   "draws_kept": 1900,
+   "mean_P_kind_by_step_deleted": [
+    0.289900004863739,
+    0.4075999855995178,
+    0.23019999265670776,
+    0.08219999819993973,
+    0.08219999819993973
+   ],
+   "mean_P_kind_by_step_kept": [
+    0.48809999227523804,
+    0.642799973487854,
+    0.616599977016449,
+    0.7908999919891357,
+    0.7908999919891357
+   ],
+   "auc_step_predicts_deletion": [
+    0.7290677697126928,
+    0.7376431705903458,
+    0.8602857201998179,
+    0.9994331134601054,
+    0.9994331134601054
+   ]
+  },
+  "zombies": {
+   "draws_deleted": 4043,
+   "draws_kept": 813,
+   "mean_P_kind_by_step_deleted": [
+    0.09629999846220016,
+    0.23489999771118164,
+    0.23340000212192535,
+    0.11999999731779099,
+    0.11999999731779099
+   ],
+   "mean_P_kind_by_step_kept": [
+    0.11949999630451202,
+    0.44200000166893005,
+    0.5806000232696533,
+    0.7608000040054321,
+    0.7608000040054321
+   ],
+   "auc_step_predicts_deletion": [
+    0.5234610471259301,
+    0.7191069313611761,
+    0.8260638480735537,
+    0.9991165086026325,
+    0.9991165086026325
+   ]
+  },
+  "night": {
+   "draws_deleted": 4541,
+   "draws_kept": 99,
+   "mean_P_kind_by_step_deleted": [
+    0.1298000067472458,
+    0.19840000569820404,
+    0.13420000672340393,
+    0.07190000265836716,
+    0.07190000265836716
+   ],
+   "mean_P_kind_by_step_kept": [
+    0.22849999368190765,
+    0.3612000048160553,
+    0.4871000051498413,
+    0.744700014591217,
+    0.744700014591217
+   ],
+   "auc_step_predicts_deletion": [
+    0.5493205563674624,
+    0.5931790932892012,
+    0.8096267675655475,
+    0.9998665358718211,
+    0.9998665358718211
+   ]
+  },
+  "day": {
+   "draws_deleted": 8797,
+   "draws_kept": 3195,
+   "mean_P_kind_by_step_deleted": [
+    0.24230000376701355,
+    0.37610000371932983,
+    0.24889999628067017,
+    0.09640000015497208,
+    0.09640000015497208
+   ],
+   "mean_P_kind_by_step_kept": [
+    0.39089998602867126,
+    0.5900999903678894,
+    0.6317999958992004,
+    0.8120999932289124,
+    0.8120999932289124
+   ],
+   "auc_step_predicts_deletion": [
+    0.6619502344927306,
+    0.6991453730402828,
+    0.8326030552099939,
+    0.9991387731235022,
+    0.9991387731235022
+   ]
+  }
+ },
+ "deleted_form": {
+  "all": {
+   "final_P_kind_max_over_neighbourhood_deleted": {
+    "<0.05": 0.44759334233018444,
+    "0.05-0.2": 0.4313240365871945,
+    ">=0.2": 0.12108262108262108
+   },
+   "own_cell_class_deleted": {
+    "none": 9857,
+    "zombies": 683,
+    "cows": 46,
+    "skeletons": 38,
+    "arrows": 2714
+   },
+   "real_frame_P_kind": 0.9745504316859057
+  },
+  "cows": {
+   "final_P_kind_max_over_neighbourhood_deleted": {
+    "<0.05": 0.44467750393287886,
+    "0.05-0.2": 0.4487414787624541,
+    ">=0.2": 0.10658101730466701
+   },
+   "own_cell_class_deleted": {
+    "none": 5011,
+    "zombies": 656,
+    "cows": 0,
+    "skeletons": 36,
+    "arrows": 1925
+   },
+   "real_frame_P_kind": 0.9888427232186475
+  },
+  "zombies": {
+   "final_P_kind_max_over_neighbourhood_deleted": {
+    "<0.05": 0.29928271085827357,
+    "0.05-0.2": 0.5248577788770715,
+    ">=0.2": 0.17585951026465496
+   },
+   "own_cell_class_deleted": {
+    "none": 3486,
+    "zombies": 0,
+    "cows": 34,
+    "skeletons": 1,
+    "arrows": 522
+   },
+   "real_frame_P_kind": 0.9924746175807528
+  },
+  "night": {
+   "final_P_kind_max_over_neighbourhood_deleted": {
+    "<0.05": 0.43316450121118694,
+    "0.05-0.2": 0.5230125523012552,
+    ">=0.2": 0.04382294648755781
+   },
+   "own_cell_class_deleted": {
+    "none": 4480,
+    "zombies": 17,
+    "cows": 1,
+    "skeletons": 4,
+    "arrows": 39
+   },
+   "real_frame_P_kind": 0.9371218434916668
+  },
+  "day": {
+   "final_P_kind_max_over_neighbourhood_deleted": {
+    "<0.05": 0.4550414914175287,
+    "0.05-0.2": 0.3839945435944072,
+    ">=0.2": 0.16096396498806412
+   },
+   "own_cell_class_deleted": {
+    "none": 5377,
+    "zombies": 666,
+    "cows": 45,
+    "skeletons": 34,
+    "arrows": 2675
+   },
+   "real_frame_P_kind": 0.9890324738157648
+  }
+ }
+}

@@ -517,3 +517,28 @@ context, record and belief; only the target's noise differs.
 - The data do not teach it: the reader on the real next frame keeps 100% by day.
 - K = 8, the finest trained step, removes only about 15% (Stage B), so the cause lies more in the learned conditional
   than in the coarse steps.
+
+## C6: learned fast, then flat while the learning rate decays (`c5_calibration_ckpt{02,05,08}.json`)
+
+C5's draws and readings at P1.5's checkpoints, each read with its own S1 reader (real-frame floor 0.95-1.00 at every
+checkpoint).
+
+| World keeps | Ckpt 2 (5.1M) | Ckpt 5 (12.8M) | Ckpt 8 (20.5M) | Ckpt 10 (25.6M) |
+| :--- | ---: | ---: | ---: | ---: |
+| Cows, day | 0.252 | 0.881 | 0.938 | 0.940 |
+| Cows, night | 0.013 | 0.703 | 0.763 | 0.767 |
+| Zombies, day | 0.262 | 0.951 | 0.981 | 0.983 |
+| Zombies, night | 0.018 | 0.840 | 0.873 | 0.883 |
+| Skeletons, day | 0.032 | 0.751 | 0.825 | 0.853 |
+| World learning rate | 9.6e-5 | 5.8e-5 | 2.4e-5 | 1.0e-5 |
+
+- Day cows' dispersion is 1.41 / 1.33 / 1.38 from checkpoint 5 on; at checkpoint 2 it is 3.71.
+- The step-1 AUC (day) is 0.77 / 0.80 / 0.77 from checkpoint 5 on.
+- **By the declared rule this is mixed.**
+  - The coin still falls from 5 to 8 (cows +5.7 points), so it is not flat from 5 on. My prediction was wrong.
+  - It is flat from 8 to 10 (cows +0.2, within noise), while skeletons still rise (+2.8).
+- **The plateau coincides with the cosine schedule's tail.** The rate falls from 2.4e-5 to 1.0e-5 between 8 and 10, so
+  "converged" and "too small a rate to keep learning" cannot be told apart here.
+- **What it does establish:** the persistence coin is learned (from 75% deletion at checkpoint 2 to 6%), with
+  diminishing returns. It is not a fixed property of the sampler, and the form (near-binomial by day, decided at the
+  first step) is stable from checkpoint 5 on.

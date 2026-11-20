@@ -310,11 +310,20 @@ def _monitor(model: M.M0, cfg, episodes, n_windows=None) -> dict:
                 model.perception(c["frames"][:, a:a + 512], c["fixation"][:, a:a + 512]).parts()
                 for a in range(0, ep.T + 1, 512)])), c["fixation"])
             toks.append(Pe.p[0, ::8].reshape(-1, Pe.p.shape[-1]).float())
-            rin = rst = None                                             # P1.5: the spatial history from the episode's start
-            if model.record is not None:
+            rin = None                                                   # P1.5: the spatial history from the episode's start,
+            if model.record is None:                                     # scanned in 256-frame pieces (P1.6's 2,048-dim record
+                emb = model.belief.percept_embed(Pe)                     # over a whole long episode exceeded 6 GB); the
+            else:                                                        # denoiser's read kept for the windows' frames only
                 start = torch.zeros(Pe.p.shape[:2], dtype=torch.bool, device=dev); start[:, 0] = True
-                rin, rst = model.record.scan(model.record.input(Pe.p, Pe.g, Pe.fix), start, model.record.zero(1, dev))
-            x = model.belief.tokens(model.belief.percept_embed(Pe, rst), c["reward"], c["terminated"], c["action"])
+                xr, state, embs, rin = model.record.input(Pe.p, Pe.g, Pe.fix), model.record.zero(1, dev), [], {}
+                need = {u for t in (picks[ep_of == i] - off[i] + 1).tolist() for u in range(max(0, t - P), t + 1)}
+                for a in range(0, ep.T + 1, 256):
+                    ri, rs = model.record.scan(xr[:, a:a + 256], start[:, a:a + 256], state)
+                    embs.append(model.belief.percept_embed(M.Percept(*(z[:, a:a + 256] for z in Pe.parts()), Pe.fix[:, a:a + 256]), rs))
+                    rin.update({u: ri[:, u - a] for u in need if a <= u < a + 256})
+                    state = rs[:, -1]
+                emb = torch.cat(embs, 1)
+            x = model.belief.tokens(emb, c["reward"], c["terminated"], c["action"])
             y, _ = model.belief(x, model.belief.initial(1, dev))
             b_pred = torch.cat([torch.zeros_like(y[:, :1]), y[:, 1::2][:, :-1]], 1)
             for t in (picks[ep_of == i] - off[i] + 1).tolist():                     # target frame t >= 1
@@ -328,7 +337,8 @@ def _monitor(model: M.M0, cfg, episodes, n_windows=None) -> dict:
                 sg[:, -1] = levels
                 lv = [(sg, torch.full_like(sg, k.bit_length() - 1))] * 2
                 mem = model.belief.memory(rep(b_pred))
-                l = M.shortcut_loss(model.denoiser, x0, rep(c["prev_action"]), mem if rin is None else (mem, rep(rin)),
+                rw = None if rin is None else torch.stack([rin[u] for u in range(sl.start, sl.stop)], 1).expand(len(levels), -1, -1, -1)
+                l = M.shortcut_loss(model.denoiser, x0, rep(c["prev_action"]), mem if rin is None else (mem, rw),
                                     rep(c["fixation"]), rep(c["episode"]), rep(c["valid"]), e["shortcut"],
                                     torch.zeros(len(levels), dtype=torch.bool, device=dev), False, lv, noise)
                 losses.append(l[:, -1].float().cpu())

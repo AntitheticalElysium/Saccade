@@ -287,3 +287,37 @@ From a perfect history, P1.5 loses 9.5% of the start's cows at step 1 (simulator
   plus its context pass; projected on P1.5's measured updates.
 - **What would make it worth its cost:** clearly higher coverage of mobs than the chooser and C2's world-eye, with the
   deleted mobs covered well above the kept ones.
+
+## C5: the sampler's calibration at mob cells, and does Mamba know where the mobs are (user 11-20: "let's run 3. first since it actually attacks our failure"; "shouldn't Mamba know about mobs? Does it?")
+
+C4 showed that reality and the world's mean both keep the cow, and only some of the world's samples drop it. C5
+measures that sampling distribution directly, at the deletion.
+
+- **Units:** C4's 2,079 S2 start mobs (frame t = t0 + 1 of a DEV episode; the real past, record and belief), 8 draws
+  each with the default sampler (K = 4, `c4_sample.samples`; draws 0-1 are C4's). A draw keeps the mob if the reader
+  finds its kind in the 3 x 3 neighbourhood of its cell after the real camera move (C4's rule).
+- **(1) Calibration.** The keep rate over draws against the reader on the real frame t at the same cells (the
+  instrument floor), by kind and by day / night.
+- **(2) Concentration.** Deletions per unit out of 8, against a binomial at the pooled rate of its kind and light:
+  share of units never deleted, deleted in >= 4 of 8, the share of all deletions they hold, and the dispersion index.
+  - Over-dispersed: particular contexts lose the mob most of the time; the world's conditional is wrong for them.
+  - Binomial: every draw flips the same small coin; the deletion is spread over all contexts.
+- **(3) Where on the ladder.** The reader's P(kind), max over the neighbourhood, on each step's clean estimate (4 steps)
+  and on the final sample, for draws that end deleted against kept; how well each step's P predicts the end (AUC).
+  Plus the deleted cell's form: the reader's class and confidence at the mob's cell in the final sample, against the
+  real frame's (a confident other class = a committed alternative; low confidence = a blend).
+- **(4) Does Mamba know?** A linear probe per map cell of entity presence (any entity; cows) at frame t:
+  - from the predicted belief that the denoiser reads for frame t (`bp`, read through `memory_out`);
+  - from the previous real frame's 63 map tokens (the copy reference);
+  - from both.
+  Probe data: C3's 400 DEV episodes minus the 99 that hold units, 120 frames each, 80% / 20% by episode; held-out AP
+  against the base rate. Then on the units: the deletion rate by quartile of the belief probe's P(entity in the
+  neighbourhood at t).
+- **What separates:**
+  - deletions concentrated where the belief probe is unsure: the conditioning is the limit (Mamba's side);
+  - the probe confident where draws delete, and binomial spread: the denoiser's sampling of its own conditional (the
+    user's "solely a denoiser sampling issue").
+- **Predictions (before running):** over-dispersed, mostly night and edge; every step's estimate keeps the mob at
+  first (C2's mean), and the draws part at steps 2-3; the belief probe well below the copy reference (P1-F1.6: the
+  global projection loses spatial detail), but not marking the deleted units.
+- **Not in C5:** no inference-time fix (record guidance, other K), and no training. Those wait for the cause.

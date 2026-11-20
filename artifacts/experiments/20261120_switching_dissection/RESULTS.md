@@ -406,3 +406,32 @@ per-cell read of the record (Linear 1,024 -> 64) in its own group. 1,500 updates
   surprise at the flip barely falls. A cheap memory read therefore does not take the eye off the HUD flips.
 - **The world-eye does** (HUD-flip coverage 0.224). The world's own prediction times the flips sharply, from the same
   record through the denoiser's read, trained by the whole of P1.
+
+## C4: the sample-eye fails both criteria (`c4_sample.py`, `c4_sample.json`)
+
+The data are C2's 3,000 DEV frames and 2,079 S2 start mobs. Surprise is measured against the world's own 4-step sample,
+two draws per frame.
+
+| Covered when present | Sample-eye | World-eye (C2) | Chooser | Uniform |
+| :--- | ---: | ---: | ---: | ---: |
+| Any entity | 0.435 | 0.484 | 0.484 | 0.204 |
+| Cows | 0.402 | 0.448 | 0.418 | 0.149 |
+| Zombies | 0.266 | 0.296 | 0.352 | 0.166 |
+| Changed HUD | 0.206 | 0.224 | 0.409 | 0.109 |
+| Entering terrain | 0.511 | 0.511 | 0.457 | 0.216 |
+
+- **Where its surprise lies:** static map 36% (night 60%), entering terrain 34%, mobs 24%. The two draws differ from
+  each other by 78% of their mean error.
+- **Deletion link:** when a draw deleted the mob, the eye covers it 0.483; when the draw kept it, 0.489 (596 / 3,562
+  draws). S2's deletion rate by surprise quartile is 0.07 / 0.34 / 0.10 / 0.08 (correlation -0.15).
+- **Cost (measured):** 4.08 s per 64-step update (179%) and 16.0 s per 256-step update (187%), so +28.1 h on the
+  15.4 h run if fresh.
+- **Verdict by the declared rule:** fails. Mob coverage is not higher (it is lower), and deleted mobs are not covered
+  more than kept ones.
+- **Why.** A sample differs from reality wherever the world is stochastic: textures, night static, terrain entering
+  the view. A single cell where the draw dropped the cow is one high-error cell among many. The two draws' disagreement
+  (0.78) shows how large that sampling noise is.
+- **What it implies for the deletion.** Reality shows the cow, and so does the world's mean prediction. Only a fraction
+  of its samples drop it. The deletion is a property of the world's sampling distribution (its calibration at mob
+  cells), and no single-frame comparison between reality and the world singles it out. An eye cannot find it in
+  training; a score over many of the world's samples can.

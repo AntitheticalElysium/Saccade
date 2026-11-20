@@ -357,3 +357,26 @@ measures that sampling distribution directly, at the deletion.
 - **Data and probe:** all DEV episodes (C3's order), 120 frames each, 80% / 20% by episode, `s1.encode`; C5's
   per-output logistic probe; held-out AP against the base rate.
 - **Reading:** b_t near its reference means the actor's input knows where zombies are; far below means it does not.
+
+## C8: an eye scored by the world's belief change (user 11-20: "agreed for testing it; would it be an accurate test? If yes, launch it")
+
+- **Score.** For frame t, B_t per cell = || x_hat_{t+1}(real frame t) - x_hat_{t+1}(the world's own estimate of frame t) ||^2:
+  how far the real frame moves the world's zero-signal prediction of the next frame, against its own expectation.
+  - The expected frame replaces the real one everywhere it enters: the denoiser's context, the record's update and
+    Mamba's percept (Mamba re-run on the prefix).
+  - Both arms take NOOP at t (causal: the eye chooses before the action), share the real past, the monitor's
+    glimpses and noise seeds, and the real lighting.
+- **Data:** C2's 150 DEV episodes and picks (frames with t + 1 <= T), P1.5 checkpoint 10.
+- **Beside it, on the same frames:** C2's world-eye surprise S_t (recomputed) and the chooser (C2's code).
+- **Readings:** coverage under the chooser's policy with contingency off (as C2 and C4), by entity kind, changed HUD,
+  entering terrain and night; B's share by region, day and night.
+- **Check:** the re-run Mamba with the real action reproduces C2's predicted belief (max abs difference reported).
+- **What makes B worth pursuing:**
+  - entity coverage above S's (0.484), at night especially;
+  - a lower night static share than S's 60%;
+  - changed-HUD coverage at or below S's 0.224.
+- **Accuracy limits:**
+  - a single zero-signal estimate per frame (C2's), and the real lighting in both arms;
+  - offline frames under the monitor's fixations;
+  - it shows where the eye would look, not what looking there would teach the world.
+- **Prediction:** night static falls well below 60%; entity coverage rises at night; HUD flips stay near S's.

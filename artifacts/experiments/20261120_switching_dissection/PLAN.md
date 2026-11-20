@@ -267,3 +267,23 @@ From a perfect history, P1.5 loses 9.5% of the start's cows at step 1 (simulator
 2. **If the record beats the 8-frame view clearly:** C3 rerun with the new read at the chooser's peak 1e-3 (fresh
    parameters), the trained head at 1e-4, about 6,000 updates. Otherwise the record does not carry what the eye would
    need, and C3 stops there.
+
+## C4: the sample-eye (user 11-20: "run that sample-eye on the data to see if it does produce coverage worth the cost")
+
+- **What it measures.** Surprise is the squared distance between the real frame's tokens and the world's own sample of
+  that frame: the sampler's K = 4 steps from noise, given the real past (the monitor's window, the real record and
+  belief). C2's world-eye used the zero-signal mean instead. Windows go through the chooser's policy with contingency
+  off.
+- **Same data as C2:** its 3,000 DEV target frames and its 2,079 S2 start mobs. Two draws per frame (separate noise
+  seeds): the eye's surprise is their mean, and their spread is reported beside it.
+- **Readings:**
+  - coverage of entities, cows, zombies, HUD flips and entering terrain, by day and night, beside C2's world-eye and
+    the chooser;
+  - surprise shares by region;
+  - the deletion link. The draw's own outcome is read at the mob's cell (the S1 reader on the sampled periphery);
+    the eye's coverage of mobs its draw deleted is compared against mobs its draw kept, and P1.5's S2 deletion rate
+    is binned by the sample-eye's surprise.
+- **Cost:** as C2's cost test (`c2_cost.inputs`, the trainer's shapes, warmed), with K periphery evaluations per frame
+  plus its context pass; projected on P1.5's measured updates.
+- **What would make it worth its cost:** clearly higher coverage of mobs than the chooser and C2's world-eye, with the
+  deleted mobs covered well above the kept ones.

@@ -770,3 +770,33 @@ P1.5's own training looks (the 400 labelled training episodes) against the paire
 
 The chooser covers entities, zombies and cows above uniform from the first 250 updates. Uniform would only remove its
 HUD over-looking. This is coverage, not what the world learns from it.
+
+## C12: the day coin is not a hedge over where the mob goes next (`c12_hedging.py`, `c12_hedging.json`)
+
+C5's 2,079 units and 8 draws, by the mob's free 4-neighbours at t0 under Craftax-Classic's move rule. A cow moves to a
+random choice of 4 moves and 4 stays, and a blocked move becomes a stay; so a cow with one free neighbour stays put at
+least 87.5% of the time, and one with four free neighbours 50%.
+
+| Day cows | 1 free | 2 free | 3 free | 4 free |
+| :--- | ---: | ---: | ---: | ---: |
+| Units | 43 | 117 | 310 | 459 |
+| Deletion | 0.044 +- 0.013 | 0.065 +- 0.011 | 0.052 +- 0.005 | 0.066 +- 0.005 |
+
+- **Ratio of 4 free to at most 1 free: 1.51, bootstrap 95% interval 0.90-3.23;** correlation over units 0.04. By the
+  declared reading the interval covers 1, so the hedge is not supported. A hedge strong enough to be the cause would
+  make nearly boxed-in cows far safer than free ones. A small contribution cannot be excluded; no day cow was fully
+  boxed in.
+- **By day zombies show no trend either** (0.9-3.7%). At night cows rise from 0.146 (1 free) to 0.271 (4 free), but
+  night is confounded with the edge ring and static (C5).
+- **The coin is a near-uniform under-confidence about persistence**, as C5's dispersion (1.38) suggested.
+- **Ruled out so far:**
+  - missing evidence (C5);
+  - the coarse sampler (K = 8, the finest trained step, removes 15%);
+  - the shortcut's bootstrap (K = 8 uses only the flow term);
+  - a hedge over the next cell (C12);
+  - sampling-time history guidance as a clean fix (C10).
+- **Not yet tested:**
+  - whether more training at a useful learning rate keeps lowering it (C6 flat while the rate decays to 1e-5);
+  - the objective's emphasis at the low-signal levels where presence is decided (ramp w = 0.9 tau + 0.1: weight 0.1
+    at tau = 0 against 0.89 at 7/8);
+  - a mob being 1 cell of 81 in the per-frame mean.

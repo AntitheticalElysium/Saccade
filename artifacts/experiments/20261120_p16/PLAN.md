@@ -183,8 +183,15 @@ Codex's review found two more problems:
 
 ## Readings (P1.6 against P1.5)
 
-1. **P1.5's evaluation, same scope** (`evaluation.py`: P1.5's queue with P1.5 as the comparison arm; the S2 battery
-   and the monitor), with the rollouts writing generated glimpses.
+1. **P1.5's evaluation queue** (`evaluation.py`: P1.5's queue with P1.5 as the comparison arm; the monitor), with the
+   rollouts writing generated glimpses.
+   - **The S2 battery is not in the queue** (Codex 11-20). It runs separately and is pending: its readers assert P1.5's
+     exact encoder, so P1.6 needs readers fitted to its own checkpoint, and simulator references scored through them.
+     `s2b` (the competent-start variant) needs the fixation pairing ported.
+   - The production smoke runs in a folder keyed by the checkpoint's hash. The preflight smoke's files are in
+     `checks/preflight_smoke/`.
+   - The readout's gradient diagnostic opens the checkpoint's world-eye cache after the fill, so it measures the
+     training objective (Codex).
    - Every record call on the evaluation path now passes the glimpse and its fixation: `s1`, `s2`, `interface`,
      `routes`, `sleep`, `dissect`, `native_pairs`, `trace` and `trajectory`. P1.5's record ignores them.
    - The adapter check scans the record with the glimpse and checks that the generated glimpse moves the futures'

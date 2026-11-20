@@ -223,5 +223,6 @@ if __name__ == "__main__":
     else:
         ck = Path(sys.argv[1]).resolve()
         run_check(ck)
-        queue(ck, HERE / "checks/smoke", True)
+        queue(ck, HERE / f"checks/smoke_{TR.file_sha256(ck)[:12]}", True)   # keyed by checkpoint (Codex 11-20: a shared
+                                                                         # folder held the preflight checkpoint's identity)
         queue(ck, HERE / "readings", False)

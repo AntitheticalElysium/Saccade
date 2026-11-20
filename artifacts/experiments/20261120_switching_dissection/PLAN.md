@@ -308,10 +308,12 @@ measures that sampling distribution directly, at the deletion.
   real frame's (a confident other class = a committed alternative; low confidence = a blend).
 - **(4) Does Mamba know?** A linear probe per map cell of entity presence (any entity; cows) at frame t:
   - from the predicted belief that the denoiser reads for frame t (`bp`, read through `memory_out`);
-  - from the previous real frame's 63 map tokens (the copy reference);
+  - from the reader's mob probabilities on the previous real frame (63 x 4), fitted, and unfitted as a copy (the
+    reference: what the last frame implies);
   - from both.
-  Probe data: C3's 400 DEV episodes minus the 99 that hold units, 120 frames each, 80% / 20% by episode; held-out AP
-  against the base rate. Then on the units: the deletion rate by quartile of the belief probe's P(entity in the
+  Probe data: every DEV episode without units (764), 120 frames each, 80% / 20% by episode; held-out AP against the
+  base rate. (Amended after the smoke, before the run: C3's 301 unit-free episodes and the 1,008 raw tokens as the
+  reference gave a copy AP of 0.05, a data-starved per-cell fit rather than a reference.) Then on the units: the deletion rate by quartile of the belief probe's P(entity in the
   neighbourhood at t).
 - **What separates:**
   - deletions concentrated where the belief probe is unsure: the conditioning is the limit (Mamba's side);

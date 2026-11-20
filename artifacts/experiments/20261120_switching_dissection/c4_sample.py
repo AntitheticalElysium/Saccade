@@ -34,8 +34,9 @@ DRAWS = 2
 
 
 @torch.no_grad()
-def samples(model, cfg, st, e, ts, draw):
-    """The world's K-step periphery / lighting sample of target frames ts given their real past -> p [W, 81, 16]."""
+def samples(model, cfg, st, e, ts, draw, trace=None):
+    """The world's K-step periphery / lighting sample of target frames ts given their real past -> p [W, 81, 16].
+    A list `trace` collects each step's clean estimate (p, v) (C5)."""
     c, Pe, rin, bp = st
     m, sc = cfg["p1"]["monitor"], cfg["edm"]["shortcut"]
     P, k, clamp = cfg["data"]["context_prefix"], sc["k_max"], cfg["perception"]["periphery"]["tanh_clamp"]
@@ -63,6 +64,8 @@ def samples(model, cfg, st, e, ts, draw):
         with TR.autocast(DEV, cfg):
             o = model.denoiser(tuple(xin), (code, code), stack(c["prev_action"]), mem, stack(Pe.fix), stack(c["episode"]), stack(c["valid"]))
         move = lambda zz, xx: zz + (xx.float().clamp(-clamp, clamp) - zz) / (1 - tau) * d
+        if trace is not None:
+            trace.append((o[0][:, -1].float(), o[2][:, -1].float()))
         p_t, v_t = move(p_t, o[0][:, -1]), move(v_t, o[2][:, -1])
     return p_t, v_t
 

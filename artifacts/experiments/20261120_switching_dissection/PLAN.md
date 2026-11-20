@@ -599,3 +599,58 @@ measures that sampling distribution directly, at the deletion.
 - **Prediction:** a small fall (about a point). The 5 -> 8 stretch moved 6 points over three passes at falling rates,
   and C12 says the coin is uniform, which an under-trained rare feature would give.
 - **Cost:** about 1.6 h of training, then about 15 min of readings.
+
+## C15: sampling-time remedies for the day coin (the user 11-20: "I'll let you make the judgement call on the next run")
+
+- **Why this next.** The day coin is the main failure. C13 localised it to the sampler's path: early under-confidence
+  at levels 1-3, committed at the middle steps where the real path recovers. Its candidate remedies need no
+  retraining. It runs on P1.5 checkpoint 10, comparable with C5, C10 and C13, as soon as P1.6's run and its
+  evaluation free the GPU.
+- **Claim and competing explanation.**
+  - (i) The coin is drift: the sampler's own errors accumulate along its path. A remedy that only contracts drift,
+    restart sampling, should cut it without changing what the world conditions on.
+  - (ii) The world under-uses its context at the commit steps. Then only amplifying the history there should cut it:
+    guidance limited to the mid-chain interval.
+  - The two arms separate (i) from (ii). Both, either or neither working is informative.
+- **Sources (read 11-20).**
+  - **Restart** (Xu et al., NeurIPS 2023, arXiv 2306.14878): re-noise from t_min to t_max with fresh noise of
+    variance t_max^2 - t_min^2 (EDM sigma), re-solve the ODE back down, repeat K times. The noise contracts the
+    accumulated gap between generated and true distributions by (1 - lambda)^K. Use small K for strong models
+    (Stable Diffusion: K = 2).
+  - **Limited-interval guidance** (Kynkaanniemi et al., NeurIPS 2024, arXiv 2404.07724): w(sigma) = w inside
+    (sigma_lo, sigma_hi], 1 outside. It is harmful at high noise (variation collapses, modes drop) and unnecessary at
+    low noise. Best ImageNet-512 intervals were (0.19, 1.61] to (0.28, 2.90] with w = 2.0-2.1.
+- **Our levels in sigma.** z = (1 - tau) eps + tau x gives sigma = (1 - tau) / tau. The K = 4 sampler's steps start
+  at tau = 0, 2/8, 4/8 and 6/8, that is sigma = inf, 3.0, 1.0 and 0.33.
+  - The interval (0.28, 2.90] covers the steps starting at 4/8 and 6/8: the third and fourth.
+  - C13's commits (K = 8, input levels 3/8-5/8, sigma 1.67-0.6) fall inside it.
+- **Arms (C5's 2,079 units, 8 draws, C5's noise seeds, the default K = 4 sampler, physical stage).**
+  - **A0, unguided:** C4.samples itself; must reproduce C5 exactly.
+  - **A1, interval guidance:** C10's whole-history unconditional (no context frames, record and belief at their
+    episode-start zeros, action kept; the only form that moved the day coin in C10) at w = 2.0. Applied at the third
+    and fourth steps only, weight 1 elsewhere.
+  - **A2, restart:** after the third step (tau = 6/8), re-noise to tau = 2/8 and re-solve the second and third steps;
+    K = 2, then the final step.
+    - The re-noise in our form: x = z / tau_hi + eps' sqrt(sigma_lo^2 - sigma_hi^2), then z' = tau_lo x. That gives
+      z / 3 + 0.745 eps', whose noise std is exactly 1 - 2/8 and signal 2/8.
+    - Fresh noise is seeded per draw, unit and restart.
+  - **Cost per frame:** A0 4 evaluations, A1 6, A2 8.
+- **Readings (C10's set):**
+  - keep rates by kind and light, and at night by C5's edge ring;
+  - staying put among kept draws against the real frame;
+  - spurious mobs per frame;
+  - token error and spread over draws by region.
+- **Declared reading.** An arm is a candidate remedy if day cows' deletion falls by at least a third (6.0% -> 4.0% or
+  lower), with:
+  - staying put within 3 points of A0's;
+  - spurious mobs up by no more than 10%;
+  - static-HUD error up by no more than 50%;
+  - spread at mob and entering-terrain cells down by no more than 10% (C10's failure modes).
+
+  Restart alone working supports drift (i). Guidance alone working supports context use (ii). Neither working
+  points back to the conditional at levels 1-3, a training-side problem.
+- **Accuracy limits:**
+  - one-step draws from a perfect history (imagination's compounding is S2's);
+  - the arms' parameters come from image papers, not tuned here;
+  - the sigma mapping assumes unit-scale tokens;
+  - the whole-history unconditional is an episode start (C10's caveat).

@@ -535,3 +535,37 @@ measures that sampling distribution directly, at the deletion.
   - Free count correlates with terrain (open grass against forest edges) and with other mobs nearby.
   - Mob positions at t0 approximate the simulator's sequential update (zombies move before cows).
   - Units are inner cells (rows 1-5, columns 1-7), so every neighbour is in view.
+
+## C13: where along the signal levels the world loses a visible mob (user 11-20: "run both ... dissect, don't stay surface level")
+
+- **Question.** C5 found that the sampler's first step decides the deletion. Is the under-confidence in the learned
+  conditional on the real path (training's), on the sampler's own path, or in an estimate at zero signal that depends
+  on the noise it should ignore?
+- **Units:** C5's 2,079 start mobs, real past (C2.episode), context at the context signal, C4's context seeds; P1.5
+  checkpoint 10, S2's readers.
+- **(a) The real path.** The real frame t noised to each finest-grid level tau = j / 8, j = 0..7, with 8 draws each.
+  One evaluation at (j, finest step), the denoiser's x-estimate read at the mob's 3 x 3 neighbourhood after the camera
+  move (C5's rule). Keep rate by level, kind and light.
+- **(b) The sampler's path.** The default sampler at K = 8 (the finest trained step, flow term only; the cascade's
+  physical stage), 8 draws, each step's clean estimate read the same way. The keep rate at step j + 1 (input level j /
+  8) beside (a)'s at level j. Both are pure noise at j = 0. A gap that opens later is the sampler leaving training's
+  path.
+- **(c) Zero signal.** The level-0 estimate across its 8 draws at the mob's cell: the spread over draws against the
+  distance from the draws' mean to the real token. At zero signal the ideal x-estimate ignores the noise, so a spread
+  comparable to the distance means the estimate hallucinates from noise. Beside it, the share of draws whose level-0
+  estimate loses the mob.
+- **(d) What the objective spends on mobs.** At each level the share of the target's squared periphery error that lies
+  on labelled entity cells, raw and times the ramp weight w = 0.9 tau + 0.1.
+- **Readings.**
+  - **The conditional is under-confident** if (a) loses mobs at low levels at about the sampler's rate. If that loss
+    sits where w is smallest and mobs' share in (d) is small, the objective is the lead.
+  - **The sampler's path is the cause** if (a) keeps mobs at every level but (b) loses them.
+  - **The zero-signal estimate is the cause** if (c) shows a large spread and its losses match the final deletion.
+- **Prediction:** (a) loses day cows at levels 0-2 at roughly the sampler's 6%, recovering by level 4; (c) a spread that
+  is a large fraction of the distance; (d) mobs well under 5% of the weighted error at low levels.
+- **Accuracy limits:**
+  - the reader is the instrument (real-frame floor 1.00 by day, C5);
+  - one checkpoint;
+  - window evaluations (C4's form, which reproduces S2's step-1 deletion, C5).
+- **The same readings at the learning-rate test's checkpoint** (C14) show whether more training moves the curve, and
+  at which levels.

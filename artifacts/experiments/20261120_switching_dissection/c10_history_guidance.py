@@ -3,7 +3,9 @@ draws. x_hat = x_u + w (x_c - x_u) at each of the sampler's four physical-stage 
 8 context frames by noise ("frames", DFoT's form) or removes the whole history ("all": no context frames, the record
 and belief at their episode-start zeros), the action kept in both. The unguided arm is C4.samples itself (C5's draws).
 
-    MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_switching_dissection.c10_history_guidance [smoke]
+    MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_switching_dissection.c10_history_guidance [smoke | night]
+`night` (added after the full run): the night units only, with C5's edge ring (unit row 1 / 5 or column 1 / 7; the
+full run's ring, the map's outer ring after the camera move, held no units).
 """
 import importlib, json, sys
 from pathlib import Path
@@ -80,7 +82,7 @@ def guided(model, cfg, st, e, ts, draw, mode, w):
     return p_t, v_t
 
 
-def main(smoke=False):
+def main(smoke=False, night_only=False):
     model, cfg = AI.load(C5.CK)
     model.requires_grad_(False).eval()
     R = S2.load_readers(model, cfg)
@@ -98,7 +100,7 @@ def main(smoke=False):
             r = DL.deleted(mg, mp, u)
             if r:
                 units.append((w, e, t0 + 1, int(kind), int(i), int(j), np.mean([x[0] for x in r]), bool(u[7])))
-    units = units[:60] if smoke else units
+    units = units[:60] if smoke else [x for x in units if x[7]] if night_only else units
     rec = {a[0]: [] for a in ARMS}
     fr = {a[0]: {"spurious": [], "err": {g: [0., 0] for g in C1.GROUPS}, "spread": {g: [0., 0] for g in C1.GROUPS}} for a in ARMS}
     check = None
@@ -127,7 +129,7 @@ def main(smoke=False):
                     continue
                 inside = 0 <= r0 < 7 and 0 <= c0 < 9
                 own = r0 * 9 + c0 if inside else None
-                rec[name].append({"kind": kind, "night": night, "edge": inside and (r0 in (0, 6) or c0 in (0, 8)), "inside": inside,
+                rec[name].append({"kind": kind, "night": night, "edge": i in (1, 5) or j in (1, 7), "inside": inside,   # C5's ring (unit grid)
                                   "kept": (cls[:, qi][:, cells] == kind).any(-1).cpu().numpy(),
                                   "stay": (cls[:, qi, own] == kind).cpu().numpy() if inside else np.zeros(DRAWS, bool),
                                   "real_kept": bool((real[qi, cells] == kind).any()), "real_stay": bool(inside and real[qi, own] == kind)})
@@ -140,7 +142,7 @@ def main(smoke=False):
         print(e, len(rec["unguided"]), flush=True)
     KN = C5.KINDS
     res = {"units": len(rec["unguided"]), "draws": DRAWS, "smoke_check_w1_max_abs": check, "arms": {}}
-    if not smoke:
+    if not smoke and not night_only:
         z5 = np.load(HERE / "c5_units.npz")
         a = np.stack([x["kept"] for x in rec["unguided"]])
         res["unguided_reproduces_c5"] = float((a == z5["kept"]).mean()) if a.shape == z5["kept"].shape else f"shape {a.shape} vs {z5['kept'].shape}"
@@ -164,9 +166,12 @@ def main(smoke=False):
         out["spread_by_region"] = {g: v[0] / max(v[1], 1) for g, v in f["spread"].items()}
         res["arms"][name] = out
         print(name, json.dumps(out), flush=True)
-    (HERE / f"c10_history_guidance{'_smoke' if smoke else ''}.json").write_text(json.dumps(res, indent=1) + "\n")
+    tag = "_smoke" if smoke else "_night" if night_only else ""
+    (HERE / f"c10_history_guidance{tag}.json").write_text(json.dumps(res, indent=1) + "\n")
+    np.savez_compressed(HERE / f"c10_units{tag}.npz", **{f"{n}_kept": np.stack([x["kept"] for x in rr]) for n, rr in rec.items()},
+                        kinds=np.array([x["kind"] for x in rec["unguided"]]), edge=np.array([x["edge"] for x in rec["unguided"]]))
     print("check", check, res.get("unguided_reproduces_c5"), flush=True)
 
 
 if __name__ == "__main__":
-    main(len(sys.argv) > 1 and sys.argv[1] == "smoke")
+    main("smoke" in sys.argv[1:], "night" in sys.argv[1:])

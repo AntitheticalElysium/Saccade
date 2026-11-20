@@ -599,3 +599,62 @@ and both arms share that path.
 
 **Predictions:** right that night static falls and that HUD flips stay near the world-eye's. Wrong about "well below
 60%" and about entities.
+
+## C9: a score cache works and an estimate cache does not; the cheaper route halves the cost but no more (`c9_eye_cache.py`, `c9_early.py`, their `.json`, `c9_fixations.png`)
+
+The data are C2's 3,000 DEV frames, and all eyes see the same frames. "Deployed" is the form a world-eye would take in
+training: the chooser's own contingency C with the world's S. Coverage when present:
+
+| Deployed | Chooser | Fresh world-eye | Score cache, 2 stale | Score cache, 5 stale | Estimate cache, 5 stale | Uniform |
+| :--- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Any entity | 0.484 | 0.514 | 0.514 | 0.490 | 0.357 | 0.204 |
+| Cows | 0.418 | 0.462 | 0.462 | 0.433 | 0.283 | 0.149 |
+| Zombies | 0.352 | 0.347 | 0.348 | 0.345 | 0.293 | 0.166 |
+| Changed HUD | 0.409 | 0.299 | 0.307 | 0.338 | 0.282 | 0.109 |
+| Entering terrain | 0.457 | 0.485 | 0.485 | 0.475 | 0.318 | 0.216 |
+| TV to fresh | 0.130 | 0 | 0.031 | 0.086 | 0.232 | |
+| Argmax agreement with fresh | 0.67 | 1 | 0.87 | 0.76 | 0.58 | |
+
+- **The deployed world-eye beats the chooser modestly:**
+  - entities +3.0 points and cows +4.4;
+  - zombies tie (-0.5);
+  - changed-HUD looks fall by 11 points.
+  - With contingency off (C2's form) it had tied on entities and lost 5.6 points on zombies. Contingency restores the
+    zombies.
+- **The estimate cache chases encoder drift.**
+  - Its 5-stale choices are nearer the drift-only eye than the fresh eye (TV 0.133 against 0.232).
+  - Its looks are halfway to uniform: mob share 0.031 of looked cells, against 0.041 for the chooser and 0.017 for
+    uniform.
+  - Its look mass on windows the current world already predicts well is 0.368, against fresh 0.254, the chooser 0.270
+    and drift only 0.449.
+  - So it isn't confirming what the world knows; it is looking where the encoder's tokens moved.
+- **The score cache** stores each refresh's error in that checkpoint's own tokens, which removes the drift. 1, 2 and 5
+  passes stale give TV 0.028, 0.031 and 0.086. At 5 passes stale it still matches or beats the chooser on everything
+  except zombies (-0.7).
+- **Early training drifts faster.** One pass stale, deployed with each checkpoint's own chooser head:
+
+  | At checkpoint | TV to fresh | Entities: stale / fresh / chooser | Zombies: stale / fresh / chooser | Changed HUD: stale / chooser |
+  | :--- | ---: | :--- | :--- | :--- |
+  | 2 | 0.172 | 0.383 / 0.452 / 0.454 | 0.296 / 0.342 / 0.343 | 0.264 / 0.367 |
+  | 3 | 0.117 | 0.451 / 0.473 / 0.459 | 0.345 / 0.348 / 0.342 | 0.319 / 0.402 |
+  | 4 | 0.099 | 0.470 / 0.468 / 0.466 | 0.354 / 0.336 / 0.351 | 0.368 / 0.416 |
+  | 5 | 0.088 | 0.468 / 0.488 / 0.473 | 0.333 / 0.340 / 0.349 | 0.327 / 0.422 |
+
+  Three passes stale early (checkpoint 2 read at 5, contingency off): TV 0.153, entities 0.411 against fresh 0.458.
+  A cache refreshed before checkpoint 3 is worse than the chooser.
+- **The chooser-proxy belief barely matters.** Building Mamba's belief from the chooser's sampled looks instead of the
+  monitor's prior moves the eye by TV 0.006-0.007 (argmax agreement 0.95-0.97). In P1.5 the eye's own past looks
+  hardly change its estimate, so the sequential dependence can be cut. G1 changes this by design, and C9 cannot
+  measure it.
+- **The cheaper route costs +6.6 h,** about 41-45% of each update. Two chunked denoiser forwards are 80-87% of that;
+  the perception, record and belief pass is the rest. It halves the fresh in-loop eye (+12.2 h) and costs about
+  the same as a cache refreshed every pass (+6.3 h). The denoiser's evaluations are the cost, whichever way they are
+  arranged.
+- **The figure** (`c9_fixations.png`): six frames, each eye's per-cell look probability and its most likely window.
+  The 5-stale estimate cache spreads its looks; the score cache follows the fresh eye.
+
+**Predictions:**
+- right that the score cache is far closer to fresh than the estimate cache (0.086 against 0.232), and that the
+  estimate cache chases drift;
+- right that the proxy belief is within the 1-pass staleness (0.007 against 0.038);
+- wrong that the cheaper route costs under a third of the fresh eye: it costs 54%.

@@ -470,3 +470,29 @@ measures that sampling distribution directly, at the deletion.
 - **Cost if adopted:** a second denoiser evaluation per sampler step in imagination (evaluation and the later actor),
   none in training.
 - **Prediction:** "frames" at 1.5 halves the day coin; "all" does more but costs fidelity; w = 3 raises staying put.
+
+## C11: which refresh schedule (user 11-20: "I meant using the world-eye throughout the entire run, but letting it stay stale longer during the beginning ... roughly equivalent to the chooser at those stages. Is that not the case? If you don't know, can we test this first?")
+
+- **Map:** C2's 3,000 DEV frames at all ten P1.5 checkpoints. For every pair i < j, checkpoint i's score cache (its
+  own error) is read at checkpoint j in the deployed form, with checkpoint j's chooser head supplying C. Beside each
+  j: the fresh world-eye and the chooser.
+- **Schedules,** scored from the map:
+  - Pass p is read at checkpoint p, the end of the pass: the cache's oldest point, so the reading is conservative.
+  - Pass 1 always uses the chooser. A cache filled at initialisation is uninformative, because the denoiser's output
+    layers are zero-initialised and the "error" is the size of a random encoder's tokens.
+  - A refresh after pass r serves the passes from r + 1 until the next refresh.
+  - Evaluated: every one- and two-refresh schedule, the chooser throughout, and the fresh eye throughout (the upper
+    bound).
+- **Choice rule (declared before the run):** the two-refresh schedule with the highest mean entity coverage over the
+  ten passes, whose mean zombie coverage is no more than 0.01 below the chooser throughout. Changed-HUD coverage is
+  reported beside it.
+- **Readings:**
+  - the map's entity, zombie and changed-HUD coverage per (i, j);
+  - the per-pass curve of the chosen schedule and of an early-stale schedule (refresh after pass 1, kept for
+    several passes);
+  - the mean over passes for every schedule.
+- **Accuracy limits:**
+  - P1.5's checkpoints, whose world was trained with the chooser's looks. P1.6's world (G1, and the world-eye's own
+    looks) will drift differently;
+  - 3,000 frames: coverage differences of about 1 point are within noise (paired frames; entity frames n = 2,012);
+  - coverage is where the eye looks, not what the world learns from it.

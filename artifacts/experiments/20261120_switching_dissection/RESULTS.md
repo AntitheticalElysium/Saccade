@@ -887,3 +887,10 @@ reader, on the same 2,079 units with the same 8 draws per unit.
     retraining: guidance limited to the mid-chain interval (Kynkaanniemi et al. 2024), restart sampling (Xu et al.
     2023) and epsilon scaling (Ning et al. 2024).
   - Training-time input perturbation (Ning et al. 2023) is unproven here and stays out.
+- **C13's levels at checkpoint 11** (`c13_levels_ckpt_11.json`, own reader): the final samples agree with the
+  calibration (day cows 0.949 -> 0.953 kept at K = 8; night cows 0.782 -> 0.809).
+  - At level 0 the noise-free estimate shows fewer mobs at 11 (day cows 0.90 -> 0.88, night 0.70 -> 0.46), while the
+    sampler recovers more.
+  - Level 0 is a blend read near the reader's threshold, and checkpoint 10 was read with S2's reader while 11 used its
+    own. Those level-0 differences are therefore not interpretable as a change in mechanism. The un-annealed
+    checkpoint may also simply blur its zero-signal estimate.

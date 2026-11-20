@@ -248,3 +248,13 @@ Codex's review found two more problems:
   - Masking the whole history cuts the day deletion by 60%, but overshoots where the history is decisive (static-HUD
     error x10), makes mobs move less and makes draws less varied.
   - It is sampling-only, so no training change.
+- **The day coin** (`20261120_switching_dissection` C12-C14, run before launch at the user's request: "run both and
+  launch P1.6 if they don't point to anything").
+  - It is not a hedge over the next cell (C12), and not the learning rate running out: one more pass at checkpoint
+    5's rate leaves it at 6.0% -> 5.8% (C14).
+  - It is early under-confidence at levels 1-3, carried forward and committed by the sampler at steps 4-6, where the
+    real path recovers (C13): exposure bias.
+  - Its candidate remedies are sampling-time, so P1.6's training does not change for it. They are tested after this
+    run: guidance limited to the mid-chain interval, restart sampling, epsilon scaling.
+  - At night the noise-free estimate omits the mob (70% of night cow deletions, C13), and more training still helps
+    (-10%, C14). That is G1's target.

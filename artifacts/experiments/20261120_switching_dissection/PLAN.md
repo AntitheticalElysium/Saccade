@@ -386,6 +386,9 @@ measures that sampling distribution directly, at the deletion.
 - **Data:** C2's 3,000 DEV target frames (150 episodes, the same picks), P1.5 checkpoints 10, 9, 8 and 5.
 - **Early training (added after the smoke):** checkpoint 2's score and estimate caches read at checkpoint 5 against
   checkpoint 5's fresh eye (3 passes stale, contingency off). The late checkpoints alone would hide early drift.
+- **Early, per pass (`c9_early.py`, added after C9 found early drift):** a score cache one pass stale at checkpoints
+  2-5 (checkpoint j - 1's own error read at j), contingency off and deployed with checkpoint j's own chooser head;
+  beside j's fresh eye and j's chooser. It sets a refresh schedule from data.
 - **Eyes, each scored per window and passed through the chooser's policy:**
   - **fresh:** checkpoint 10's zero-signal estimate against checkpoint 10's tokens (C2's world-eye);
   - **estimate cache, k passes stale:** checkpoint k's estimate against checkpoint 10's tokens (C2's staleness form);
@@ -427,3 +430,43 @@ measures that sampling distribution directly, at the deletion.
   - the 5-stale score cache is far closer to fresh than the estimate cache (0.25), which mostly chases drift;
   - the proxy-belief eye is within the 1-pass staleness (TV < 0.04);
   - the cheaper route costs under a third of the fresh in-loop eye (+12.2 h).
+
+## C10: history guidance at the persistence coin (user 11-20: "For the history guidance ... Do you want to run it now, or does it take a long time?")
+
+- **Source: DFoT** (Song et al., ICML 2025, arXiv 2502.06764, read 11-20).
+  - It is classifier-free guidance where the condition is the history: score = uncond + w (cond - uncond).
+  - "Unconditional" is the same model with the history frames masked by full noise. Training needs no dropout,
+    because diffusion forcing noises every frame independently; DFoT's binary-dropout baseline is worse.
+  - Vanilla guidance is best at w = 1.5 on Kinetics (FVD 208 -> 182). It improves consistency at a cost in diversity,
+    and at w >= 3 it can "generate static videos" by copying the last history frame.
+- **Ours.** Shortcut forcing noises every frame independently too, so masking our 8 context frames by noise is in
+  distribution frame by frame. But our past also enters through the record and Mamba's belief, which training never
+  masks except at an episode's first frame. Two unconditional forms:
+  - **frames:** the 8 context frames at signal 0, fresh noise; the record and belief kept (DFoT's masking);
+  - **all:** no context frames, with the record and belief at their episode-start values (zero), as at an episode's
+    first frame; the action is kept in both terms, so the guidance concerns the history only.
+- **Applied** at every one of the sampler's four steps of the physical stage: x_hat = x_u + w (x_c - x_u), then the
+  sampler's clip and move. The glimpse stage is untouched; the physical tokens never read it.
+- **Units and draws:** C5's 2,079 start mobs and 8 draws, with C5's noise seeds. The unguided arm must reproduce C5's
+  keep rates exactly.
+- **Arms (4):**
+  - unguided (C5);
+  - frames at w = 1.5, DFoT's best;
+  - frames at w = 3, its static-video end;
+  - all at w = 1.5.
+- **Readings:**
+  1. keep rate by kind, day / night, and at night by edge ring (the mob's cell on the map's outer ring) vs inner;
+  2. **staying put:** among kept draws, the share whose mob stays at its own cell, against the real frame's (DFoT's
+     static-video failure);
+  3. **spurious mobs** per frame: map cells the reader calls a mob in the draw and none in the real frame;
+  4. token error against the real frame by region (C1's groups), and the spread over draws by region (diversity).
+- **What makes it a candidate:** day cow deletion well below 6% and the night edge clearly lower, with staying put
+  within a few points of the real frame and no rise in spurious mobs or in the entering-terrain error.
+- **Accuracy limits:**
+  - one-step draws from a perfect history: not imagination's compounding, which S2 measures;
+  - w is not tuned beyond the two published points;
+  - "all" pairs an episode-start context with a mid-episode action, a combination training never saw;
+  - a few-step shortcut sampler, where guidance of the average velocity is a heuristic; DFoT used 50 DDIM steps.
+- **Cost if adopted:** a second denoiser evaluation per sampler step in imagination (evaluation and the later actor),
+  none in training.
+- **Prediction:** "frames" at 1.5 halves the day coin; "all" does more but costs fidelity; w = 3 raises staying put.

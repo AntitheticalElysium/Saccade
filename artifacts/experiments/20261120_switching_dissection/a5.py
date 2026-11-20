@@ -80,7 +80,7 @@ def step1(model, cfg, R, enc, rows, plans, eps, sub, L, grids, override):
             gq[t], fq[t] = own[a]
             with TR.autocast(DEV, cfg):
                 pp = M.Percept(en["p"][:t + 1].to(DEV).float()[None], gq.to(DEV).float()[None], en["v"][:t + 1].to(DEV).float()[None], fq.to(DEV)[None])
-                reads, _, last = S.history(model, pp.p)
+                reads, _, last = S.history(model, pp.p, g=pp.g, fix=pp.fix)   # P1.6: the record reads the glimpse
                 y, c = model.belief(model.belief.tokens(S.embed(model, pp, reads), en["reward"][:t + 1].to(DEV)[None],
                                     en["terminated"][:t + 1].to(DEV)[None], en["action"][:t + 1].to(DEV)[None]), model.belief.initial(1, DEV))
             cs.append(c); bps.append(y[:, -1].float()); rl.append(last)
@@ -146,7 +146,7 @@ def main(n=None):
         override = {} if arm == "orig" else {w: v[arm] for w, v in T.items()}
         res[arm] = step1(model, cfg, R, enc, rows, plans, eps, sub, L, grids, override)
         print(arm, f"{time.time() - t0:.0f}s", flush=True)
-    saved = np.load(S2.HERE / "model.npz")
+    saved = np.load(S2.HERE / f"model{S2.TAG}.npz")                     # this world's own S2 futures (S2_TAG)
     same = (res["orig"]["grid"][:, :, 1] == saved["m_grid"][:len(rows), :, 1]).all((-1, -2))
     print(f"orig vs S2's saved step-1 frames: {same.mean():.4f} of futures identical", flush=True)
     sel = np.array(sorted(T))                                            # the override reached the model?
@@ -159,7 +159,7 @@ def main(n=None):
               f" around the target {near.mean():.5f}", flush=True)
     for r in res.values():
         r.pop("ptok"); r.pop("g0")
-    tag = "" if n is None else "_smoke"
+    tag = S2.TAG + ("" if n is None else "_smoke")                      # P1.6 (S2_TAG): its own files beside P1.5's
     np.savez_compressed(DL.EV.HERE / f"a5{tag}.npz", **{f"{a}_{k}": v for a, r in res.items() for k, v in r.items()},
                         targets=np.array([[w, v["kind"], *v["cell"], *v["on"], *v["away"]] for w, v in sorted(T.items())]))
     summarise(tag)

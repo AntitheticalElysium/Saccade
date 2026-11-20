@@ -32,6 +32,9 @@ DEV = S.DEV
 P15 = ROOT / "artifacts/experiments/20261116_p15/run/ckpt_10.pt"
 CK = Path(os.environ.get("S2_CKPT", P15)).resolve()              # another world (11-19: the switch arm); P1.5 by default
 TAG = os.environ.get("S2_TAG", "")                               # its outputs: model{TAG}.npz, gates{TAG}.json
+OWN = os.environ.get("S2_OWN") == "1"                            # P1.6 (11-21): a world with its own encoder reads through its
+OTAG = TAG if OWN else ""                                        # own readers (readers{TAG}.pt, its S1 kind reader) and its own
+                                                                 # reading of the simulator futures (oracle{TAG}.npz)
 BANK = ROOT / "artifacts/experiments/20261114_s2_harness/dev_bank_h16.npz"
 AI = importlib.import_module("artifacts.experiments.20261030_actor_interface.interface")
 EV = importlib.import_module("artifacts.experiments.20261116_p15.evaluation")
@@ -115,18 +118,22 @@ def readers():
         res["shift_accuracy"] = float((o == dv["shift"]).float().mean())
         res["shift_recall_by_class"] = [float((o[dv["shift"] == c] == c).float().mean()) for c in range(5)]
     torch.save({"hud": hud.state_dict(), "belief": bel.state_dict(), "shift": sh.state_dict(),
-                "checkpoint_sha256": TR.file_sha256(CK), "script_sha256": TR.file_sha256(__file__)}, HERE / "readers.pt")
-    (HERE / "readers.json").write_text(json.dumps(res, indent=1) + "\n")
+                "checkpoint_sha256": TR.file_sha256(CK), "script_sha256": TR.file_sha256(__file__)}, HERE / f"readers{OTAG}.pt")
+    (HERE / f"readers{OTAG}.json").write_text(json.dumps(res, indent=1) + "\n")
     print(json.dumps({k: v for k, v in res.items() if k != "fit_logs"}, indent=1), flush=True)
 
 
 def load_readers(model, cfg):
-    saved = torch.load(HERE / "readers.pt", weights_only=False, map_location="cpu")
-    assert saved["checkpoint_sha256"] == TR.file_sha256(P15)       # the readers read P1.5's frozen encoder's tokens:
-    if CK != P15.resolve():                                        # another world must share that encoder exactly
-        a, b = (torch.load(c, weights_only=False, map_location="cpu")["model"] for c in (P15, CK))
-        assert all(torch.equal(a[k], b[k]) for k in a if k.startswith("perception.")), "the encoder differs from P1.5's"
-    out = {"kind": S.load_reader(P15.parent / "s1/results.reader.pt", P15, DEV)}
+    saved = torch.load(HERE / f"readers{OTAG}.pt", weights_only=False, map_location="cpu")
+    if OWN:                                                        # this world's own readers, fitted on its encoder
+        assert saved["checkpoint_sha256"] == TR.file_sha256(CK), "readers fitted on another checkpoint"
+        out = {"kind": S.load_reader(CK.parent / "s1/results.reader.pt", CK, DEV)}
+    else:
+        assert saved["checkpoint_sha256"] == TR.file_sha256(P15)   # the readers read P1.5's frozen encoder's tokens:
+        if CK != P15.resolve():                                    # another world must share that encoder exactly
+            a, b = (torch.load(c, weights_only=False, map_location="cpu")["model"] for c in (P15, CK))
+            assert all(torch.equal(a[k], b[k]) for k in a if k.startswith("perception.")), "the encoder differs from P1.5's"
+        out = {"kind": S.load_reader(P15.parent / "s1/results.reader.pt", P15, DEV)}
     for k, heads in (("hud", {"hud": 160, "sleep": 2}), ("belief", {"hud": 160, "sleep": 2}), ("shift", {"shift": 5})):
         m = S.MLP(saved[k]["body.0.weight"].shape[1], heads); m.load_state_dict(saved[k])
         out[k] = m.to(DEV).eval().requires_grad_(False)
@@ -224,7 +231,7 @@ def oracle(n=None):
             print(f"start {w + 1}/{len(rows)} {time.time() - t_start:.0f}s", flush=True)
     if pend:
         flush()
-    np.savez_compressed(HERE / ("oracle.npz" if n is None else "oracle_smoke.npz"), **stack(out, len(rows)))
+    np.savez_compressed(HERE / (f"oracle{OTAG}.npz" if n is None else f"oracle{OTAG}_smoke.npz"), **stack(out, len(rows)))
 
 
 def model_futures(n=None):
@@ -395,7 +402,7 @@ CONS = ["health0_alive", "terminated_with_health", "reward_inconsistent"] + \
 
 def gates(n=None):
     rng, tag = np.random.default_rng(20261119), "" if n is None else "_smoke"
-    z = dict(np.load(HERE / f"oracle{tag}.npz")); z.update(np.load(HERE / f"model{TAG}{tag}.npz"))
+    z = dict(np.load(HERE / f"oracle{OTAG}{tag}.npz")); z.update(np.load(HERE / f"model{TAG}{tag}.npz"))
     L = dict(np.load(S.LABELS / "s0_dev_labels.npz"))
     rows, plans = bank(len(z["rd_grid"]))
     ep_of, light = rows[:, 0], z["lab_light"][:, 0]

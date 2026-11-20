@@ -380,3 +380,50 @@ measures that sampling distribution directly, at the deletion.
   - offline frames under the monitor's fixations;
   - it shows where the eye would look, not what looking there would teach the world.
 - **Prediction:** night static falls well below 60%; entity coverage rises at night; HUD flips stay near S's.
+
+## C9: the world-eye's cache, its cheaper route, and what a stale eye looks at (user 11-20: "how bad is the drift for the 5-pass ... Is it worse than using the chooser? Can we see what it would fixate"; "what's your cheaper route?")
+
+- **Data:** C2's 3,000 DEV target frames (150 episodes, the same picks), P1.5 checkpoints 10, 9, 8 and 5.
+- **Early training (added after the smoke):** checkpoint 2's score and estimate caches read at checkpoint 5 against
+  checkpoint 5's fresh eye (3 passes stale, contingency off). The late checkpoints alone would hide early drift.
+- **Eyes, each scored per window and passed through the chooser's policy:**
+  - **fresh:** checkpoint 10's zero-signal estimate against checkpoint 10's tokens (C2's world-eye);
+  - **estimate cache, k passes stale:** checkpoint k's estimate against checkpoint 10's tokens (C2's staleness form);
+  - **score cache, k passes stale:** checkpoint k's estimate against checkpoint k's own tokens. Each refresh stores
+    the error itself (81 values per frame) instead of the estimate;
+  - **drift only:** checkpoint 10's tokens against checkpoint k's tokens. It separates encoder drift from staleness;
+  - **chooser-proxy belief (the cheaper route):** checkpoint 10's estimate with Mamba's belief built from the
+    chooser's sampled fixations, instead of the monitor's prior fixations that C2's fresh eye used. The two
+    fixation streams bracket how much the eye's own past looks move its estimate.
+- **Policies:**
+  - contingency off, for comparison with C2-C8;
+  - the deployed form: the chooser's own contingency C (checkpoint 10's head) with the world's S.
+  - The chooser itself is its own C + S.
+- **Readings per eye:**
+  - coverage (C2's table);
+  - TV distance and argmax agreement to the fresh eye under the same policy;
+  - **where its looks land:** the expected share of looked-at cells per region (mob, changed HUD, static HUD, entering
+    terrain, terrain edit, static map), day and night, against uniform;
+  - **confirmation:** the look mass on windows the current world already predicts well (the fresh score below its
+    frame's median);
+  - the estimate cache's TV to the drift-only eye. If it is near, a stale estimate cache chases encoder drift.
+- **Figure:** six frames (three day, three night, each with a mob), with each eye's per-cell look probability and
+  its most likely window: the chooser, the fresh eye, the 5-stale estimate cache and the 5-stale score cache
+  (deployed form).
+- **Cost of the cheaper route,** at the trainer's shapes on P1.5 checkpoint 10's training streams (warmed, 3 timed
+  each):
+  - the perception, record and belief pass (`c2_cost.inputs`);
+  - two chunked denoiser forwards without gradients.
+  - The exact route is a two-stream pass: the chunk at the context signal for keys and values, then each target at
+    signal 0 reading them. Its code is not written, so two plain chunked forwards stand in for its cost.
+  - Projected on P1.5's measured updates.
+- **Accuracy limits:**
+  - offline frames, and late-training checkpoints only (early training drifts faster);
+  - it shows where each eye looks, not what looking there teaches the world;
+  - the proxy comparison bounds the belief's dependence on the fixation stream in P1.5, where the glimpse barely
+    reaches the periphery estimate. With P1.6's foveal record the dependence is larger by design, and this does not
+    measure it.
+- **Predictions:**
+  - the 5-stale score cache is far closer to fresh than the estimate cache (0.25), which mostly chases drift;
+  - the proxy-belief eye is within the 1-pass staleness (TV < 0.04);
+  - the cheaper route costs under a third of the fresh in-loop eye (+12.2 h).

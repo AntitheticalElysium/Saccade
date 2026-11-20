@@ -496,3 +496,13 @@ measures that sampling distribution directly, at the deletion.
     looks) will drift differently;
   - 3,000 frames: coverage differences of about 1 point are within noise (paired frames; entity frames n = 2,012);
   - coverage is where the eye looks, not what the world learns from it.
+
+## C11b: does the early chooser beat uniform? (user 11-20: "maybe starting uniform for the first 2k updates if that's better than the current chooser and the stale world-eye")
+
+- **Data:** P1.5's own gaze trace (`gaze.bin`): every look the chooser made in training, with the paired uniform
+  window that the chunk held before the chooser replaced it. Restricted to the 400 labelled training episodes
+  (`s0_train400_labels`, `20261104_p1f2_review/trace.py`'s mapping and masks).
+- **Reading:** coverage when present (any entity, zombies, cows, changed HUD, entering terrain) of the chosen window
+  against the paired uniform window. Bins of 250 updates over the first 2,500 updates (pass 1), then one bin per pass.
+- **What it answers:** whether the chooser's looks while it is still learning are better or worse than uniform, by
+  where they land. It does not measure what the world learns from either.

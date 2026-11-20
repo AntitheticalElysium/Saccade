@@ -266,3 +266,25 @@ Codex's review found two more problems:
     run: guidance limited to the mid-chain interval, restart sampling, epsilon scaling.
   - At night the noise-free estimate omits the mob (70% of night cow deletions, C13), and more training still helps
     (-10%, C14). That is G1's target.
+
+## Run notes
+
+- **Launched** 2026-11-20 23:16 AEDT (unit `saccade-p16`, sources sealed `6f08a6c7`).
+- **The fill at checkpoint 6** (update 13,125) took 44 min, against the 47 projected.
+  - The checkpoint's controller state records `eye_cache_06.npy`, and its digest matches.
+  - One row per training frame (2,439,791), all finite, none empty. Per-cell error: median 0.005, 99th percentile
+    5.5; an episode's first frame (no history) averages 2.5.
+  - Looks after the fill follow the cache: the logged S argmax equals the cache's in 100% of rows, against 49% before,
+    where the chooser's own S agreed with the world's error on about half the frames.
+- **Allocator warnings** (expandable segments failed to map 2-20 MB with about 75 MB free) at 03:56, 05:33, 05:45,
+  07:15 and 09:31. They are recovered, not errors. If one becomes an out-of-memory crash, resuming backfills any
+  missing monitor.
+- **Monitor against P1.5, checkpoints 1-6:** +0.1, +5.1, +3.9, +1.1, -1.0 and +1.7% in G1, within one seed's run-to-run
+  variation. No aggregate change, as predicted. The world-eye acts from pass 7.
+- **After the run** (the GPU in this order; the user 11-20: "I'll let you make the judgement call on the next run"):
+  1. C15, the day coin's sampling-time remedies, on P1.5 (`20261120_switching_dissection/c15_remedies.py`);
+  2. readings 2, 4-6 on the selected checkpoint (`readings.py`), and 7 (CPU);
+  3. S2 on P1.6: `S2_CKPT=<selected> S2_TAG=_p16 S2_OWN=1`, then readers, oracle, model and gates (its S1 kind reader
+     comes from the queue's `run/s1/results.reader.pt`);
+  4. reading 3, A5's paired look, with the same environment.
+  - Each is smoke-tested first.

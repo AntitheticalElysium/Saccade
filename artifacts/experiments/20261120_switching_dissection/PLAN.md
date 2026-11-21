@@ -654,3 +654,57 @@ measures that sampling distribution directly, at the deletion.
   - the arms' parameters come from image papers, not tuned here;
   - the sigma mapping assumes unit-scale tokens;
   - the whole-history unconditional is an episode start (C10's caveat).
+
+## The day coin's error form (user 11-21: "Is that actually the error we're seeing or not?", "we want the denoiser to recover from its own mistakes?")
+
+Two measurements, one script (`coin_form.py`). P1.5 checkpoint 10, C5's day units, the native K = 4 sampler (ladder
+tau = 0, 2/8, 4/8, 6/8; step 2/8), C5's draw seeds, S2's readers. No training, no new arm of the world.
+
+**(1) Can the denoiser recover from its own mistakes?** (Codex's paired check, in its exact form)
+- Start the native sampler from the real target frame noised to level tau_i with the draw's own noise (z*_i =
+  (1 - tau_i) eps0 + tau_i x, history fixed), for i = 0..3 (i = 0 is the native sampler itself), and read the final
+  sample.
+- A_i, the deletion from start i, telescopes. Starting at z*_{i-1} and taking one native step is Codex's one own
+  step, so delta_i = A_{i-1} - A_i is the final deletion caused by one own step taken from a perfect input at level
+  i - 1. A_4 is the real frame (floor 0 by day).
+- drop_i is the share of estimates at step i, from the perfect input z*_i, that lack the cow: the step's own error on
+  an in-distribution input.
+- repair_i = 1 - delta_{i+1} / drop_i is the share of those single-step drops that later steps put back, from their
+  own drifted inputs. On the real path, fresh real signal repairs them by construction.
+- **Claim:** later steps fail to repair (exposure bias in the literal sense: they trust a state that lost the cow).
+  **Competing:** they repair most single-step drops, and the coin is the few steps whose drop survives. Then the
+  error rate of the conditional at those levels is the target.
+- **Declared reading (day cows):**
+  - repair <= 0.5 at the steps carrying most of the coin: recovery is the target (train on drifted inputs);
+  - repair >= 0.8: the conditional's per-step error is the target (low-level calibration), not recovery;
+  - between: both, in the measured proportion.
+
+**(2) What is wrong in the drifted state?** At the cow's cell (units whose real frame keeps the cow on its own cell),
+the native state's deviation from the same-noise real path, Delta_i = z_i - z*_i, is decomposed onto:
+- the real cow token x;
+- the draw's own noise eps0 at that cell;
+- the model's absence token (the unit's deleted draws' final token, orthogonalised to x);
+- a remainder.
+
+The frame-wide energy ratio |z_i|^2 / |z*_i|^2 is measured as well. Split by final outcome.
+- **"More noise than the model expects"** (input perturbation, Ning 2023; MixFlow's slowed interpolation): Delta is
+  about alpha (eps0 - x), so the coefficient on eps0 is positive and about minus the coefficient on x. A state that
+  lags its label.
+- **A content swap:** Delta moves toward the absence token, a structured error Gaussian proxies cannot imitate. The
+  matching fix trains on the model's own steps (DEFAR's simulated step, Codex's design).
+- **Epsilon scaling and time shift** presume a frame-wide variance excess. Their premise is absent if the energy ratio
+  is within 2% of 1.
+- **Declared reading** at the commit steps (inputs at tau 4/8 and 6/8) for draws ending deleted:
+  - the absence component holds at least half of |Delta|^2: content swap;
+  - eps0 and x together hold at least half, with the eps0 coefficient at least half the size of the x coefficient
+    and of opposite sign: a lagging state, the input perturbation / MixFlow premise;
+  - otherwise unresolved.
+
+**Smoke checks:** the native path equals C4.samples exactly, and A_0's keeps reproduce C5's on the smoke units.
+
+**Why these are not half-truth ablations.** Both run on the deployed world, sampler and units (no toy, no proxy
+model), with the outcome itself read: the final deletion by S2's reader. Each has a claim, a competing explanation
+and a separating measurement, with the reading declared before running. Each answers a question the user asked, and
+its outcome picks between named fix families: recovery versus per-step calibration, and the form of a recovery fix.
+They select no architecture by themselves. Their limit is one checkpoint, one seed and day units only (night's
+failure, C13, starts at the noise-free estimate).

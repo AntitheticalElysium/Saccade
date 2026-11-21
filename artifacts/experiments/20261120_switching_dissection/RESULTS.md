@@ -944,3 +944,68 @@ What the arms separate, beyond the rule:
 - What is not separated: whether the conditional under-weights history at the commit steps (a training-side
   question), or whether amplification moves the coin through a route the conditional doesn't use. C15 tests remedies
   at sampling time, not the training cause. No follow-up test is run here; it goes to the user first.
+
+## The day coin's error form: a mid-chain conditional error, half repaired, and a content swap, not noise (`coin_form.py`, `coin_form.json`)
+
+P1.5 checkpoint 10, C5's 1,499 day units, the native K = 4 sampler, 8 draws, S2's readers.
+- **Instruments:** the native path equals C4.samples exactly (0.0). The native final reproduces C5's keeps in 11,977
+  of 11,992 draws (99.87%). The smoke had 216 of 216; the rest is batch-dependent bf16 kernels, as in C10.
+
+**(1) Repair: start the sampler from the real frame noised to each level with the draw's own noise (day cows, 929).**
+
+| start (tau) | 0 (native) | 2/8 | 4/8 | 6/8 | real frame |
+|---|---|---|---|---|---|
+| final deletion | 6.10% | 5.33% | 1.99% | 0.16% | 0 |
+
+| step taken from a perfect input at | 0 | 2/8 | 4/8 | 6/8 |
+|---|---|---|---|---|
+| its estimate lacks the cow (drop) | 9.23% | 8.50% | 2.58% | 0.16% |
+| final deletion it causes (delta) | 0.77 +- 0.30 | **3.34 +- 0.28** | **1.83 +- 0.18** | 0.16 +- 0.08 |
+| share of its drops later steps repair | 0.92 | 0.61 | 0.29 | 0 (last step) |
+
+- **85% of the coin (5.17 of 6.10 points) is made by the steps from 2/8 and 4/8,** even when their input is the real
+  frame's own noised form. These inputs are in distribution, so the drop itself is the conditional's error at mid
+  signal, not exposure bias: with a quarter of the signal and a history that shows the cow, the estimate omits it in
+  8.5% of noise draws.
+- **The non-repair is the exposure-bias part.** Later steps, fed the state built from that estimate, put the cow back
+  in 61% (2/8) and 29% (4/8) of cases. On the real path, fresh signal puts it back by construction.
+- **Step 0, from pure noise (always in distribution), drops the cow in 9.2% of estimates but 92% are repaired:** the
+  noise-free estimate's omissions are not the coin (consistent with C13: 15% of day deletions).
+- **By the declared reading: both.** Step 4/8 is below the 0.5 repair bar, step 2/8 between. Either lever alone would
+  remove the same 5.2 points: no drops at 2/8 and 4/8, or full repair of them (the coin would be 0.93 points).
+- Zombies (372): the same shape, smaller (1.65% native; delta 1.04 and 0.67 at 2/8 and 4/8; repair 0.75 and 0.51).
+  Skeletons (97): 14.6% native; the estimate from 2/8 lacks them in 48% (repair 0.85), and from 4/8 in 7.1%
+  (repair 0.38).
+
+**(2) What the drifted state is: the native state's deviation from the same-noise real path at the cow's own cell**
+(cows staying on their cell; 284 deleted and 4,196 kept draws).
+
+| deleted draws | tau 2/8 | 4/8 | 6/8 |
+|---|---|---|---|
+| share of the deviation's energy toward the model's absence token (orthogonal to the cow) | 0.79 | 0.80 | 0.80 |
+| share along the cow token (less cow) | 0.19 | 0.19 | 0.19 |
+| share along the draw's own noise | 0.002 | 0.001 | 0.001 |
+| deviation energy / the level's noise energy | 0.016 | 0.25 | 3.75 |
+| frame-wide state energy / the real path's | 1.000 | 0.998 | 0.998 |
+
+- **It is a content swap, not noise.**
+  - The cow's cell moves toward the terrain content the model ends with (80%), with a smaller loss of the cow itself
+    (19%), and almost nothing along its own noise.
+  - That rules out a state that lags its label: the noise coefficient is ~0, not opposite the cow's. This is the
+    premise of input perturbation and of MixFlow's slowed interpolation.
+  - The frame's energy matches the real path within 0.2%: no frame-wide variance excess, the premise of epsilon
+    scaling and time shift.
+- **Kept draws drift the same way, less.** Absence share 0.70-0.77, cow coefficient -0.12 against -0.23 at 6/8,
+  deviation 1.9 against 3.7 noise energies. This check is not circular: the absence token is the mean of the unit's
+  deleted draws' finals, and kept draws do not enter it. For deleted draws their own final enters it, so their share
+  is partly circular.
+- **By the declared reading: a content swap.** Gaussian proxies do not imitate it. If the fix is recovery, the
+  matching family trains on the model's own steps (DEFAR's simulated step, Codex's design).
+
+**What this settles, and what it doesn't.**
+- The coin needs a mid-chain error on in-distribution inputs (2/8 and 4/8) and its incomplete repair from the drifted
+  state. The drift is structured (toward terrain), not noise.
+- It doesn't say which lever is achievable. C14 says more training at a higher rate does not lower the coin, so the
+  mid-chain error is a floor under the current objective. C15 says amplified history at those steps cuts it, so the
+  history is under-weighted there.
+- Limits: one checkpoint, one seed, day units only.

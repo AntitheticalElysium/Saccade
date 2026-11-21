@@ -140,3 +140,29 @@ rows, not a from-scratch recipe.
   Over those 50 updates the 4/8 term fell 4.5% and the flow term 1.7%; too short to read.
 - **Launched** as unit `saccade-defar` (MemoryMax 11G, below the 11.9 GB free). It resumed at update 15625 at the
   continuation's constant factor 0.579. Expected about 2 h, then `readings.py run`.
+
+## The repair gap: a gate before the readings (user 11-22: "is 625 updates enough ... Is there a way to know this before committing to running the evals on it?")
+
+`repair_gap.py`, about 10 minutes of GPU after training, on the panel's 929 day cows with 4 draws. Each checkpoint is
+read on its own tokens and its own drift, since the fine-tune moves the encoder (the continuation changed all 22
+perception tensors, by up to 1.8%).
+
+**What it measures.**
+- From the real frame noised to 2/8 (4/8), one deployed quarter-step gives the drifted state at 4/8 (6/8), and the
+  finest output is read there.
+- The drifted state is a function of the source state and the history. It holds no more information about the frame
+  than the source state, so a perfect repair can do no better than the finest output on the source state itself.
+- **Repair gap** = drift error / source error - 1, on the cows' 3 x 3 neighbourhoods and on the frame. Zero means
+  perfect repair.
+- Also read: the cow's token-space mass in the drift estimate, against the source and clean estimates.
+
+**Declared reading.** The drift-row checkpoint's neighbourhood repair gap, against the continuation's (the fine-tune
+alone) and checkpoint 10's:
+- **Learned at this dose:** at either transition, at most 75% of the continuation's gap, or a drift-state mass at
+  least 0.05 above it. Then the primary readout runs.
+- **Not learned at this dose:** within 10% of the continuation's gap at both, and the mass within 0.02. Then the
+  readings are not run, and extending the dose (another interval from checkpoint 11) goes to the user.
+- **Between:** the primary runs, read with that caveat.
+
+**Staging.** The primary (native 4-step deletion and the guards) runs first. The explanatory readings (8 steps, the
+token-space chain) run only after it.

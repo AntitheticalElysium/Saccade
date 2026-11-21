@@ -708,3 +708,41 @@ and a separating measurement, with the reading declared before running. Each ans
 its outcome picks between named fix families: recovery versus per-step calibration, and the form of a recovery fix.
 They select no architecture by themselves. Their limit is one checkpoint, one seed and day units only (night's
 failure, C13, starts at the noise-free estimate).
+
+## Why the mid-signal estimate drops the cow (user 11-21: "do we know the exact cause for why the denoiser fails the prediction in the first place? Investigate")
+
+`midsignal.py`. P1.5 checkpoint 10, C5's 929 day cows, 8 draws. Inputs are the real target frame noised to tau = 2/8
+and 4/8 with the draw's own noise (the inputs on which the error-form test found the drops: 8.5% and 2.6%). The
+estimate is read under the deployed step code (d = 1/4, the bootstrap-trained shortcut output) and under the finest
+step (d = 1/8, the flow-trained output).
+
+**Four candidate causes, each with its own separating reading (declared before running):**
+1. **Unit-specific context failure:** some units' contexts fail to carry the cow, whatever the noise. Reading: the
+   dispersion of per-unit drop counts over 8 draws. Above 3, with most drops in units dropped in at least 4 of 8:
+   unit-driven. 1.5 or less: noise-driven per draw.
+2. **A location hedge** (x-prediction's posterior mean spread over the cells the cow could occupy, no cell winning).
+   Reading: in drop draws, the cow's reader probability summed over the 3 x 3 neighbourhood.
+   - At least half of drops with summed mass of 0.5 or more and no cell above the others: a hedge.
+   - At least half with summed mass below 0.2: the estimate believes the cow absent.
+3. **Following the cell's noise:** the history is under-weighted against the noisy cell. For cows staying on their
+   cell, the noise's evidence at that cell is Lambda = (|z - tau x_t|^2 - |z - tau x_c|^2) / (2 (1 - tau)^2):
+   - x_c is the real cow token;
+   - x_t is the real token of the nearest same-terrain, entity-free cell of that frame.
+
+   Reading:
+   - the own-cell keep rate rises steeply with Lambda, and the model is indifferent at Lambda >= 0 (it needs the
+     cell's own evidence to keep the cow): noise-following, history under-weighted;
+   - flat in Lambda: not driven by the cell's noise.
+4. **The shortcut's d = 1/4 output, trained only by bootstrap rows** (about 8% of the batch, from the model's own
+   half steps): an artefact of that output. Reading: the drop under the finest code against the deployed code at the
+   same input.
+   - Finest at most half of deployed: the shortcut output is the source.
+   - Within 25%: the conditional itself.
+
+These are facts about the deployed world, not arms. Each separates causes that call for different fixes:
+- unit-driven: what those contexts share;
+- hedge: commitment of a spread estimate, which K and DEFAR-type repair address;
+- noise-following: how the history is weighted, on the training side;
+- shortcut artefact: the bootstrap, or the finest step at sampling.
+
+Limits: one checkpoint, day cows, the reader's threshold.

@@ -127,3 +127,16 @@ run with the real frame noised to the destination level in place of the drifted 
 
 One checkpoint interval; one seed (no compute for another); day cows. A fine-tune of a model trained without drift
 rows, not a from-scratch recipe.
+
+## Run notes
+
+- **11-22 check (`defar.py check`).** Exactness: the two-stream pass with q = c equals forward() to 0.0, and the drift
+  rows' flow term equals shortcut_loss's to 0.0. The first launch ran out of GPU memory in the first update's backward,
+  when two drift rows could share a micro-batch. Drift rows are now at most one per micro-batch, with
+  `expandable_segments` on.
+- **Cost and memory**, 50 updates from checkpoint 10: 11.5 s per update in steady state, against the continuation's
+  9.27 (+25%); peak 3.42 GiB, against 3.23.
+- **First drift terms** (per frame, ramp-weighted): 0.0045 at 4/8, 0.0029 at 6/8, against a flow-term mean of 0.0021.
+  Over those 50 updates the 4/8 term fell 4.5% and the flow term 1.7%; too short to read.
+- **Launched** as unit `saccade-defar` (MemoryMax 11G, below the 11.9 GB free). It resumed at update 15625 at the
+  continuation's constant factor 0.579. Expected about 2 h, then `readings.py run`.

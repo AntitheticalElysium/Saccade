@@ -8,6 +8,35 @@ Abbreviations:
 - R2k / R4k: the rerun `sw_rec2` at 2,000 / 4,000 updates.
 - A1: the first, re-warmed arm `sw_rec` at 2,000.
 
+**Glossary of this folder's codes (11-22; new work is named by what it tests, not by code):**
+
+| code | what it tests |
+|---|---|
+| A2 | deleted mobs coming back (resurrection) |
+| A3 | where the base world's step-1 deletion happens |
+| A4 | whether a glimpse protects a mob |
+| A5 | the paired look-at-the-mob test |
+| A6 | where the learned gaze moved across the switching arms |
+| B2 | whether switching changed the denoiser's reliance on the record |
+| K sweep | the sampler's step count |
+| C1 | why the chooser's world predicts better |
+| C2 | the world-eye's cost and where it looks |
+| C3 | a cheap memory read for the eye |
+| C4 | the sample-eye (looking where samples disagree) |
+| C5 | the deletion calibration panel (the day-coin panel: 2,079 mobs, 8 draws) |
+| C6 | deletion across training checkpoints |
+| C7 | whether the belief knows which cell a zombie is in |
+| C8 | the belief-change eye |
+| C9 | caching the eye's scores |
+| C10 | history guidance at sampling |
+| C11 / C11b | the cache's refresh schedule / the early chooser against uniform |
+| C12 | the location-hedge test (free against boxed-in cows) |
+| C13 | deletion by signal level along the chain |
+| C14 | the higher-learning-rate continuation (one more interval at checkpoint 5's rate) |
+| C15 | the sampling-time remedies (interval guidance, restart) |
+| coin_form | the error form (repair from real starts; what the drift is made of) |
+| midsignal* | why the mid-signal estimate loses the cow; `midsignal_tokens`: the token-space re-read |
+
 ## 1. The extra appearances are spawns, not jumps (candidate 5 refuted)
 
 | Cows, per 1,000 transitions | Step | Simulator | P1.5 | R4k | A1 |

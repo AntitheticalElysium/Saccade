@@ -1,10 +1,9 @@
-"""Drift rows, DEFAR's simulated inference step (PLAN.md): P1.5 continued from checkpoint 10 by C14's exact recipe plus
-drift rows; checkpoint 11 in defar_run/. C14's run is the matched control. The package is untouched: the trainer's
-bootstrap_rows and shortcut_loss are wrapped here.
+"""The drift-row fine-tune, DEFAR's simulated inference step (PLAN.md): P1.5 continued from checkpoint 10 by the
+higher-learning-rate continuation's exact recipe, plus drift rows; checkpoint 11 in defar_run/. The package is untouched:
+the trainer's bootstrap_rows and shortcut_loss are wrapped here.
 
     MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261122_defar.defar check      # exactness, cost, memory
     MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261122_defar.defar train
-    MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261122_defar.defar readings
 """
 import copy, importlib, json, os, shutil, sys, time
 from pathlib import Path
@@ -17,10 +16,11 @@ from saccade import model as M, train as TR
 
 HERE = Path(__file__).resolve().parent
 C14 = importlib.import_module("artifacts.experiments.20261120_switching_dissection.c14_lr")
-SRC, RUN, CTRL = C14.SRC, HERE / "defar_run", C14.RUN / "ckpt_11.pt"
-DRIFT = {"fraction": 0.25, "seed": 2606, "step": 2, "beta": 1.0}   # step: grid steps of 1 / k_max (2 -> 1/4, the sampler's)
+SRC, RUN, CONT = C14.SRC, HERE / "defar_run", C14.RUN / "ckpt_11.pt"   # CONT: the continuation's checkpoint 11
+DRIFT = {"fraction": 0.25, "seed": 2606, "dest": (4, 6), "beta": 1.0}   # dest: destination signal indices (k_max = 8)
 ORIG_LOSS, ORIG_ROWS = M.shortcut_loss, TR.bootstrap_rows
-CLAMP = [None]                                                     # the sampler's clamp, set from the config
+CFG = {}                                                           # the sampler's clamp, step and step code, from install()
+TERMS = [HERE / "drift_terms.jsonl"]
 
 
 def rows_with_drift(cfg, world_seed, update):
@@ -52,37 +52,42 @@ def two_stream(den, xc, xq, code_c, code_q, prev_action, memory, fix, episode, v
 
 def drift_rows(den, x0, pa, memory, fix, episode, valid, sc, levels, noise):
     """The drift rows' per-frame loss [B, T]: the flow term (stream c, the ordinary inputs) plus beta x the drift term
-    (stream q). For frames at tau1 >= step / k_max: the real frame noised to tau0 = tau1 - step / k_max with the same
-    noise, one no-gradient finest-code evaluation, one sampler step of step / k_max to tau1, then the finest-code estimate
-    there against the real frame, ramp-weighted in x-space, physical group only."""
-    k, ds, b = sc["k_max"], DRIFT["step"], M._bcast
+    (stream q). Every frame's query goes to a destination level, 4/8 on even frames and 6/8 on odd ones. The real frame
+    is noised to one sampler step below it (2/8, 4/8) with the frame's own noise; one no-gradient evaluation by the
+    deployed quarter-step output and the sampler's own step (with its clamp) give the drifted state; then the finest
+    output there against the real frame, ramp-weighted in x-space, physical group only."""
+    k, e_max, b = sc["k_max"], sc["k_max"].bit_length() - 1, M._bcast
     tau = [s.float() / k for s in M._parts(tuple(l[0] for l in levels))]            # p, g, v
     zt = tuple((1 - b(t, x)) * n + b(t, x) * x for x, n, t in zip(x0, noise, tau))
     code = tuple(M.shortcut_code(s_, e_, k) for s_, e_ in levels)                    # (physical, glimpse)
-    s1 = levels[0][0]; can = s1 >= ds
-    s0 = torch.where(can, s1 - ds, s1); t0 = s0.float() / k
+    B, T = levels[0][0].shape
+    lo, hi = DRIFT["dest"]
+    s1 = torch.where(torch.arange(T, device=zt[0].device) % 2 == 0, lo, hi).expand(B, T)   # destination, no randomness
+    s0 = s1 - round(CFG["d"] * k); t0, t1 = s0.float() / k, s1.float() / k
     z0 = [((1 - b(t0, x)) * n + b(t0, x) * x).to(z.dtype) for x, n, z in ((x0[0], noise[0], zt[0]), (x0[2], noise[2], zt[2]))]
     with torch.no_grad():
         mem = tuple(m.detach() for m in memory) if isinstance(memory, tuple) else memory.detach()
-        e0 = two_stream(den, zt, (z0[0], zt[1], z0[1]), code, (M.shortcut_code(s0, levels[0][1], k), code[1]), pa, mem, fix, episode, valid)[1]
-        move = lambda z, xh: z.float() + (xh.float().clamp(-CLAMP[0], CLAMP[0]) - z.float()) / b(1 - t0, z) * (ds / k)
-        zd = [torch.where(b(can, z), move(z, xh), zz.float()).to(zz.dtype) for z, xh, zz in ((z0[0], e0[0], zt[0]), (z0[1], e0[2], zt[2]))]
-    oc, oq = two_stream(den, zt, (zd[0], zt[1], zd[1]), code, code, pa, memory, fix, episode, valid)
-    w = [sc["ramp"][0] * t + sc["ramp"][1] for t in tau]
+        e0 = two_stream(den, zt, (z0[0], zt[1], z0[1]), code, (M.shortcut_code(s0, torch.full_like(s0, CFG["e_step"]), k), code[1]),
+                        pa, mem, fix, episode, valid)[1]
+        move = lambda z, xh: z.float() + (xh.float().clamp(-CFG["clamp"], CFG["clamp"]) - z.float()) / b(1 - t0, z) * CFG["d"]
+        zd = [move(z, xh).to(z.dtype) for z, xh in ((z0[0], e0[0]), (z0[1], e0[2]))]
+    oc, oq = two_stream(den, zt, (zd[0], zt[1], zd[1]), code, (M.shortcut_code(s1, torch.full_like(s1, e_max), k), code[1]),
+                        pa, memory, fix, episode, valid)
+    w, w1 = [sc["ramp"][0] * t + sc["ramp"][1] for t in tau], sc["ramp"][0] * t1 + sc["ramp"][1]
     n_el = sum(t[0, 0].numel() for t in x0)                                          # shortcut_loss's per-frame mean
     per_frame = lambda terms: sum(e.flatten(2).sum(-1) for e in terms) / n_el
     flow = per_frame([b(wt, x) * (o.float() - x) ** 2 for o, x, wt in zip(oc, x0, w)])
-    drift = per_frame([b(w[0], x0[0]) * (oq[0].float() - x0[0]) ** 2, b(w[2], x0[2]) * (oq[2].float() - x0[2]) ** 2])
-    STATS.append((float(drift.detach()[can].mean()) if can.any() else float("nan"), float(flow.detach().mean())))
-    return flow + DRIFT["beta"] * drift * can
-
-
-STATS = []
+    drift = per_frame([b(w1, x0[0]) * (oq[0].float() - x0[0]) ** 2, b(w1, x0[2]) * (oq[2].float() - x0[2]) ** 2])
+    if TERMS[0] is not None:                                                         # the in-run reading (PLAN.md)
+        with open(TERMS[0], "a") as fh:
+            fh.write(json.dumps({"drift_4": float(drift.detach()[:, 0::2].mean()), "drift_6": float(drift.detach()[:, 1::2].mean()),
+                                 "flow": float(flow.detach().mean())}) + "\n")
+    return flow + DRIFT["beta"] * drift
 
 
 def shortcut_loss(den, x0, prev_action, memory, fix, episode, valid, sc, bootstrap, start, levels=None, noise=None):
     """shortcut_loss with drift rows (bootstrap codes: 0 flow, 1 bootstrap, 2 drift). Levels and noise are drawn exactly
-    as shortcut_loss draws them, so the training RNG runs as in C14; non-drift rows go to shortcut_loss itself."""
+    as shortcut_loss draws them, so the training RNG runs as in the continuation; non-drift rows go to shortcut_loss itself."""
     if bootstrap.dtype == torch.bool:
         return ORIG_LOSS(den, x0, prev_action, memory, fix, episode, valid, sc, bootstrap, start, levels, noise)
     boot, drift = bootstrap == 1, bootstrap == 2
@@ -106,17 +111,21 @@ def shortcut_loss(den, x0, prev_action, memory, fix, episode, valid, sc, bootstr
 
 
 def install(cfg):
-    CLAMP[0] = cfg["perception"]["periphery"]["tanh_clamp"]
+    _, e_step, d = M.shortcut_ladder(cfg)
+    CFG.update(clamp=cfg["perception"]["periphery"]["tanh_clamp"], e_step=e_step, d=d)
     M.shortcut_loss, TR.bootstrap_rows = shortcut_loss, rows_with_drift
 
 
 def check():
     """(1) two_stream with q = c equals forward(); (2) a drift row's flow term equals shortcut_loss's on the same row, levels
-    and noise; (3) C14's recipe for a few updates with and without drift rows: seconds per update and peak memory."""
+    and noise; (3) the continuation's recipe with drift rows for 50 updates from a scratch copy: seconds per update and
+    peak memory (the continuation itself logged 9.27 s and 3.23 GiB), and the drift terms it writes."""
     assert os.environ.get("MAMBA_DETERMINISTIC") == "1"
+    scratch = Path(os.environ["DEFAR_SCRATCH"])
     AI = importlib.import_module("artifacts.experiments.20261030_actor_interface.interface")
     model, cfg = AI.load(SRC / "ckpt_10.pt"); den = model.denoiser; den.train()
     install(cfg); dev = torch.device("cuda"); sc = cfg["edm"]["shortcut"]
+    TERMS[0] = None
     g = torch.Generator(device=dev).manual_seed(0)
     B, T = 2, 24
     r = lambda *s: torch.randn(*s, device=dev, generator=g)
@@ -136,45 +145,38 @@ def check():
         out["two_stream_c_vs_forward"] = max(float((a.float() - b_.float()).abs().max()) for a, b_ in zip(f, c))
         out["two_stream_q_vs_forward"] = max(float((a.float() - b_.float()).abs().max()) for a, b_ in zip(f, q))
         orig = ORIG_LOSS(den, x0, pa, mem, fix, ep, va, sc, torch.zeros(B, dtype=torch.bool, device=dev), True, levels, noise)
-        DRIFT_beta, DRIFT["beta"] = DRIFT["beta"], 0.0
+        beta, DRIFT["beta"] = DRIFT["beta"], 0.0
         mine = drift_rows(den, x0, pa, mem, fix, ep, va, sc, levels, noise)
-        DRIFT["beta"] = DRIFT_beta
+        DRIFT["beta"] = beta
         out["flow_term_vs_shortcut_loss"] = float((orig - mine).abs().max() / orig.abs().max())
     print(json.dumps(out), flush=True)
     del model, den; torch.cuda.empty_cache()
-    for arm in ("control", "drift"):                                  # C14's recipe, a few updates, from a scratch copy
-        run = Path(os.environ["DEFAR_SCRATCH"]) / f"check_{arm}"
-        shutil.rmtree(run, ignore_errors=True); run.mkdir()
-        shutil.copyfile(SRC / "ckpt_10.pt", run / "latest.pt")
-        for fn in ("gaze.bin", "chooser.jsonl", "log.jsonl"):
-            shutil.copyfile(SRC / fn, run / fn)
-        ck = torch.load(SRC / "ckpt_10.pt", map_location="cpu", weights_only=False)
-        cfg = copy.deepcopy(ck["cfg"]); total, frac = cfg["p1"]["frames"], cfg["p1"]["checkpoint_every_fraction"]
-        f5 = TR.lr_factor(5 * total * frac, cfg)
-        cfg["p1"] = dict(cfg["p1"], frames=int(round(total * 1.1)), checkpoint_every_fraction=1 / 11)
-        M.shortcut_loss, TR.bootstrap_rows = ORIG_LOSS, ORIG_ROWS
-        if arm == "drift":
-            install(cfg)
-        lr0, vr0 = TR.lr_factor, TR.validate_resume
-        TR.lr_factor = lambda frames, cfg_: f5; TR.validate_resume = lambda *a, **k: None
-        torch.cuda.reset_peak_memory_stats(); STATS.clear()
-        TR.p1(cfg, ck["world_seed"], run, updates=ck["state"]["update"] + 50, log_every=25)   # the 2nd log: steady state
-        TR.lr_factor, TR.validate_resume = lr0, vr0
-        logs = [json.loads(l) for l in (run / "log.jsonl").read_text().splitlines()][-1]
-        print(arm, json.dumps({k: logs.get(k) for k in ("update", "sec_per_update", "peak_gib", "g1")}),
-              "drift/flow per frame", np.nanmean([s[0] for s in STATS]) if STATS else None, np.mean([s[1] for s in STATS]) if STATS else None,
-              flush=True)
-    M.shortcut_loss, TR.bootstrap_rows = ORIG_LOSS, ORIG_ROWS
+    run = scratch / "check_drift"
+    shutil.rmtree(run, ignore_errors=True); run.mkdir()
+    shutil.copyfile(SRC / "ckpt_10.pt", run / "latest.pt")
+    for fn in ("gaze.bin", "chooser.jsonl", "log.jsonl"):
+        shutil.copyfile(SRC / fn, run / fn)
+    ck = torch.load(SRC / "ckpt_10.pt", map_location="cpu", weights_only=False)
+    cfg = copy.deepcopy(ck["cfg"]); total, frac = cfg["p1"]["frames"], cfg["p1"]["checkpoint_every_fraction"]
+    f5 = TR.lr_factor(5 * total * frac, cfg)
+    cfg["p1"] = dict(cfg["p1"], frames=int(round(total * 1.1)), checkpoint_every_fraction=1 / 11)
+    TERMS[0] = scratch / "check_drift_terms.jsonl"; TERMS[0].unlink(missing_ok=True)
+    TR.lr_factor = lambda frames, cfg_: f5; TR.validate_resume = lambda *a, **k: None
+    torch.cuda.reset_peak_memory_stats()
+    TR.p1(cfg, ck["world_seed"], run, updates=ck["state"]["update"] + 50, log_every=25)   # the 2nd log: steady state
+    log = [json.loads(l) for l in (run / "log.jsonl").read_text().splitlines()][-1]
+    terms = [json.loads(l) for l in TERMS[0].read_text().splitlines()]
+    print("drift rows", json.dumps({k: log.get(k) for k in ("update", "sec_per_update", "peak_gib", "g1")}),
+          "calls", len(terms), "drift 4/8, 6/8, flow:", *(round(float(np.mean([t[k] for t in terms])), 6) for k in ("drift_4", "drift_6", "flow")),
+          flush=True)
 
 
 def train():
-    """C14's train() with drift rows installed and its run directory moved here."""
+    """The continuation's train() with drift rows installed and its run directory moved here; drift terms logged."""
     ck = torch.load(SRC / "ckpt_10.pt", map_location="cpu", weights_only=False)
     install(ck["cfg"])
     C14.RUN = RUN
     C14.train()
-    (HERE / "drift_stats.json").write_text(json.dumps({"calls": len(STATS), "drift_term_mean": float(np.nanmean([x[0] for x in STATS])),
-                                                     "flow_term_mean": float(np.mean([x[1] for x in STATS]))}, indent=1) + "\n")
 
 
 if __name__ == "__main__":

@@ -144,6 +144,21 @@ def main(smoke=False):
                                            "indifference_lambda": float(-a / b_) if b_ != 0 else None, "bins_lo_hi_keep_n": bins,
                                            "lambda_mean": float(x.mean()), "lambda_share_negative": float((x < 0).mean()),
                                            "token_separation_mean": float(np.mean([r["sep"] for r in lam]))}
+    # Within reading (3): when the own cell loses the cow, is it relocated to a neighbour (a cow that moved) or deleted;
+    # and the drop-prone units against the cow token's separation from its terrain (how weak the cell's evidence is).
+    for s_ in LEVELS:
+        lam = [r for r in rec if f"lambda|{s_}" in r]
+        if lam:
+            own = np.concatenate([r[f"own|{s_}|deployed"] for r in lam]); kept = np.concatenate([r[f"kept|{s_}|deployed"] for r in lam])
+            sep = np.array([r["sep"] for r in lam]); kd = np.array([(~r[f"kept|{s_}|deployed"]).sum() for r in lam])
+            qs = np.quantile(sep, [0, 1 / 3, 2 / 3, 1])
+            res[f"own_loss|{s_}"] = {"own_cell_losses": int((~own).sum()), "relocated_share": float((kept & ~own).sum() / max((~own).sum(), 1)),
+                                     "deleted_share": float((~kept & ~own).sum() / max((~own).sum(), 1)),
+                                     "drop_by_separation_tercile": [(float(lo), float(hi), float(kd[(sep >= lo) & (sep <= hi)].mean() / 8))
+                                                                    for lo, hi in zip(qs[:-1], qs[1:])],
+                                     "separation_drop_correlation": float(np.corrcoef(sep, kd)[0, 1])}
+    np.savez_compressed(HERE / f"midsignal_units{'_smoke' if smoke else ''}.npz",
+                        **{k: np.stack([r[k] for r in rec]) for k in rec[0] if k.startswith(("kept|", "mass|", "maxp|"))})
     (HERE / f"midsignal{'_smoke' if smoke else ''}.json").write_text(json.dumps(res, indent=1) + "\n")
     print(json.dumps(res, indent=1), flush=True)
 

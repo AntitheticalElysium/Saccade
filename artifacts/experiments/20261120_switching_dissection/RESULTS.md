@@ -963,16 +963,17 @@ P1.5 checkpoint 10, C5's 1,499 day units, the native K = 4 sampler, 8 draws, S2'
 | final deletion it causes (delta) | 0.77 +- 0.30 | **3.34 +- 0.28** | **1.83 +- 0.18** | 0.16 +- 0.08 |
 | share of its drops later steps repair | 0.92 | 0.61 | 0.29 | 0 (last step) |
 
-- **85% of the coin (5.17 of 6.10 points) is made by the steps from 2/8 and 4/8,** even when their input is the real
-  frame's own noised form. These inputs are in distribution, so the drop itself is the conditional's error at mid
-  signal, not exposure bias: with a quarter of the signal and a history that shows the cow, the estimate omits it in
-  8.5% of noise draws.
-- **The non-repair is the exposure-bias part.** Later steps, fed the state built from that estimate, put the cow back
-  in 61% (2/8) and 29% (4/8) of cases. On the real path, fresh signal puts it back by construction.
+- **85% of the coin (5.17 of 6.10 points) follows the steps from 2/8 and 4/8,** even when their input is the real
+  frame's own noised form. Corrected 11-22 (`midsignal_tokens`): the "drop" there is the reader's reading of a
+  calibrated location hedge, not an error. The estimate keeps about 0.9 of the cow's mass, spread over its own cell
+  and its neighbours, and the reader calls a 30% blend "no cow". The loss is made by the later steps.
+- **The later steps make the coin.** Fed the state built from that hedge, they keep or move the cow in 61% (2/8) and 29%
+  (4/8) of cases and lose it in the rest. On the real path, fresh signal puts it back by construction.
 - **Step 0, from pure noise (always in distribution), drops the cow in 9.2% of estimates but 92% are repaired:** the
   noise-free estimate's omissions are not the coin (consistent with C13: 15% of day deletions).
-- **By the declared reading: both.** Step 4/8 is below the 0.5 repair bar, step 2/8 between. Either lever alone would
-  remove the same 5.2 points: no drops at 2/8 and 4/8, or full repair of them (the coin would be 0.93 points).
+- **By the declared reading: both.** Step 4/8 is below the 0.5 repair bar, step 2/8 between. Superseded 11-22: the
+  reader-based "drop" is mostly a hedge (`midsignal_tokens`), so there is one lever, the chain's handling of its own
+  hedged states. The arithmetic stands: full repair would leave 0.93 points.
 - Zombies (372): the same shape, smaller (1.65% native; delta 1.04 and 0.67 at 2/8 and 4/8; repair 0.75 and 0.51).
   Skeletons (97): 14.6% native; the estimate from 2/8 lacks them in 48% (repair 0.85), and from 4/8 in 7.1%
   (repair 0.38).
@@ -1003,56 +1004,92 @@ P1.5 checkpoint 10, C5's 1,499 day units, the native K = 4 sampler, 8 draws, S2'
   matching family trains on the model's own steps (DEFAR's simulated step, Codex's design).
 
 **What this settles, and what it doesn't.**
-- The coin needs a mid-chain error on in-distribution inputs (2/8 and 4/8) and its incomplete repair from the drifted
-  state. The drift is structured (toward terrain), not noise.
-- It doesn't say which lever is achievable. C14 says more training at a higher rate does not lower the coin, so the
-  mid-chain error is a floor under the current objective. C15 says amplified history at those steps cuts it, so the
-  history is under-weighted there.
+- The drift is structured (toward terrain), not noise.
+- Corrected 11-22 (`midsignal_tokens`): the mid-chain estimate on in-distribution inputs is a calibrated hedge, not an
+  error. The coin is the later steps losing the hedged cow's mass. C14 (more training doesn't lower it) and C15
+  (amplified history at those steps cuts it) both fit that: training never shows a hedged state, and amplifying the
+  conditional's deviation commits the hedge.
 - Limits: one checkpoint, one seed, day units only.
 
-## Why the mid-signal estimate drops the cow: weak cell contrast, made weaker by the periphery's pooling, decided on the cell's own noise, and deleted rather than moved (`midsignal.py`, `midsignal_cells.py`, their `.json`)
+## The mid-signal estimate is a calibrated hedge; the coin is the chain losing the hedged cow (`midsignal.py`, `midsignal_cells.py`, `midsignal_tokens.py`, their `.json`)
 
 P1.5 checkpoint 10, C5's 929 day cows, 8 draws. Inputs are the real frame noised to tau 2/8 and 4/8 with the draw's own
-noise. The deployed drop reproduces the error-form test exactly: 8.48% and 2.58%.
+noise. The deployed drop reproduces the error-form test exactly: 8.48% and 2.58%. `midsignal_tokens` reads the
+estimate in token space on the 560 cows staying on their cell with a same-terrain empty cell in view:
+- the cow weight a on the terrain -> cow line at the own cell;
+- the weight moved to each neighbour;
+- their sum, the mass M (same-terrain neighbours, exact; all neighbours, approximate).
 
-**By the declared readings:**
+The instruments agree exactly: midsignal's star estimates equal coin_form's chain (0.0), and 7,432 of 7,432 drop
+decisions match.
 
-| reading | 2/8 | 4/8 | verdict |
-|---|---|---|---|
-| (4) drop, finest step / deployed d = 1/4 | 9.8% / 8.5% | 3.0% / 2.6% | not the shortcut output: the conditional itself |
-| (2) drops with summed cow mass below 0.2 in the 3 x 3 neighbourhood (0.5 or more) | 88% (0.6%) | 88% (0%) | absence, not a hedge (kept draws hold 1.0-1.2) |
-| (1) dispersion of per-unit drops; share of drops in units dropped >= 4 of 8 | 3.6; 52% | 2.4; 23% | partly unit-driven at 2/8, mostly noise at 4/8 |
-| (3) own-cell keep against the cell's noise evidence Lambda (staying cows, 560 units) | 0.42 (Lambda < -0.8) -> 1.00 (> 0.7); indifferent at -1.0 | 0.76 -> 1.00; indifferent at -1.7 | follows the cell's noise, with a prior of about +1 nat for "cow here" |
+**The reader read hedges as absence (corrected 11-22).**
+- **The reader's threshold.** It calls a cell a cow from a weight of 0.30 (median; IQR 0.25-0.55). Estimates lie on the
+  cow-terrain line: median distance off it 0.016 of the separation.
+- **At 2/8, the reader's drops keep the cow's mass.**
+  - Median M 0.89 (finest code 0.92); 87% (92%) at 0.6 or more, 3% (0.6%) below 0.3.
+  - The own cell keeps about 0.42, the neighbours the rest.
+  - By reading (2) of `midsignal_tokens`: a hedge read as a drop.
+  - midsignal's (2), "absence, not a hedge" (reader mass below 0.2 in 88%), is superseded; so are its "deleted rather
+    than relocated about half the time" and the "weak +1 nat prior".
+- **At 4/8:** median M 0.72 (0.83); 64% (75%) at 0.6 or more, 12% (5%) below 0.3. Mostly a hedge, partly a removal.
 
-**What concentrates the drops.**
-- **The cow token's separation from its terrain token.** Drop at 2/8 by separation third: 19.6% / 0.27% / 0.53%
-  (4/8: 5.3% / 0.07% / 0.13%); correlation -0.65.
-- **By terrain:**
-  - cows on sand: 46 units, 25.8%, separation 2.12;
-  - on grass: 505 units, 5.1%, separation 3.70;
-  - on path: 9 units, 2.8%.
-- **In raw pixels** (`midsignal_cells`), the low-separation third differs from its terrain by 0.138 rms at full
-  resolution, against 0.270 for the rest. The periphery's own 3 x 3 pooling keeps 48% of that difference for them,
-  against 69% for the rest: 0.070 against 0.187.
-  - Sand cows lose most: full 0.195, pooled 0.104, against grass 0.229 and 0.153.
-  - The token separation follows the pooled difference (correlation 0.92) more than the full one (0.88). The drop
-    correlates -0.61 with the pooled difference and -0.60 with the full one.
-- **When the own cell loses the cow,** the estimate relocates it to a neighbour in 51% of cases (2/8) and deletes it in
-  49%. At 4/8: 33% and 67%.
+**The model's own posterior keeps the cow; the chain loses it.**
+- **At tau = 0,** the finest code's estimate (E_theta[x | history], noise-independent per C13) holds:
+  - the cow's mass: 0.978 over same-terrain neighbours, 0.996 over all;
+  - an own-cell weight of 0.62. The data's staying-put share is 0.603, and the game keeps 0.996.
+- **The native K = 4 sampler keeps 0.937 on the same draws.** Gap 0.041 / 0.059; on the 138 units whose whole
+  neighbourhood shares the terrain (exact), M 1.03 against a keep of 0.942.
+  - By reading (1): the chain loses mass its own posterior holds (the same-terrain gap sits right at the 0.04 bar,
+    the others above it).
+  - Most of the coin is in units whose posterior is full: units with M_0 of 0.97 or more keep only 0.953-0.956.
+- **Along the native chain, in draws that end deleted, the mass drains step by step.** Kept draws stay at 1.0.
+
+  | native estimate | 0 | 1 (2/8) | 2 (4/8) | 3 (6/8, the final) |
+  |---|---|---|---|---|
+  | mass, deleted draws | 0.90 | 0.75 | 0.44 | 0.23 (median 0.04) |
+  | own weight, deleted draws | 0.54 | 0.36 | 0.17 | 0.08 |
+
+  Deleted finals are mostly empty: median mass 0.04, though a quarter keep 0.44 or more spread below the reader's
+  threshold (faint ghosts).
+- **From the real 2/8 start (reading 3).** The 305 reader drops end deleted in 95 draws and kept in 210.
+
+  | | mass at 2/8 | 4/8 | 6/8 | final cow position |
+  |---|---|---|---|---|
+  | ending deleted | 0.79 | 0.53 | 0.10 | none |
+  | kept | 0.93 | 0.97 | 1.00 | mostly a neighbour (own weight 0.014) |
+
+  The estimate's own weight at 2/8 barely separates them: above 1/4 in 68% against 79%. By the declared reading, the
+  later steps remove a cow their own input favours.
+
+**Low-contrast cows: the evidence, not the posterior.**
+- Reading (4)'s M_0 by separation tercile is 0.934 / 0.995 / 1.005 over same-terrain neighbours. By the declared bar,
+  that says the history prior is weaker for the low tercile. It is a measurement confound:
+  - low-contrast (sand) cows have fewer same-terrain neighbours (5.2 against 6.2-6.6);
+  - over all neighbours their M_0 is 0.975;
+  - on the exact all-same-terrain subset it is 1.01, while that subset's chain keeps only 0.884 (28 units).
+  - Their posterior holds them; their chain loses 12%.
+- At equal cell evidence Lambda, the 2/8 own weight differs by less than 0.05 across terciles. Contrast acts through
+  how strong the cell's evidence is, not through a different weight on history.
+- What concentrates the drops (midsignal_cells, unchanged):
+  - separation third 19.6% / 0.27% / 0.53% (reader drops at 2/8);
+  - sand 25.8% against grass 5.1%;
+  - the periphery's 3 x 3 pooling keeps 48% of the low third's pixel contrast, against 69% for the rest.
 
 **The causal chain as measured.**
-1. Some cows are weakly distinct from their terrain in the coarse token. They are low-contrast in pixels (sand above
-   all), and the periphery's pooling blends them further.
-2. At mid signal, the noise at that cell often makes it look like terrain. The estimate follows the cell's evidence,
-   with a weak persistence prior (about +1 nat).
-3. Losing the cow at its cell, it deletes rather than relocates about half the time, with no constraint that a cow
-   seen at t - 1 is still nearby.
-4. Later steps, fed the state built from that estimate, repair only 61% (2/8) and 29% (4/8). The state has moved
-   toward terrain (the error-form test).
+1. At low signal, the estimate is a calibrated posterior mean. It keeps the cow (mass about 1), with its location split
+   between staying (0.62) and the neighbours, as in the data.
+2. The deterministic sampler moves the state toward that hedge. The next steps receive a cow superposed over several
+   cells. Training never shows that: its states are always one real frame plus noise.
+3. At 4/8 and 6/8, those states are resolved. The cow lands on one cell (kept or moved), or in about 6% of draws its
+   mass drains to nothing (0.90 -> 0.75 -> 0.44 -> 0.23).
+4. Low-contrast cows give weaker evidence, so the hedge lasts longer and drains more often (chain keep 0.88 against
+   0.96), though their posterior is as full as the others'.
 
 **What this does not establish.**
-- Whether higher periphery acuity would lower the coin: pooling is correlated with the drops, not manipulated, and
-  changing it changes the encoder.
-- Why the learned prior is only about +1 nat and why losses are deleted rather than moved. These are properties of
-  the learned conditional; the training data's real staying-put share of cows is 0.603 (C10).
-- Lambda's terrain token is the nearest same-terrain empty cell, an approximation.
+- Why the resolution of a superposed state defaults to terrain rather than to a cell. By arithmetic, each cell of a
+  hedge holds only part of a cow (0.1-0.4) at a level where training's cows are whole. That is a reading of the state,
+  not a measured cause.
+- Whether a sharper periphery would lower the coin: correlational.
+- One checkpoint, day cows, the linear blend reading. It is exact for a posterior mean over cow and terrain at a cell,
+  and approximate where a neighbour's terrain differs.

@@ -37,11 +37,13 @@ def label_frames():
 
 
 @torch.no_grad()
-def episode(model, cfg, dl, e, zero_belief_fovea=False):
-    """C2.episode (with the glimpse); optionally Mamba reads a record whose fovea group is zeroed (reading 2's arm)."""
-    if not zero_belief_fovea:
+def episode(model, cfg, dl, e, zero_from=None):
+    """C2.episode (with the glimpse); with `zero_from`, Mamba reads the record with its features from that index on
+    zeroed (reading 2's arm: Record.size(cfg, coarse=True), the fovea group; the full size zeroes nothing, the smoke's
+    check that this copy is C2's pass)."""
+    if zero_from is None:
         return C2.episode(model, cfg, dl, e)
-    m = cfg["p1"]["monitor"]; T = int(dl[e].T); n0 = M.Record.size(cfg, coarse=True)
+    m = cfg["p1"]["monitor"]; T = int(dl[e].T)
     recs = [[(0, 1, t, *D.fixation_prior(np.random.default_rng([m["fixed_fixation_seed"], int(e), t]), ())) for t in range(T + 1)]]
     c = TR.tensors(D.gather([dl[e]], recs), DEV)
     with TR.autocast(DEV, cfg):
@@ -52,7 +54,7 @@ def episode(model, cfg, dl, e, zero_belief_fovea=False):
             sl = slice(a, min(T + 1, a + 512))
             first = torch.zeros(1, sl.stop - a, dtype=torch.bool, device=DEV); first[:, 0] = a == 0
             ri, si = model.record.scan(model.record.input(Pe.p[:, sl], Pe.g[:, sl], Pe.fix[:, sl]), first, state); state = si[:, -1]
-            si = si.clone(); si[..., n0:] = 0                                   # Mamba's read without the fovea group
+            si = si.clone(); si[..., zero_from:] = 0                            # Mamba's read without the fovea group
             y, carry = model.belief(model.belief.tokens(model.belief.percept_embed(M.Percept(Pe.p[:, sl], Pe.g[:, sl], Pe.v[:, sl], Pe.fix[:, sl]), si),
                                                         c["reward"][:, sl], c["terminated"][:, sl], c["action"][:, sl]), carry)
             rins.append(ri.to(torch.bfloat16)); ys.append(y[:, 1::2])
@@ -86,7 +88,7 @@ def window_err(model, cfg, st, e, t, zero_read_fovea):
     return (w[:, None] * (o[0][:, -1].float() - x0[0][:, -1].float()).square().mean(-1)).cpu().numpy()
 
 
-def reliance(ck):
+def reliance(ck, smoke=False):
     """(2) Error with the fovea group zeroed in the denoiser's read (Mamba intact), and in both reads, against intact; by
     region (labels), light, camera still / moved, and whether the cell was looked at in the last 1 / 8 frames."""
     model, cfg = AI.load(ck); model.requires_grad_(False).eval()
@@ -94,9 +96,14 @@ def reliance(ck):
     L, picks = label_frames()
     groups, light, lookup, loff, _ = C1.semantics(L)
     dl = S.episodes(L)
+    check = {}
+    if smoke:
+        picks = dict(list(picks.items())[:3])
+        e = next(iter(picks)); a, b = C2.episode(model, cfg, dl, e), episode(model, cfg, dl, e, M.Record.size(cfg))
+        check = {"copy_equals_c2_rin": float((a[2].float() - b[2].float()).abs().max()), "copy_equals_c2_bp": float((a[3].float() - b[3].float()).abs().max())}
     rows = []
     for e, ts in picks.items():
-        st, stz = episode(model, cfg, dl, e), episode(model, cfg, dl, e, True)
+        st, stz = episode(model, cfg, dl, e), episode(model, cfg, dl, e, M.Record.size(cfg, coarse=True))
         fix = st[1].fix[0].cpu()
         for t in (int(x) for x in ts):
             arms = [window_err(model, cfg, st, e, t, False), window_err(model, cfg, st, e, t, True), window_err(model, cfg, stz, e, t, True)]
@@ -110,7 +117,7 @@ def reliance(ck):
     err = np.stack([r[0] for r in rows])                                  # [frames, 3 arms, 8 levels, 81]
     rw = np.array([r[1] for r in rows]); night = light[rw] < 0.5
     l1, l8, mv = np.stack([r[2] for r in rows]), np.stack([r[3] for r in rows]), np.array([r[4] for r in rows])
-    res = {"frames": len(rows), "arms": ["intact", "fovea_zeroed_denoiser_read", "fovea_zeroed_both_reads"], "by": {}}
+    res = {"frames": len(rows), "arms": ["intact", "fovea_zeroed_denoiser_read", "fovea_zeroed_both_reads"], "smoke_checks": check, "by": {}}
     for g in C1.GROUPS:
         gm = groups[g][rw]                                                # [frames, 81]
         for tag, fsel in (("day", ~night), ("night", night), ("camera_still", ~mv), ("camera_moved", mv)):
@@ -121,7 +128,7 @@ def reliance(ck):
                 e_arm = [(err[:, a].sum(1) * cell).sum() / cell.sum() for a in range(3)]   # summed over levels, per cell
                 res["by"][f"{g}|{tag}|{lk}"] = {"cells": int(cell.sum()), "intact": float(e_arm[0]),
                                                 "rel_increase_denoiser": float(e_arm[1] / e_arm[0] - 1), "rel_increase_both": float(e_arm[2] / e_arm[0] - 1)}
-    np.savez_compressed(OUT / f"reliance_{Path(ck).stem}.npz", err=err, rows=rw, look1=l1, look8=l8, moved=mv)
+    np.savez_compressed(OUT / f"reliance_{Path(ck).stem}{'_smoke' if smoke else ''}.npz", err=err, rows=rw, look1=l1, look8=l8, moved=mv)
     return res
 
 
@@ -133,16 +140,19 @@ def units(L):
             if 9 <= int(rows[u[0], 3]) + 1 <= L["ep_T"][int(rows[u[0], 0])] and DL.deleted(mg, mp, u)]
 
 
-def calibration(ck):
+def calibration(ck, smoke=False):
     """(4) C5's draws (default sampler, 8 per unit, own S1 reader) with each unit's mob looked at in frame t - 1 or not;
     (6) spurious mobs (drawn where the real frame has none) per cell inside t - 1's window against outside. On ck and on
-    P1.5 checkpoint 10 (the control: its record holds no glimpse)."""
+    P1.5 checkpoint 10 (the control: its record holds no glimpse; with C5's reader, seeds and units it must reproduce
+    C5's keeps exactly)."""
     L = dict(np.load(S.LABELS / "s0_dev_labels.npz")); loff = np.r_[0, np.cumsum(L["ep_T"] + 1)]
     dl = S.episodes(L); us_all = units(L)
+    if smoke:
+        us_all = [x for x in us_all if x[0] in sorted({u[0] for u in us_all})[:2]]
     res = {}
     for name, path in (("p16", Path(ck)), ("p15", P15)):
         model, cfg = AI.load(path); model.requires_grad_(False).eval()
-        R = {"kind": C5.reader(model, cfg, False)}
+        R = {"kind": S.load_reader(path.parent / "s1/results.reader.pt", path, DEV)}   # each world's S1 kind reader (C5's for P1.5)
         rec, spur = [], {"in": [0., 0], "out": [0., 0], "real_in": [0., 0], "real_out": [0., 0]}
         for e in sorted({x[0] for x in us_all}):
             st = C2.episode(model, cfg, dl, e)
@@ -176,8 +186,11 @@ def calibration(ck):
                     if m.sum() >= 5:
                         out["keep"][f"{C5.KINDS[kn]}|{tag}|{lk}"] = {"units": int(m.sum()), "deletion": float(1 - kept[m].mean()),
                                                                      "se": float((1 - kept[m].mean(1)).std(ddof=1) / np.sqrt(m.sum()))}
+        if name == "p15" and not smoke:
+            z5 = np.load(Path(C5.__file__).parent / "c5_units.npz")["kept"]
+            out["reproduces_c5"] = float((kept == z5).mean()) if kept.shape == z5.shape else f"shape {kept.shape} vs {z5.shape}"
         res[name] = out
-        np.savez_compressed(OUT / f"calibration_{name}.npz", kept=kept, kinds=kinds, night=night, looked=looked, moved=moved)
+        np.savez_compressed(OUT / f"calibration_{name}{'_smoke' if smoke else ''}.npz", kept=kept, kinds=kinds, night=night, looked=looked, moved=moved)
         del model; torch.cuda.empty_cache()
     return res
 
@@ -186,7 +199,7 @@ def zombies(ck):
     """(5) C7 on ck with its own reader."""
     C7 = importlib.import_module(SD + "c7_zombies")
     C7.C5.CK = Path(ck)
-    C7.C5.S2.load_readers = lambda model, cfg: {"kind": C5.reader(model, cfg, False)}
+    C7.C5.S2.load_readers = lambda model, cfg: {"kind": S.load_reader(Path(ck).parent / "s1/results.reader.pt", Path(ck), DEV)}
     C7.HERE = OUT                                                         # c7_zombies.json written here, not over C7's
     C7.main()
     return json.loads((OUT / "c7_zombies.json").read_text())
@@ -210,7 +223,8 @@ if __name__ == "__main__":
     what = sys.argv[1]
     if what != "trace":
         assert os.environ.get("MAMBA_DETERMINISTIC") == "1"
-    res = {"reliance": lambda: reliance(sys.argv[2]), "calibration": lambda: calibration(sys.argv[2]),
+    smoke = "smoke" in sys.argv[3:]
+    res = {"reliance": lambda: reliance(sys.argv[2], smoke), "calibration": lambda: calibration(sys.argv[2], smoke),
            "zombies": lambda: zombies(sys.argv[2]), "trace": trace}[what]()
-    (OUT / f"{what}.json").write_text(json.dumps(res, indent=1) + "\n")
+    (OUT / f"{what}{'_smoke' if smoke else ''}.json").write_text(json.dumps(res, indent=1) + "\n")
     print(json.dumps(res, indent=1)[:4000], flush=True)

@@ -297,6 +297,19 @@ Codex's review found two more problems:
     is killed inside its own group. `memwatch.sh` logs host memory, shared memory and the largest holders every 20 s
     to `checks/memory_resume.log`, and stops the unit if free memory stays below 2 GB. The queue skips completed
     steps, so the smoke pass was not repeated.
+  - **Four steps then failed** (found at 19:01; I was watching only for the unit's exit):
+    - clocks, trajectory and mining ran out of GPU memory. The queue's parent ran the adapter check in its own
+      process and kept 1.5 GiB of CUDA memory (context and cached blocks) through the queue. The check now runs in
+      its own process, and the parent holds none.
+    - recursion_4's real-replay identity failed at 0.0434 against 0.03 (P1.5: 0.016 over all 128 windows). Its
+      first batch was reproduced exactly and decomposed at the worst window:
+      - the stored fp16 tokens alone move a full pass 0.028 from encode's full-precision belief (P1.5: 0.013);
+      - the step-by-step path stays 0.017 from a pass over the same stored tokens (P1.5: 0.010).
+
+      The path is sound; P1.6's belief is about twice as sensitive to fp16 token rounding at its worst window, with
+      the same means (0.0066 against 0.0065). The identity is now checked against the same-precision pass, with the
+      threshold unchanged, and the old error is still reported (`recursion_steps.py`, a0760b9b and 84c48cc3).
+  - Restarted at 19:08 with a watcher that wakes on the first failed step, an OOM kill or a guard stop.
 - **After the run** (the GPU in this order; the user 11-20: "I'll let you make the judgement call on the next run"):
   1. C15, the day coin's sampling-time remedies, on P1.5 (`20261120_switching_dissection/c15_remedies.py`);
   2. readings 2, 4-6 on the selected checkpoint (`readings.py`), and 7 (CPU);

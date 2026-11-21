@@ -122,7 +122,7 @@ def check():
     r = lambda *s: torch.randn(*s, device=dev, generator=g)
     x0 = (r(B, T, 81, 16).tanh(), r(B, T, 9, 64).tanh(), r(B, T, 8).tanh())
     mem = (r(B, T, den.K, den.W), r(B, T, 81, den.record_read[0].in_features))
-    pa = torch.randint(0, 17, (B, T), device=dev, generator=g); fix = torch.randint(0, 49, (B, T), device=dev, generator=g)
+    pa = torch.randint(0, 17, (B, T), device=dev, generator=g); fix = torch.randint(1, 8, (B, T, 2), device=dev, generator=g)   # window centres (row, col)
     ep, va = torch.zeros(B, T, dtype=torch.long, device=dev), torch.ones(B, T, dtype=torch.bool, device=dev)
     levels = [M.shortcut_levels((B, T), sc["k_max"], torch.zeros(B, dtype=torch.bool, device=dev), dev) for _ in range(2)]
     noise = tuple(torch.randn(t.shape, device=dev, generator=g) for t in x0)

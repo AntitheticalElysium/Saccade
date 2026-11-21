@@ -281,6 +281,22 @@ Codex's review found two more problems:
   missing monitor.
 - **Monitor against P1.5, checkpoints 1-6:** +0.1, +5.1, +3.9, +1.1, -1.0 and +1.7% in G1, within one seed's run-to-run
   variation. No aggregate change, as predicted. The world-eye acts from pass 7.
+- **Training ended** at 15:52 on 11-21. The rule selected checkpoint 10 (no three successive increases). Against
+  P1.5, G1 at checkpoints 7-10 was +2.3, +2.5, +1.0 and +1.0%.
+- **The evaluation froze the host.** The full S1 stage had encoded the training set and 800 of the 1,009 DEV
+  episodes by 16:12.
+  - From 16:17 the desktop stopped responding: apps were marked unresponsive, a crashed btop took 4 minutes to dump
+    core, and udevd's watchdog fired at 16:32. The machine rebooted at 16:38.
+  - Nothing was OOM-killed. The host has no swap, and the unit's 24 GB cap was above what the rest of the host left
+    free. The last check (15:55) showed 5 GB available while the unit held 8.2 GB, with 12 GB of shared memory charged
+    outside it, holder unknown (184 MB after the reboot). So the kernel thrashed instead of killing the job.
+  - S1 keeps every episode's encoding in host memory. P1.6's adds the 2,048-wide record copy every 64th frame, about
+    2.5 GB more than P1.5's (measured on three episodes: 9.3 kB against 18.6 kB per frame there). The queue's parent
+    process holds about 2.8 GB throughout.
+  - **Resumed at 16:52** as unit `saccade-p16-eval` with a cap of 18 GB, below the host's free memory, so an overrun
+    is killed inside its own group. `memwatch.sh` logs host memory, shared memory and the largest holders every 20 s
+    to `checks/memory_resume.log`, and stops the unit if free memory stays below 2 GB. The queue skips completed
+    steps, so the smoke pass was not repeated.
 - **After the run** (the GPU in this order; the user 11-20: "I'll let you make the judgement call on the next run"):
   1. C15, the day coin's sampling-time remedies, on P1.5 (`20261120_switching_dissection/c15_remedies.py`);
   2. readings 2, 4-6 on the selected checkpoint (`readings.py`), and 7 (CPU);

@@ -1,0 +1,20 @@
+{
+ "frames": 123494,
+ "argmax_agree_6_10": 0.7308614183685037,
+ "argmax_agree_cache_6": 0.7834064812865402,
+ "argmax_agree_cache_10": 0.6858389881289779,
+ "spearman_6_10": 0.8985460629595966,
+ "spearman_cache_6": 0.9534789721556637,
+ "spearman_cache_10": 0.8815639923985786,
+ "total_error_6": 10655633.0,
+ "total_error_10": 10268805.0,
+ "top_window_has_any_entity|cache": 0.7297113007902395,
+ "top_window_has_any_entity|ckpt6": 0.730332290233419,
+ "top_window_has_any_entity|ckpt10": 0.7399150096801296,
+ "top_window_has_changed_hud|cache": 0.4423789446786764,
+ "top_window_has_changed_hud|ckpt6": 0.44314552191133255,
+ "top_window_has_changed_hud|ckpt10": 0.39830075380094543,
+ "top_window_has_entering_map|cache": 0.7471285199700959,
+ "top_window_has_entering_map|ckpt6": 0.7452481819623479,
+ "top_window_has_entering_map|ckpt10": 0.7453388006615165
+}

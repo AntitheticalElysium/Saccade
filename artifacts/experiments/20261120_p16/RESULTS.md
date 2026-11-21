@@ -146,3 +146,72 @@ checkpoint 6.
 - **The day coin is unchanged (6.0 -> 6.1%).** C15 on P1.5: interval guidance cuts it by a third (-2.14 +- 0.21) but
   takes the history-free prediction's error into the HUD (x37) and into spurious mobs (+28%). Restart does nothing.
   By the declared reading neither is a remedy. Details in `../20261120_switching_dissection/RESULTS.md`, C15.
+
+## 7. Record checks (user 11-21; `record_checks.py`, `readings_record/`; PLAN "Record checks")
+
+**The eye in training (F1-F5).** The new eye behaves almost like the old one: both are broad samplers.
+
+| passes 7-10 | P1.5 chooser | P1.6 world-eye |
+|---|---|---|
+| window entropy (max 5.61 bits) | 5.58 | 5.58 |
+| chosen window = top-S window | 14.2% | 14.8% |
+| chosen window = top-C window | 7.1% | 7.1% |
+| mean probability of the chosen window (uniform 0.020) | 0.092 | 0.100 |
+| repeats the previous window (chance 2.0%) | 4.0% | 4.4% |
+| jump between looks (Chebyshev cells) | 3.12 | 3.10 |
+| entity looked at, given the previous look held one / didn't | 0.50 / 0.41 | 0.53 / 0.42 |
+
+- **The policy's form caps how far any score concentrates the looks:** 0.8 softmax(0.5 C + 0.5 S, each over its
+  mean, temperature 1) + 0.2 / 49. The cached error changed S's target little: the top-S window holds an entity 70.8%
+  against 73.0%, and touches the HUD 25.9% against 25.5%.
+- **Coverage, passes 7-10, P1.5 -> P1.6:**
+  - cows +4.2 points by day, +1.8 at night;
+  - entering terrain +3.7 / +1.9;
+  - skeletons +2.4 / +0.8;
+  - zombies +0.3 / +0.4;
+  - changed HUD -9.0 / -7.0;
+  - terrain edits -4.8 by day;
+  - the HUD counters (food, drink, energy, health) -0.1 to -1.2.
+
+  Passes 1-6 match P1.5 within 0.01.
+- **Staleness (F5).** The cache (checkpoint 6) and the world at checkpoint 10 pick the same top window on 68.6% of
+  frames (123,494 frames, prior fixations; rank correlation over windows 0.88). A fresh checkpoint-6 computation
+  agrees with the cache on 78.3%, the remainder being the looks.
+  - Total error fell 3.7% from 6 to 10.
+  - Their preferred windows are alike: an entity 73.0% against 74.0%, changed HUD 44.2% against 39.8%.
+  - With the top-S window chosen 15% of the time, staleness moves the eye little.
+
+**What the foveal record brings (R0-R2; C5's 580 night units; each world's S1 and fine readers).**
+- **R2, the content-only test.** Frame t - 1's look is forced onto the mob in every arm; 8 paired draws.
+
+  | | P1.6 | P1.5 |
+  |---|---|---|
+  | deletion under the evaluated prior look | 26.1% | 25.3% |
+  | deletion with the look forced onto the mob (A) | 25.2% (-0.93 +- 0.18) | 25.3% (+0.02 +- 0.08) |
+  | A with that one write removed from the read (B) | 26.3% (B - A +1.14 +- 0.19) | |
+  | A with the fovea group removed from the read (C) | 27.1% (C - A +1.94 +- 0.26) | |
+
+  - The forced look protects by about 1 point in P1.6, all of it through the record's write (B - A matches it). The
+    old fovea, the glimpse into Mamba, protects by nothing (P1.5, as in A5).
+  - The effect is the same at the edge and inside (+1.05 / +1.21 for B - A), camera still or moved, cows and zombies.
+- **By the declared reading the premise is weak.**
+  - Only 3 of the 580 units have a crop that shows the mob while the coarse token does not (1 beyond the 8-frame
+    coarse history). For 565 (97%), S1's reader already reads the mob in the coarse token at t - 1, yet 23.3% of
+    those are deleted.
+  - At the deletions we measure, the evidence is in the coarse tokens and the world doesn't keep the mob. The night
+    deletion is a failure to use readable coarse evidence, not missing evidence.
+  - This revises C13's "evidence" wording: the noise-free estimate omits these mobs although a probe reads them.
+- **Limit: the instrument cannot see G1's intended case.** C5's units are mobs the coarse reader detects at the
+  start. A night mob only the crop shows (F1.5's +5-9 points of recall) is not a unit. In a generated frame it could
+  only be scored by a fine reader on a generated glimpse.
+- **R1, coverage at the deletions** (the evaluated prior fixations), P1.6:
+
+  | night units | looked at t - 1 | world cell in a crop within 8 frames | written at the read cell (camera unmoved) |
+  |---|---|---|---|
+  | deleted in all 8 draws (74) | 13 (17.6%) | 52 | 31 |
+  | in some (227) | 39 (17.2%) | 172 | 127 |
+  | in none (279) | 47 (16.8%) | 212 | 165 |
+
+  - Looks are neither where deletions are nor away from them.
+  - Codex's reanalysis gives 13 / 39 / 16 for the first row. Its last two definitions are stricter: they likely
+    require the mob inside the crop, where mine track the mob's t - 1 world cell. Codex's method is not checked here.

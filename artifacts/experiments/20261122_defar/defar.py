@@ -24,11 +24,16 @@ TERMS = [HERE / "drift_terms.jsonl"]
 
 
 def rows_with_drift(cfg, world_seed, update):
-    """bootstrap_rows' own draw (1 = bootstrap) plus drift rows (2) among the rest, by their own generator."""
+    """bootstrap_rows' own draw (1 = bootstrap) plus drift rows (2) among the rest, by their own generator, at most one per
+    micro-batch of the 256-step chunks (the trainer's np.array_split of the streams), so no micro-batch carries two
+    drift rows' two-stream passes at once."""
     b = ORIG_ROWS(cfg, world_seed, update)
     out = b.astype(np.int8)
     k = round(DRIFT["fraction"] * len(b))
-    out[np.random.default_rng([DRIFT["seed"], world_seed, update]).choice(np.flatnonzero(~b), k, replace=False)] = 2
+    rng = np.random.default_rng([DRIFT["seed"], world_seed, update])
+    groups = [g[~b[g]] for g in np.array_split(np.arange(len(b)), cfg["data"]["accumulate_at_256"])]
+    for i in rng.choice([i for i, g in enumerate(groups) if len(g)], k, replace=False):
+        out[rng.choice(groups[i])] = 2
     return out
 
 

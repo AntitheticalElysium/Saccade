@@ -136,10 +136,12 @@ def stale():
     return res
 
 
-@torch.no_grad()
 def fine_reader(model, cfg):
-    """R0: S1's token probe on glimpse tokens at their window's map cells (train400, this encoder)."""
-    Ltr = dict(np.load(S.LABELS / "s0_train400_labels.npz")); enc = S.encode(model, Ltr, cfg)
+    """R0: S1's token probe on glimpse tokens at their window's map cells (train400, this encoder). Not under no_grad:
+    the probe trains (C14's slip)."""
+    Ltr = dict(np.load(S.LABELS / "s0_train400_labels.npz"))
+    with torch.no_grad():
+        enc = S.encode(model, Ltr, cfg)
     cols = {k: [] for k in ("tok", "v", "kind", "terr", "ep")}
     for e, ep in enumerate(G.episode_grids(Ltr)):
         r = enc[e]; cells = M.window(r["fix"]).numpy(); n = len(ep["grid"]); ok = cells < 63   # [n, 9]

@@ -746,3 +746,69 @@ These are facts about the deployed world, not arms. Each separates causes that c
 - shortcut artefact: the bootstrap, or the finest step at sampling.
 
 Limits: one checkpoint, day cows, the reader's threshold.
+
+## Is the mid-signal drop a removal or a reader-thresholded hedge, and is the coin already in the model's own posterior? (user 11-22: "For the denoiser mid-signal; run what you need to isolate the cause")
+
+`midsignal_tokens.py`. Same model, units and draws as `midsignal.py` (P1.5 checkpoint 10, C5's 929 day cows, 8 draws,
+C4's seeds); the token-space readings on its reading-(3) subset (cow on its own cell in the real frame, a same-terrain
+empty cell in view).
+
+**Why this is needed before any cause is named.** Every earlier reading of the estimate went through the S1 kind
+reader (argmax or summed probability). The estimate is x-prediction's posterior mean: where the model is unsure
+whether or where the cow is, a cell's estimate is a blend of the cow token and the terrain token, and its cow weight is
+the model's probability. A reader trained on real tokens may call a 40% blend "terrain". Then:
+- midsignal (2)'s "absence, not a hedge" (summed reader mass below 0.2) may be the reader's threshold, not the model's
+  belief;
+- midsignal (3)'s "+1 nat prior" may be what a correct posterior gives. The real staying-put share is 0.603 (+0.42
+  nats), and the noised neighbour cells carry evidence against a move;
+- at the deployed code (d = 1/4) the output is the shortcut's jump, not a posterior mean. The posterior readings use the
+  finest code (d = 1/8, flow-trained), whose output is E[x | input].
+
+**Instrument.** At the own cell, the estimate's cow weight is a = (x_hat - x_terr) . D / |D|^2, with D = x_cow - x_terr
+(midsignal (3)'s tokens), and its distance off the cow-terrain line is |x_hat - x_terr - a D| / |D|. At each
+neighbour c, the cow weight moved there is a_c = (x_hat_c - x_c) . D / |D|^2, with x_c the real token of c (terrain:
+the cow stayed). This is exact where c shares the own cell's terrain. The estimate's cow mass M is a + the sum of a_c over the
+same-terrain, entity-free neighbours. All neighbours, with the terrain approximation, are also reported.
+
+**Readings (declared before running):**
+0. **The reader on blends.** Each unit's own cell is set to x_terr + a D (a on a 0.05 grid) in its real frame. The
+   flip weight a* is the smallest a the reader calls a cow. If the median a* is 0.3 or more, midsignal (2) and (3) are
+   re-read in token space here, and superseded where they disagree. If the estimate's median distance off the line is
+   above 0.5, token space doesn't describe it either, and that is reported as such.
+1. **Is the coin already in the model's own posterior?** At tau = 0, the finest code's estimate is E_theta[x | history]:
+   C13 found it nearly independent of its noise (spread 0.014). Its cow mass M_0 is the model's own probability that the
+   cow is in the neighbourhood. This is set against the native K = 4 sampler's keep on the same draws (0.939 in
+   `coin_form`), and against the data (the game keeps 0.996).
+   - |M_0 - keep| <= 0.02: **the coin is in the learned posterior.** The model expects visible day cows to vanish about
+     6% of the time, and the sampler is faithful to that. The cause is what training taught it, not the chain.
+   - M_0 - keep >= 0.04: **the chain loses mass its own posterior holds.** That is the sampler's resolution of blends,
+     DEFAR's premise.
+   - Between: both.
+
+   Also reported: the own weight a_0 against the staying share 0.603, and the per-unit correlation of M_0 with the
+   unit's keep rate.
+2. **Removal or hedge at 2/8 and 4/8** (the real frame noised, both codes). Among the reader's drops, the median M:
+   - below 0.3: a removal, the conditional's error that midsignal described;
+   - 0.6 or more: a hedge read as a drop;
+   - between: partial.
+3. **Where the non-repair is made** (the deployed chain from the real 2/8 start). The 4/8 state is x/6 + x_hat_2/3 + eps/2,
+   so its own cell holds more cow than terrain signal exactly when a(2/8) > 1/4. Among 2/8 drops, the share above 1/4,
+   split by how the final ends:
+   - those ending deleted mostly above 1/4: **later steps remove a cow their own input favours.** That is the
+     mis-resolution of a blended state training never shows, since its states are interpolations of real frames: DEFAR's
+     target;
+   - mostly below: later steps follow their input, and the loss is made at 2/8.
+4. **Why low-contrast cows** (midsignal's separation terciles):
+   - M_0 by tercile. The low tercile 0.05 or more below the others means the history prior itself is weaker for
+     low-contrast cows: their history doesn't establish them;
+   - a(2/8) by tercile within equal-Lambda bins. A difference of 0.1 or more means the history's weight depends on
+     contrast beyond the cell's evidence. Otherwise contrast acts only through the evidence's strength.
+
+**Exactness checks:** the native path equals `coin_form`'s (same function). The deployed estimates from the real
+2/8 and 4/8 starts equal `midsignal`'s star estimates (0.0). The native keep reproduces `coin_form`'s 6.10%.
+
+These are facts about the deployed world, not arms. (1) decides whether the culprit is the learned posterior (what
+history teaches) or the sampler's chain (what DEFAR trains); (2)-(3) say where in the chain; (4) says whether the
+history or only the current frame is weaker for low-contrast cows, which is the acuity question for the simulator.
+Limits: one checkpoint, day cows, the linear blend reading (exact for a posterior mean over cow and terrain at a cell,
+approximate where a neighbour's terrain differs).

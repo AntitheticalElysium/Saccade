@@ -69,11 +69,10 @@ def paths(model, cfg, st, e, ts, draw):
     native = (p_t, v_t)
     starts = {}
     for i in range(1, len(ladder)):
-        p_s, v_s = star(i); first = None
+        p_s, v_s = star(i); ests_i = []
         for j in range(i, len(ladder)):
-            p_s, v_s, est = step(j, p_s, v_s)
-            first = est if first is None else first
-        starts[i] = (first, (p_s, v_s))
+            p_s, v_s, est = step(j, p_s, v_s); ests_i.append(est)
+        starts[i] = (ests_i[0], (p_s, v_s), ests_i)                          # (first estimate, final, every estimate)
     return {"states": states, "estimates": ests, "native": native, "starts": starts, "star": [star(i) for i in range(len(ladder))], "eps": eps}
 
 

@@ -254,6 +254,54 @@ barely read: +1.3% at changed HUD cells when it is zeroed.
 - Changes nothing else. A5 is dropped: P1.5's paired A5 already answered it, and reading 4's split is confounded by position. S2 on P1.6 is held until the user
   decides whether P1.6 replaces P1.5.
 
+## Record checks (user 11-21: "Agreed for the record checks, run them. I want to understand exactly how the new fixation behaves and what this new fovea brings to the table, vs the old one.")
+
+`record_checks.py`; outputs in `readings_record/`. No second seed (no compute).
+
+**The eye in training** (`eye`, CPU; both runs' gaze traces on the 400 labelled training episodes; passes 1-6 against
+7-10). The eye samples its window from 0.8 softmax(0.5 C + 0.5 S, each over its mean) + 0.2 / 49. From pass 7, S is
+checkpoint 6's cached error; C is the head's contingency throughout.
+- F1, what it covers: entities by kind, changed HUD, entering terrain; by day and night.
+- F2, where its windows sit: the share touching the HUD rows, edge windows, and the entropy of the 49 windows.
+- F3, how it moves: repeats of the previous frame's window, jump distance, and whether a look at a mob is followed by
+  another look at a mob.
+- F4, what drives it: the chosen window against the S and C argmaxes, and the chosen window's probability.
+- F5, staleness (`stale`, GPU): the world's error at checkpoints 6 and 10 on the same frames and fixations. Does the
+  cache's choice of window still match the world's at 10, and what do the two prefer (entities, HUD)?
+
+**What the foveal record brings** (`content`, GPU; C5's 580 night units; P1.6 against P1.5).
+- R0, a fine reader: S1's token-probe protocol on glimpse tokens at window cells (train400, each world's encoder).
+  It says whether a crop shows the mob.
+- R1, coverage at the deletions (Codex's reanalysis, recomputed), under the evaluation's prior fixations:
+  - was the mob's cell in the t - 1 window;
+  - was its world cell inside a crop in the last 8 frames;
+  - was it written at the screen cell the denoiser reads at t (camera unmoved since).
+
+  Split by deleted in all 8 draws, some, none.
+- R2, the content-only test (Codex's design). Frame t - 1's fixation is forced onto the mob, identical in every arm:
+  Mamba and the context see the same glimpse. Three arms:
+  - A: the record as written;
+  - B: the t - 1 write removed from the denoiser's read at t;
+  - C: the fovea group removed from that read.
+
+  8 paired draws per arm (C4's seeds). P1.5 gets the same forced look (arm A only: no fovea group). Units are classed
+  at t - 1:
+  - the crop shows the mob (R0) and the coarse token doesn't (S1's reader): **"the crop adds evidence"**;
+  - both show it;
+  - the crop doesn't.
+
+  The coarse history over t - 8 .. t - 1 at the camera-aligned cell is recorded as well.
+- **Reading, declared before the run:**
+  - **A deletes less than B by at least 2 paired SE in "adds evidence" units:** the world uses fine evidence when the
+    record holds it. G1's failure is then coverage: looks don't land where losses happen.
+  - **A within 2 SE of B there:** the world does not use useful fine evidence. The failure is use: route or incentive.
+  - **Fewer than 30 "adds evidence" units:** the premise is weak at these deletions. Fine crops seldom add mob
+    evidence where the night losses are.
+  - C against A bounds the whole group's use. P1.5's forced look against its prior look is the old fovea's own effect.
+- **Smoke checks:**
+  - arm A's read recomputed by a one-frame scan equals the pass's read;
+  - without the forced look, the pass reproduces `calibration_p16.npz` on the smoke units.
+
 ## Considered on 11-20 and not in P1.6
 
 - **G2, a learned write and hold:** it fixes the decay, but needs a gradient through the scan and a request for it.

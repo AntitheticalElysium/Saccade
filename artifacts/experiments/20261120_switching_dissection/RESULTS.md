@@ -849,6 +849,10 @@ term's training form; (b) is the K = 8 sampler's own path. Both start from pure 
   - entity cells carry 40-42% of the target's periphery error at levels 0-2 and 30% of the ramp-weighted objective;
   - levels 1-3 together are 57% of that objective.
   - The low levels are not starved and mobs are not a negligible share.
+  - Correction (11-21, Codex): those shares are on C5's unit frames, chosen because a mob is present. On 3,000 random
+    DEV frames (reading 2's, P1.6 checkpoint 10), mob cells are 1.4% of cells (1.16 of 81 per frame) and carry 23.7%
+    of the ramp-weighted error: 30-31% at levels 0-2, 26% at 3, 5% at 7. The share is not negligible, but a share of
+    error does not say how much of it asks the world to keep a mob rather than to place a moving one.
 - **Skeletons:** the noise-free estimate shows them for only 15% of units by day. They appear only once the real
   signal is present (level 3 and above) or along the sampler's path (final 0.87).
 - **Predictions:**

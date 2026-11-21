@@ -1009,3 +1009,50 @@ P1.5 checkpoint 10, C5's 1,499 day units, the native K = 4 sampler, 8 draws, S2'
   mid-chain error is a floor under the current objective. C15 says amplified history at those steps cuts it, so the
   history is under-weighted there.
 - Limits: one checkpoint, one seed, day units only.
+
+## Why the mid-signal estimate drops the cow: weak cell contrast, made weaker by the periphery's pooling, decided on the cell's own noise, and deleted rather than moved (`midsignal.py`, `midsignal_cells.py`, their `.json`)
+
+P1.5 checkpoint 10, C5's 929 day cows, 8 draws. Inputs are the real frame noised to tau 2/8 and 4/8 with the draw's own
+noise. The deployed drop reproduces the error-form test exactly: 8.48% and 2.58%.
+
+**By the declared readings:**
+
+| reading | 2/8 | 4/8 | verdict |
+|---|---|---|---|
+| (4) drop, finest step / deployed d = 1/4 | 9.8% / 8.5% | 3.0% / 2.6% | not the shortcut output: the conditional itself |
+| (2) drops with summed cow mass below 0.2 in the 3 x 3 neighbourhood (0.5 or more) | 88% (0.6%) | 88% (0%) | absence, not a hedge (kept draws hold 1.0-1.2) |
+| (1) dispersion of per-unit drops; share of drops in units dropped >= 4 of 8 | 3.6; 52% | 2.4; 23% | partly unit-driven at 2/8, mostly noise at 4/8 |
+| (3) own-cell keep against the cell's noise evidence Lambda (staying cows, 560 units) | 0.42 (Lambda < -0.8) -> 1.00 (> 0.7); indifferent at -1.0 | 0.76 -> 1.00; indifferent at -1.7 | follows the cell's noise, with a prior of about +1 nat for "cow here" |
+
+**What concentrates the drops.**
+- **The cow token's separation from its terrain token.** Drop at 2/8 by separation third: 19.6% / 0.27% / 0.53%
+  (4/8: 5.3% / 0.07% / 0.13%); correlation -0.65.
+- **By terrain:**
+  - cows on sand: 46 units, 25.8%, separation 2.12;
+  - on grass: 505 units, 5.1%, separation 3.70;
+  - on path: 9 units, 2.8%.
+- **In raw pixels** (`midsignal_cells`), the low-separation third differs from its terrain by 0.138 rms at full
+  resolution, against 0.270 for the rest. The periphery's own 3 x 3 pooling keeps 48% of that difference for them,
+  against 69% for the rest: 0.070 against 0.187.
+  - Sand cows lose most: full 0.195, pooled 0.104, against grass 0.229 and 0.153.
+  - The token separation follows the pooled difference (correlation 0.92) more than the full one (0.88). The drop
+    correlates -0.61 with the pooled difference and -0.60 with the full one.
+- **When the own cell loses the cow,** the estimate relocates it to a neighbour in 51% of cases (2/8) and deletes it in
+  49%. At 4/8: 33% and 67%.
+
+**The causal chain as measured.**
+1. Some cows are weakly distinct from their terrain in the coarse token. They are low-contrast in pixels (sand above
+   all), and the periphery's pooling blends them further.
+2. At mid signal, the noise at that cell often makes it look like terrain. The estimate follows the cell's evidence,
+   with a weak persistence prior (about +1 nat).
+3. Losing the cow at its cell, it deletes rather than relocates about half the time, with no constraint that a cow
+   seen at t - 1 is still nearby.
+4. Later steps, fed the state built from that estimate, repair only 61% (2/8) and 29% (4/8). The state has moved
+   toward terrain (the error-form test).
+
+**What this does not establish.**
+- Whether higher periphery acuity would lower the coin: pooling is correlated with the drops, not manipulated, and
+  changing it changes the encoder.
+- Why the learned prior is only about +1 nat and why losses are deleted rather than moved. These are properties of
+  the learned conditional; the training data's real staying-put share of cows is 0.603 (C10).
+- Lambda's terrain token is the nearest same-terrain empty cell, an approximation.

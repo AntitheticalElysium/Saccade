@@ -235,6 +235,24 @@ Codex's review found two more problems:
 - (7): passes 1-6 track P1.5's chooser. From pass 7, entity coverage rises by about 2-3 points over P1.5's at the same
   passes, and changed-HUD coverage falls by about 7-11 points.
 
+**Added 11-21 (the user: "Okay for your change and the added test"): do the counter gains come through the foveal
+record?** P1.6 beats P1.5 on hunger timing (native pairs 0.20 -> 0.66) and on coal and iron increments
+(consequences 0.73 -> 0.89 and 0.36 -> 0.67), far beyond the 0.12 run-to-run bar. Reading 2 found the foveal record
+barely read: +1.3% at changed HUD cells when it is zeroed.
+- **Claim:** the gains are carried by the foveal record. **Competing:** they come from elsewhere, either the
+  world-eye's training looks or run chance.
+- **Control:** native pairs and consequences rerun on P1.6 with the record writing no glimpse
+  (`P16_BLANK_FOVEA=1`: the fovea group stays exactly zero in both reads; every scan asserts that no state it is
+  handed carries a glimpse). Outputs go to `readings_blank_fovea/`.
+- **Reading:**
+  - The gains fall back towards P1.5 → the record carries them.
+  - They stay within the 0.12 bar → it does not. Then the world-eye or run chance, which this cannot separate;
+    reading 7, the trace, shows whether the eye's looks changed.
+  - The same tools' other rows (cooldown, wood, stone) show whether blanking damages the world generally (zeroing is
+    out of distribution) or the counters alone.
+- Changes nothing else. A5 is dropped (reading 4's randomised split answered it). S2 on P1.6 is held until the user
+  decides whether P1.6 replaces P1.5.
+
 ## Considered on 11-20 and not in P1.6
 
 - **G2, a learned write and hold:** it fixes the decay, but needs a gradient through the scan and a request for it.

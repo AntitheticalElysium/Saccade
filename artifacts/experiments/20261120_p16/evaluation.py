@@ -43,6 +43,21 @@ def guard():
     M.Denoiser.embed = guarded
 
 
+def blank_fovea():
+    """The added test (user 11-21, P16_BLANK_FOVEA=1): the record writes no glimpse, so its fovea group stays exactly zero
+    in both reads; every scan checks that no state it is handed carries one (a stored state from the unblanked world)."""
+    inp, scan = M.Record.input, M.Record.scan
+
+    def blanked(self, p, g=None, fix=None):
+        x = inp(self, p, g, fix)
+        return torch.cat([x[..., :-self.fovea], torch.zeros_like(x[..., -self.fovea:])], -1) if self.fovea else x
+
+    def checked(self, p, first, state):
+        assert not self.fovea or not state[..., 2 * self.channels * len(self.a):].any(), "a record state carries the glimpse"
+        return scan(self, p, first, state)
+    M.Record.input, M.Record.scan = blanked, checked
+
+
 def steps(checkpoint, readings, smoke):
     """F6.1's steps, each tool under the guard, F6.1's stages through this run's dispatcher."""
     rows = []
@@ -207,6 +222,8 @@ def queue(checkpoint, out, smoke):
 
 if __name__ == "__main__":
     assert os.environ.get("MAMBA_DETERMINISTIC") == "1"
+    if os.environ.get("P16_BLANK_FOVEA") == "1":
+        blank_fovea()
     if sys.argv[1] == "--tool":
         guard()
         sys.argv = sys.argv[2:]

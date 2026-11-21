@@ -4,7 +4,9 @@ the cow weight moved there, their sum M. Native K = 4 chain and the chains from 
 (coin_form.paths), plus the finest code's estimates (posterior means) at tau 0, 2/8, 4/8 (midsignal.star_estimates).
 P1.5 checkpoint 10, C5's day cows, 8 draws, S2's readers.
 
-    MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_switching_dissection.midsignal_tokens [smoke]
+    MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_switching_dissection.midsignal_tokens [smoke] [CKPT]
+
+Another checkpoint (CKPT) is read with its own S1 kind reader, and its outputs are tagged with its run.
 """
 import importlib, json, sys
 from pathlib import Path
@@ -21,9 +23,11 @@ DEV = torch.device("cuda")
 GRID_A = np.round(np.arange(0, 1.0001, 0.05), 2)
 
 
-def main(smoke=False):
-    model, cfg = AI.load(C5.CK); model.requires_grad_(False).eval()
-    R = S2.load_readers(model, cfg)
+def main(smoke=False, ck=None, out=HERE):
+    ck = Path(ck).resolve() if ck else C5.CK
+    model, cfg = AI.load(ck); model.requires_grad_(False).eval()
+    R = S2.load_readers(model, cfg) if ck == C5.CK else {"kind": C5.reader(model, cfg, False)}
+    tag = ("_smoke" if smoke else "") + ("" if ck == C5.CK else "_" + ck.parent.parent.name + "_" + ck.stem)
     L = dict(np.load(S.LABELS / "s0_dev_labels.npz")); loff = np.r_[0, np.cumsum(L["ep_T"] + 1)]
     dl = S.episodes(L); grids = G.episode_grids(L)
     o = np.load(DL.EV.S2 / "oracle.npz"); U = DL.units(o, 4000)
@@ -40,7 +44,7 @@ def main(smoke=False):
             cells = [r * 9 + cc for r in range(r0 - 1, r0 + 2) for cc in range(c0 - 1, c0 + 2) if 0 <= r < 7 and 0 <= cc < 9]
             if cells and kind == 2 and not night:
                 cows.append((x, cells, (r0 * 9 + c0) if 0 <= r0 < 7 and 0 <= c0 < 9 else None))
-    ref = np.load(HERE / "midsignal_units.npz")
+    ref = np.load(HERE / "midsignal_units.npz") if ck == C5.CK else None   # midsignal's drops: P1.5 only
     if smoke:
         e3 = sorted({u[0][1] for u in cows})[:4]; cows = [u for u in cows if u[0][1] in e3]
     MS.LEVELS = (0, 2, 4)
@@ -65,8 +69,9 @@ def main(smoke=False):
                  "kept_native": np.array([nb(kind_of(q["native"])) for q in paths]),
                  "kept_from2": np.array([nb(kind_of(q["starts"][1][1])) for q in paths]),
                  "drop2_dep": np.array([not nb(kind_of(q["starts"][1][0])) for q in paths])}
-            k2 = ref["kept|2|deployed"][n_unit]
-            checks["kept2_vs_midsignal"][0] += int(((~r["drop2_dep"]) == k2).sum()); checks["kept2_vs_midsignal"][1] += C5.DRAWS
+            if ref is not None:
+                k2 = ref["kept|2|deployed"][n_unit]
+                checks["kept2_vs_midsignal"][0] += int(((~r["drop2_dep"]) == k2).sum()); checks["kept2_vs_midsignal"][1] += C5.DRAWS
             if own is None or int(real[qi, own]) != kind:
                 rec.append(r); continue
             kinds, view = n63(g["grid"])[t], n63(g["view"])[t]
@@ -153,12 +158,13 @@ def main(smoke=False):
                                [float(lo), float(hi)] + [float(a2f[(terc == k)[:, None] & (lam >= lo) & (lam <= hi)].mean())
                                                          if ((terc == k)[:, None] & (lam >= lo) & (lam <= hi)).any() else None for k in range(3)]
                                for lo, hi in zip(lb[:-1], lb[1:])]}
-    np.savez_compressed(HERE / f"midsignal_tokens_units{'_smoke' if smoke else ''}.npz",
+    np.savez_compressed(Path(out) / f"midsignal_tokens_units{tag}.npz",
                         **{k: np.stack([r[k] for r in tr]) for k in tr[0] if k not in ("unit",)},
                         units=np.array([r["unit"] for r in tr]))
-    (HERE / f"midsignal_tokens{'_smoke' if smoke else ''}.json").write_text(json.dumps(res, indent=1, default=float) + "\n")
+    res["checkpoint"] = str(ck)
+    (Path(out) / f"midsignal_tokens{tag}.json").write_text(json.dumps(res, indent=1, default=float) + "\n")
     print(json.dumps(res, indent=1, default=float), flush=True)
 
 
 if __name__ == "__main__":
-    main("smoke" in sys.argv[1:])
+    main("smoke" in sys.argv[1:], next((a for a in sys.argv[1:] if a.endswith(".pt")), None))

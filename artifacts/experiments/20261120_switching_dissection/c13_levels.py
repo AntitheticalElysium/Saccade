@@ -115,7 +115,7 @@ def main(smoke=False, ck=None, own=False):
             inside = 0 <= r0 < 7 and 0 <= c0 < 9
             own = r0 * 9 + c0 if inside else None
             x = own0[:, qi, own] if inside else None                    # [D, 16] level-0 estimates at the mob's cell
-            rec.append({"kind": kind, "night": night, "inside": inside,
+            rec.append({"id": (e, t, kind, i, j), "kind": kind, "night": night, "inside": inside,
                         "stayed": bool(inside and real[qi, own] == kind), "real_kept": bool((real[qi, cells] == kind).any()),
                         "level_kept": (lev[:, :, qi][:, :, cells].argmax(-1) == kind).any(-1).numpy(),      # [k, D]
                         "sampler_kept": (smp[:, :, qi][:, :, cells].argmax(-1) == kind).any(-1).numpy(),   # [D, k + 1]
@@ -160,7 +160,8 @@ def main(smoke=False, ck=None, own=False):
             g["corr_unit_level0_loss_vs_final_deletion"] = float(np.corrcoef(l0, fin)[0, 1]) if fin.std() > 0 and l0.std() > 0 else None
             res["by_group"][f"{KINDS[kn]}|{tag}"] = g
     np.savez_compressed(HERE / f"c13_units{'_smoke' if smoke else ''}{'_' + ck.stem if ck != C5.CK else ''}.npz", level_kept=lk, sampler_kept=sk,
-                        kinds=kinds, night=night, stayed=np.array([x["stayed"] for x in rec]))
+                        kinds=kinds, night=night, stayed=np.array([x["stayed"] for x in rec]),
+                        ids=np.array([x["id"] for x in rec]))                      # (episode, frame, kind, i, j) per unit
     (HERE / f"c13_levels{'_smoke' if smoke else ''}{'_' + ck.stem if ck != C5.CK else ''}.json").write_text(json.dumps(res, indent=1) + "\n")
     print(json.dumps(res, indent=1), flush=True)
 

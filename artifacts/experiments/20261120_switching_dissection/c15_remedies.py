@@ -144,7 +144,7 @@ def main(smoke=False, ck=None):
                     continue
                 inside = 0 <= r0 < 7 and 0 <= c0 < 9
                 own = r0 * 9 + c0 if inside else None
-                rec[name].append({"kind": kind, "night": night, "edge": i in (1, 5) or j in (1, 7), "inside": inside,
+                rec[name].append({"id": (e, t, kind, i, j), "kind": kind, "night": night, "edge": i in (1, 5) or j in (1, 7), "inside": inside,
                                   "kept": (cls[:, qi][:, cells] == kind).any(-1).cpu().numpy(),
                                   "stay": (cls[:, qi, own] == kind).cpu().numpy() if inside else np.zeros(DRAWS, bool),
                                   "real_kept": bool((real[qi, cells] == kind).any()), "real_stay": bool(inside and real[qi, own] == kind)})
@@ -183,7 +183,8 @@ def main(smoke=False, ck=None):
     tag = ("_smoke" if smoke else "") + ("" if ck == C5.CK else "_" + ck.parent.parent.name + "_" + ck.stem)
     (HERE / f"c15_remedies{tag}.json").write_text(json.dumps(res, indent=1) + "\n")
     np.savez_compressed(HERE / f"c15_units{tag}.npz", **{f"{n}_kept": np.stack([x["kept"] for x in rr]) for n, rr in rec.items()},
-                        kinds=np.array([x["kind"] for x in rec["A0_unguided"]]), night=np.array([x["night"] for x in rec["A0_unguided"]]))
+                        kinds=np.array([x["kind"] for x in rec["A0_unguided"]]), night=np.array([x["night"] for x in rec["A0_unguided"]]),
+                        ids=np.array([x["id"] for x in rec["A0_unguided"]]))       # (episode, frame, kind, i, j) per unit
     print("checks", checks, res.get("A0_reproduces_c5"), flush=True)
 
 

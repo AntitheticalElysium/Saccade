@@ -142,8 +142,8 @@ def main(smoke=False, ck=None, out=HERE):
                              "kept_M_median": float(np.median(Mv[~dr])), "kept_a_median": float(np.median(av[~dr]))}
     d2 = np.stack([r["drop2_dep"] for r in tr]); fin2 = np.stack([r["kept_from2"] for r in tr]); a2 = T("from20", 0); a4 = T("from21", 0)
     out3 = {"drops_at_2": int(d2.sum())}
-    for tag, sel in (("ending_deleted", d2 & ~fin2), ("repaired", d2 & fin2)):
-        out3[tag] = {"n": int(sel.sum()), "share_a2_gt_quarter": float((a2[sel] > 0.25).mean()) if sel.any() else None,
+    for outcome, sel in (("ending_deleted", d2 & ~fin2), ("repaired", d2 & fin2)):
+        out3[outcome] = {"n": int(sel.sum()), "share_a2_gt_quarter": float((a2[sel] > 0.25).mean()) if sel.any() else None,
                      "a2_median": float(np.median(a2[sel])) if sel.any() else None, "a4_median": float(np.median(a4[sel])) if sel.any() else None}
     res["3_non_repair"] = out3
     sep = np.array([r["sep"] for r in tr]); qs = np.quantile(sep, [0, 1 / 3, 2 / 3, 1])

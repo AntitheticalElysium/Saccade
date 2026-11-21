@@ -222,7 +222,10 @@ if __name__ == "__main__":
         queue(ck, out, True)
     else:
         ck = Path(sys.argv[1]).resolve()
-        run_check(ck)
+        # 11-21: the check in its own process. Run here, it left 1.5 GiB of CUDA memory (context and cached blocks)
+        # held through the whole queue, and clocks, trajectory and mining ran out of GPU memory beside it.
+        import subprocess
+        subprocess.run([sys.executable, "-u", "-m", ME, "--check", str(ck)], check=True)
         queue(ck, HERE / f"checks/smoke_{TR.file_sha256(ck)[:12]}", True)   # keyed by checkpoint (Codex 11-20: a shared
                                                                          # folder held the preflight checkpoint's identity)
         queue(ck, HERE / "readings", False)

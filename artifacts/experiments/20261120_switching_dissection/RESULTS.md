@@ -894,3 +894,49 @@ reader, on the same 2,079 units with the same 8 draws per unit.
   - Level 0 is a blend read near the reader's threshold, and checkpoint 10 was read with S2's reader while 11 used its
     own. Those level-0 differences are therefore not interpretable as a change in mechanism. The un-annealed
     checkpoint may also simply blur its zero-signal estimate.
+
+## C15: amplified history at the commit steps cuts the day coin by a third but corrupts the HUD; restart does nothing (`c15_remedies.py`, `c15_remedies.json`, `c15_units.npz`)
+
+C5's 2,079 units, 8 draws, P1.5 checkpoint 10, the default K = 4 sampler. A0 reproduces C5's keeps exactly (1.0).
+The smoke checks are exact: A0 equals the sampler, and guidance at w = 1 equals A0 (both 0.0).
+
+Deletion, with the paired change against A0 (same units, seeds and noise):
+
+| | A0 unguided | A1 guidance w 2, steps 3-4 | A2 restart K 2 |
+|---|---|---|---|
+| cows, day (929) | 6.0% | **3.9%** (-2.14 +- 0.21) | 5.7% (-0.34 +- 0.37) |
+| cows, night (262) | 23.3% | 19.4% (-3.96 +- 0.85) | 22.2% (-1.15 +- 1.02) |
+| zombies, day (372) | 1.7% | 1.5% (-0.20 +- 0.21) | 1.6% (-0.03 +- 0.37) |
+| zombies, night (235) | 11.7% | 10.1% (-1.65 +- 0.70) | 12.0% (+0.32 +- 0.67) |
+| skeletons, day (97) | 14.7% | 10.4% (-4.25 +- 1.07) | 11.1% (-3.61 +- 1.62) |
+| skeletons, night (38) | 47.0% | 36.8% (-10.2 +- 2.4) | 44.4% (-2.6 +- 3.6) |
+
+The side conditions:
+
+| | A0 | A1 | A2 |
+|---|---|---|---|
+| staying put among kept draws (cows; real 0.603) | 0.686 | 0.691 | 0.679 |
+| spurious mobs per frame | 0.841 | 1.080 (**+28%**) | 0.856 (+2%) |
+| token error, static HUD | 0.040 | 1.478 (**x37**) | 0.036 |
+| token error, changed HUD | 5.41 | 11.20 (x2.1) | 5.55 |
+| token error, mob / entering terrain | 5.49 / 3.73 | 5.61 / 3.88 | 5.52 / 3.77 |
+| spread, mob / entering terrain | 1.56 / 1.63 | 1.70 / 1.71 (up) | 1.59 / 1.62 |
+
+**By the declared reading neither arm is a candidate remedy.**
+- A1 meets the primary bar: day cows 6.0 -> 3.9%, under 4.0%. It fails two side conditions: spurious mobs +28%
+  against at most 10%, and static-HUD error x37 against at most x1.5.
+- A2 fails the primary bar.
+- The rule's consequence is that the coin points back to the conditional at levels 1-3, a training-side problem.
+
+What the arms separate, beyond the rule:
+- **Drift (i) is not supported.** Restart contracts accumulated sampler error and leaves the coin where it was, for
+  cows and zombies, day and night. Only day skeletons move (-3.6 +- 1.6, 2 SE).
+- **Context weight (ii) is supported as a direction.** Amplifying the history's contribution at the two commit steps
+  (sigma 1.0 and 0.33) cuts deletions for every kind and light, by 10 SE for day cows.
+- **The collateral is the unconditional's own error.** Where the conditional is right and the history-free prediction
+  is wrong, x_u + 2 (x_c - x_u) - x = x - x_u: the guided draw takes on the unconditional's error. That happens at the
+  HUD, which the history-free prediction cannot know (x37), and in spurious mobs. It is guidance's known failure with
+  a weak unconditional, not a property of the coin.
+- What is not separated: whether the conditional under-weights history at the commit steps (a training-side
+  question), or whether amplification moves the coin through a route the conditional doesn't use. C15 tests remedies
+  at sampling time, not the training cause. No follow-up test is run here; it goes to the user first.

@@ -83,9 +83,9 @@ def main():
                 yq,_=model.belief(model.belief.tokens(S.embed(model,q,S.history(model,q.p,g=q.g,fix=q.fix)[0]),en['reward'][:t+17].to(DEV)[None],
                                   en['terminated'][:t+17].to(DEV)[None],en['action'][:t+17].to(DEV)[None]),model.belief.initial(1,DEV))
             cs.append(c);bs.append(y[:,-1].float());rl.append(last);same.append(yq[0,1::2][t+1:t+16].float())
-        same=torch.stack(same).repeat_interleave(K,0)                      # [rows, 15, W]: bp at t+2 .. t+16
             ref=en['bp'][t+1].to(DEV).float()
             prefix_errors.append(float((y[0,-1].float()-ref).square().mean().sqrt()))
+        same=torch.stack(same).repeat_interleave(K,0)                      # [rows, 15, W]: bp at t+2 .. t+16
         carry=tuple(type(cs[0][l])(*(torch.cat([getattr(c[l],f.name) for c in cs]).repeat_interleave(K,0)
                                      for f in dataclasses.fields(cs[0][l]))) for l in range(len(cs[0])))   # Mamba-2 or -3
         initial_bp=torch.cat(bs).repeat_interleave(K,0)

@@ -60,8 +60,14 @@ C5's 2,079 units, 8 draws, each world's own S1 kind reader. The P1.5 control rep
 | skeletons, day | 16.3 +- 3.8% | 14.4 +- 1.7% | 17.3 +- 3.9% | 18.8 +- 2.0% |
 
 - Prediction (4) fails: looked-at night mobs are kept no better.
-- The looked-at protection of night zombies is already in P1.5, whose record holds no glimpse. The glimpse in the
-  context frames gives it; the foveal record adds nothing.
+- The looked / unlooked gap is position, not protection (Codex 11-21, checked). The window centres are uniform over
+  the 49 positions, so cells near the edge are looked at less: 13.4% of units at C5's edge ring against 17-19% inside.
+  Edge mobs are deleted far more at night. Within each band the gap is gone:
+  - night zombies, P1.5: edge 31.2% looked (6 units) against 32.5% unlooked (53); inner 2.8% (31) against 5.2% (145);
+  - P1.6: edge 37.5% against 34.4%; inner 4.8% against 6.3%.
+
+  This agrees with A5's paired on / away test on P1.5 (-0.1 +- 0.1 points). The denoiser's physical tokens never
+  attend to glimpse tokens (the factorised mask), so the context glimpse cannot reach the drawn periphery directly.
 - The day coin is unchanged (6.0 -> 6.1%), as predicted.
 - Prediction (6) holds: spurious mobs per empty cell are 1.48% inside the looked window against 1.33% outside in
   P1.6, and 1.50% against 1.36% in P1.5. No excess from G1.

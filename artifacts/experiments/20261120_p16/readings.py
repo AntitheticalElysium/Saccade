@@ -1,6 +1,7 @@
 """P1.6's readings 2 and 4-7 (PLAN.md), run after the evaluation queue on the selected checkpoint; reading 3 (A5's paired
 look) waits on the S2 port. The real past is built as the switching dissection's (C2.episode, the monitor's random prior
-fixations), so "looked" below is randomised: a cell is looked at if it lies in a frame's fixation window.
+fixations): a cell is looked at if it lies in a frame's fixation window. Random in the game state, not in position
+(edge cells are covered less), so read "looked" within position bands.
 
     MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_p16.readings reliance CKPT     (2) does the world use it?
     MAMBA_DETERMINISTIC=1 python -m artifacts.experiments.20261120_p16.readings calibration CKPT  (4, 6) on P1.6 and P1.5

@@ -201,7 +201,8 @@ Codex's review found two more problems:
        in both reads; by label region, light, camera, and looked in the last 1 / 8 frames;
      - calibration (4, 6) on C5's units for P1.6 and for P1.5 (the control), split by whether the mob's cell was in
        frame t - 1's window, plus spurious mobs per cell inside that window against outside. Those looks are the
-       monitor's random prior fixations, so the split is randomised;
+       monitor's random prior fixations: random in the game state but not in position (edge cells are looked at
+       less; 11-21, Codex), so the split must be read within position bands;
      - zombies (5) as C7, with each checkpoint's own reader;
      - trace (7) as C11b, for P1.6 and P1.5.
    - Reading 3 (A5's paired look) runs on S2's machinery and waits on the S2 port.
@@ -250,7 +251,7 @@ barely read: +1.3% at changed HUD cells when it is zeroed.
     reading 7, the trace, shows whether the eye's looks changed.
   - The same tools' other rows (cooldown, wood, stone) show whether blanking damages the world generally (zeroing is
     out of distribution) or the counters alone.
-- Changes nothing else. A5 is dropped (reading 4's randomised split answered it). S2 on P1.6 is held until the user
+- Changes nothing else. A5 is dropped: P1.5's paired A5 already answered it, and reading 4's split is confounded by position. S2 on P1.6 is held until the user
   decides whether P1.6 replaces P1.5.
 
 ## Considered on 11-20 and not in P1.6

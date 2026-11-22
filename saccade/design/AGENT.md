@@ -146,19 +146,35 @@ agreed; 2 and 3 researched again (below).**
 - **Practicalities:**
   - Dreamer 4's agent tokens read slightly corrupted context too, so the context pass's mild noise is not
     disqualifying (my concession to Codex was too quick).
-  - Factorised attention lets agent tokens in the physical stream choose the LOOK from the coarse frame before the
-    glimpse, and a second set choose the MOTOR action after it, within one pass.
+  - Look then act shares one pass's computation, split at the crop (Codex; corrected 11-22 against
+    saccade/model.py `sample`):
+    - physical tokens never read glimpse keys;
+    - the sampler already generates the periphery and lighting first, sets the fixation between the stages
+      (`choose(p, v)`), and keeps the physical keys and values for the glimpse steps;
+    - the completed-frame context pass runs after the crop. Splitting it the same way puts look tokens in its physical
+      half, before the crop, and motor tokens after.
   - Cost: unmeasured. The P1.6 world-eye's +12 h came from a separate sequential estimate pass, not from this.
 - **Agreed (user, 11-22): agent tokens inside the world (C).** The look becomes one of the agent's two outputs from
   the start, chosen by the same computation that picks the motor action, and the glimpse informs that action. The
   P1.6 world-eye's separate estimate pass goes.
-- **Ordering, to settle when built (Codex: the context pass runs after the crop):**
-  - look, then act: a first pass over the coarse frame chooses the look, a second, with the glimpse, the action
-    (two passes per real step);
-  - or plan the next look: with each frame's action the agent also chooses where to look in the next frame (one
-    pass; the look lags one frame).
-- **Costs to measure:** time per pass and per real step; memory at 6 GB; one-way attention verified (the world's
-  outputs unchanged when agent tokens change); prediction quality unchanged.
+- **Ordering:** look then act, inside the split pass above. (My 11-22 "two passes per real step" overstated the cost.)
+- **Costs to measure:**
+  - time per real step and memory at 6 GB;
+  - one-way attention verified: the world's outputs are unchanged when the agent tokens change;
+  - prediction quality unchanged.
+- **Codex (11-22), not yet answered before this note:**
+  - **Information versus computation.** Codex would start from belief + acquired spatial evidence + a record read, then
+    test what denoiser activations add on that same interface: an A-versus-C comparison changes the information and
+    the architecture at once. The user chose C. Once C works, the clean reading is agent tokens attending to the
+    denoiser's inputs only versus to its activations, with the same weights and heads.
+  - **Efficiency.** Measure the decision gain and the extra cost while awake. Reading the denoiser may pay mostly on
+    rare, consequential decisions, so the question is how often the agent needs that computation to act well. The
+    brain arbitrates between costly model-based and cheap habitual control by their uncertainty (Daw, Niv & Dayan
+    2005).
+  - **The look has no demonstrations.** Craftax players saw the whole screen, so the corpus has no gaze to copy. The
+    look output therefore starts from the existing chooser as its default. It learns from value only after passive
+    looks preserve outcome distributions. In P1.5's dream, reward and termination are sampled from features that
+    include the generated crop (s2b.py `outcome.features`), which is where the 0.12 pp / 5 pp inconsistency enters.
 
 *2. Which parts should the agent's goals shape, and how? (Researched again 11-22.)*
 - **Naming:** my earlier labels G0/G1/G2 collided with the loss groups (G1 next percept, G2 grounding, G3
@@ -235,8 +251,10 @@ agreed; 2 and 3 researched again (below).**
 - **Proposed position (undecided):**
   - routes 1-3 from the start, with outcome-consistent looks before any gaze is trained on dream returns (Codex), and
     the world's own training data selected by context, a broad base kept;
-  - route 4 into the belief: keep reward and continuation; add the choice's imitation loss. A value on real replay is
-    left to decision 3, because of capacity loss;
+  - route 4 into the belief: keep reward and continuation; add the choice's imitation loss. Do this after a first
+    imitation run with the world frozen (Codex: "can a choice head learn to act well from the world and memory we
+    already have?"), judged by real decisions and by dreamed consequences under matched histories. A value on real
+    replay is left to decision 3, because of capacity loss;
   - route 4 into the denoiser, at first: no. The agent tokens get their own weights. They read the denoiser's
     activations detached and the belief's memory tokens attached, so the imitation gradient reaches the belief and
     stops at the denoiser. Reason, measured in our own system: where goal and prediction losses already share a module

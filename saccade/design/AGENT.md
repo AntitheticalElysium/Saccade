@@ -122,8 +122,9 @@ staged "first loop" variants (frozen world, uniform gaze); those were mine and a
          information work.** The full system's own read will show whether decision value is there. If not, the look's
          signal here is the world's surprise, and the eye's value is night creatures and economy (dreams generate
          only the looked-at crop).
-       - This bears on acuity (decision 11) and on which environment can show what the eye is for. It is not a reason
-         to lower acuity just to make the fovea useful (the user, 11-21);
+       - **The user (11-23): known for a long time, not surprising.** We stay with Craftax-Classic and test the eye in
+         full Craftax later, which is the true out-of-distribution test anyway. The user's hunch is that the eye will
+         still be useful, even in Classic. Acuity stays as it is: no lowering just to make the fovea useful (11-21);
      - **dream returns,** once look schedules can't change later outcomes. The step order already guarantees the
        step's own outcome.
    - **Precedents:**
@@ -141,18 +142,18 @@ staged "first loop" variants (frozen world, uniform gaze); those were mine and a
    - **after one exposure:** an episodic store, later.
    - "How fast is fast" picks among these.
 3. **Learning continually.** What trains what is mostly set:
-   - the world by prediction on real experience, **and on its own dreams scored against what really followed** (P2,
-     below);
+   - the world by prediction on real experience: the corpus while watching, its own transitions while living. The
+     hypothesis is that a world good enough at P1, including on its own outputs, needs no rollout training (P2 is a
+     possible later stage; Decision 2, sub-decision 5);
    - the choice and its value by imitation, and by dreams through their own weights;
    - the look by its signals (part 1);
    - goal shaping on hold.
 
    Open: the learning rate (no annealing to zero), plasticity tools on a measured trigger, and surprise-driven
    learning later.
-4. **Acting sparsely, practising long offline.** Mostly schedules, with three jobs offline:
+4. **Acting sparsely, practising long offline.** Mostly schedules, with two jobs offline:
    - replaying real experience for the world;
-   - dreaming for the choice and the look;
-   - scoring the world's dreams against the real futures that followed them (P2).
+   - dreaming for the choice, the look and the value.
 
    Dreams start from coherent snapshots.
 
@@ -283,7 +284,7 @@ hold until we understand the rest of the system better".)*
   - **Today:** P1.5 already does a little. Its reward and continuation heads train Mamba (route_by_role, 98% of the
     belief's gradient).
 - **The default while on hold** is today's: reward and continuation train Mamba; the choice's and the value's losses
-  stay in their own weights; the denoiser learns by prediction, including P2. Codex agrees with prediction-only
+  stay in their own weights; the denoiser learns by prediction on real experience. Codex agrees with prediction-only
   updates for the denoiser at first.
 - **Naming:** my earlier labels G0/G1/G2 collided with the loss groups (G1 next percept, G2 grounding, G3
   consequences). They are dropped; the question is laid out by route.
@@ -620,21 +621,32 @@ with compute reported (Codex; "How to judge it" below).
    always wrong somewhere new. Precedents use 15-20 steps.
 4. **Returns:** λ-returns from dreamed rewards and continuation, bootstrapped by a value head (DreamerV3, Dreamer 4).
    Where the value is trained (dreams only, or real replay too) decides how much dream optimism it inherits.
-5. **What learns from dreams: the world too (corrected 11-23; the user asked why it doesn't).** "The world learns from
-   dreams" means three different things:
-   - **Its dreams scored against what really followed. Yes.** This is P2 (CURRICULUM 2, planned since 10-27):
-     - dreams start at real moments and are compared with the recorded future by a joint-trajectory energy score;
-     - gradients run pathwise through the last 2 generated steps, and the horizon grows 2 -> 4 -> 8 -> 16;
-     - it trains exactly what dreams need and real-context training can't reach: the world conditioning on its own
-       outputs. S2 localised the self-feeding fade to the denoiser's read of the record of its own frames.
-     - Precedents:
-       - Self Forcing conditions "each frame's generation on previously self-generated outputs" during training and
-         matches slower models (Huang et al. 2025);
-       - DaD frames multi-step prediction as imitation learning, with the data "as a demonstrator" correcting the
-         model's own rollouts (Venkatraman et al. 2015).
-     - Our drift-row fine-tune failed because MSE on drifted states taught hedging. P2's proper (fair) score is the
-       answer to that.
-     - In a life this is natural: every dream from a recent real moment is followed by what really happens.
+5. **What learns from dreams: the choice, the look and the value. The world learns from real experience** (the user
+   asked, 11-23, why the world doesn't evolve through dreams). I first answered that P2 was the canonical route, and
+   was wrong. I hadn't reread what happened to P2 (corrected 11-23, user: "don't cite something as canonical unless you
+   read everything about it"). "The world learns from dreams" means three different things:
+   - **Its self-fed rollouts scored against what really followed (P2, CURRICULUM 2): a possible later stage, not the
+     plan.** What was established 11-19 (`20261119_p2_decisions/RESEARCH.md`, sections 5-6):
+     - **The sampling world models in our sources don't train on their own rollouts:** Dreamer 1-4, DIAMOND, IRIS,
+       DRAMA, Horizon Imagination, LeWM. Deterministic latent models do, because their recorded targets stay valid:
+       SPR, V-JEPA 2-AC, MuZero, TD-MPC2.
+     - **The reasons:**
+       - a sampled branch diverges, so the recording is no valid target for it (Huszar 2015);
+       - a valid target is distributional, and so expensive and noisy;
+       - one-step accuracy suffices if it holds on the model's own outputs (On Training in Imagination, Lemma 1).
+     - **P2's score "never labels a transition wrong".** Only the 2 retained steps can blame the frame that lost a
+       mob, and "nothing stops the later frames being pushed to add mobs back (phantoms)". The switching arm then
+       showed that failure for real (the user, 11-19 21:53: "didn't we establish that P2 as we proposed wouldn't
+       work?").
+     - **The mob loss traced to the sampling chain:** the day coin, a calibrated hedge drained by the K = 4 chain
+       (switching dissection). It is a P1-level problem.
+     - **So the hypothesis (the user's, and the field's): a world good enough at P1, including on its own outputs,
+       avoids P2.** P2 stays a possible stage if a measured failure calls for it, under its own contract:
+       precommitted actions and a fixation schedule shared by the samples and the recorded target (Codex;
+       `20261102_p1f15_readiness/P2_DATA.md`). Also self-generated training precedents: Self Forcing (Huang et al.
+       2025), DaD (Venkatraman et al. 2015).
+     - **What a life adds is new one-step evidence.** The awake agent's own real transitions train the world's P1
+       losses online. It is not a free P2 target, since reality follows only the actions actually taken (Codex).
    - **Its dreams as if they were real experience. No.** They carry no new information, and indiscriminate training
      on generated data makes "tails of the original distribution disappear" (Shumailov et al. 2024). Our world's
      errors already sit in the tails (deaths and hits under-drawn), so this would make it more optimistic.
@@ -642,8 +654,7 @@ with compute reported (Codex; "How to judge it" below).
        forgetting, a consolidation decision. The brain's sleep replays real experience; NREM replay "can abstract
        rules from corpuses of learned information" (Lewis, Knoblich & Poe 2018).
    - **Imagined returns into the world:** goal shaping, on hold.
-   - Cost is the remaining concern: P2 rolls out with gradients, which the full run's budget has to price.
-   - The choice and its value learn from dreams through their own weights.
+   - The choice, the look and the value learn from dreams through their own weights.
 6. **The eye in dreams: targeted** (user 11-23). The agent chooses the look, and the look decides which glimpse is
    drawn, so the eye practises in dreams as in REM sleep. It trains on dream returns once look schedules can't change
    later outcomes. Before that it learns from its other signals (part 1).
@@ -660,7 +671,7 @@ differences read in the run (Codex).
 | Horizon | 15 steps; a committed termination stops the return; the value bootstraps at the cutoff | DreamerV3 `imag_length: 15`; DayDreamer 16; IRIS 20. With λ 0.95 the full 15-step return carries 0.95^14 = 49% of the target's weight (Codex), so late-dream errors reach the first decision. Read them in the run |
 | Returns | λ 0.95, γ 0.997, returns and advantages scaled by their 5th-95th percentile range | DreamerV3 (`horizon: 333`, `retnorm: perc 5-95`); Dreamer 4 γ 0.997 |
 | Value | Trained on dreamed λ-returns *and* on real-replay λ-returns, through its own weights while goal shaping is on hold. Checked against real continuations of the evaluated policy | DreamerV3 `repl_loss`, `repval` 0.3. Codex: DreamerV3's replay target bootstraps from the imagined return, so it can carry dream optimism back |
-| What learns | The world (real experience + P2 on its own dreams), and the choice, the look and the value | Sub-decision 5 |
+| What learns | From dreams: the choice, the look and the value. The world from real experience (P2 only on a measured trigger) | Sub-decision 5 |
 | Policy objective | Decision 3 (Dreamer 4's PMPO with a reverse KL to the imitation policy, or DreamerV3's actor-critic) | |
 | The eye | Targeted in watching, life and dreams; trained by the world's surprise and contingency, the decision value of a crop, and dream returns once consistent | Part 1 |
 
@@ -974,8 +985,9 @@ References:
 2. **Dreaming.**
    - Agreed: the step commits to the outcome before the look.
    - Decided: the glimpse reads nothing new, with no event code (11-23).
-   - Proposed together: starts, horizon, returns and value (precedent defaults); the world learns through P2 on its
-     dreams; the eye is targeted in dreams.
+   - Proposed together: starts, horizon, returns and value (precedent defaults). The world learns from real
+     experience, with P2 a possible later stage. The eye is targeted in dreams. Action differences are read at steps 1,
+     4 and 15 inside the run (Codex).
    - Isolation, trust and fresh starts are recorded.
    - Practice first; deliberation is parked (its own section).
 3. **Learning, awake and dreaming:**

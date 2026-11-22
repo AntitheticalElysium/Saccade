@@ -1,0 +1,101 @@
+[
+ {
+  "checkpoint": "/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/artifacts/experiments/20261116_p15/run/ckpt_10.pt",
+  "draws": 4,
+  "day_cows": 929,
+  "to_4/8": {
+   "neighbourhood_error": {
+    "clean": 1696.3948915805668,
+    "drift": 27744.68432721775,
+    "source_floor": 20953.470817002468
+   },
+   "neighbourhood_repair_gap": 0.3241092403987136,
+   "frame_repair_gap": 0.2860717564918469,
+   "mass_clean": 1.0046320505403616,
+   "mass_drift": 0.989806476380055,
+   "mass_source": 0.992929320564031,
+   "drift_mass_below_half": 0.025892857142857145,
+   "mass_units_draws": 2240
+  },
+  "to_6/8": {
+   "neighbourhood_error": {
+    "clean": 117.50916420598514,
+    "drift": 2067.846596832853,
+    "source_floor": 1696.3948915805668
+   },
+   "neighbourhood_repair_gap": 0.2189653524045907,
+   "frame_repair_gap": 0.19139466905007918,
+   "mass_clean": 1.0069408296381523,
+   "mass_drift": 1.0021151897313303,
+   "mass_source": 1.0046320505403616,
+   "drift_mass_below_half": 0.007589285714285714,
+   "mass_units_draws": 2240
+  }
+ },
+ {
+  "checkpoint": "/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/artifacts/experiments/20261120_switching_dissection/c14_run/ckpt_11.pt",
+  "draws": 4,
+  "day_cows": 929,
+  "to_4/8": {
+   "neighbourhood_error": {
+    "clean": 1796.9339507399127,
+    "drift": 28383.011501817964,
+    "source_floor": 21158.396977869794
+   },
+   "neighbourhood_repair_gap": 0.3414537751373421,
+   "frame_repair_gap": 0.28997172915634506,
+   "mass_clean": 0.9813847244064119,
+   "mass_drift": 0.9673661882864224,
+   "mass_source": 0.9583330722768263,
+   "drift_mass_below_half": 0.027232142857142858,
+   "mass_units_draws": 2240
+  },
+  "to_6/8": {
+   "neighbourhood_error": {
+    "clean": 187.73069783393294,
+    "drift": 2208.289271634072,
+    "source_floor": 1796.9339507399127
+   },
+   "neighbourhood_repair_gap": 0.22892066829989943,
+   "frame_repair_gap": 0.2014589809687688,
+   "mass_clean": 0.9781244198738481,
+   "mass_drift": 0.9744796701809264,
+   "mass_source": 0.9813847244064119,
+   "drift_mass_below_half": 0.008482142857142856,
+   "mass_units_draws": 2240
+  }
+ },
+ {
+  "checkpoint": "/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/artifacts/experiments/20261122_defar/defar_run/ckpt_11.pt",
+  "draws": 4,
+  "day_cows": 929,
+  "to_4/8": {
+   "neighbourhood_error": {
+    "clean": 3588.17360469047,
+    "drift": 22328.177755419165,
+    "source_floor": 21143.05832871422
+   },
+   "neighbourhood_repair_gap": 0.05605241248828419,
+   "frame_repair_gap": 0.0510516539083401,
+   "mass_clean": 0.9599436116937357,
+   "mass_drift": 0.9467834196961019,
+   "mass_source": 0.9580192909070734,
+   "drift_mass_below_half": 0.013392857142857142,
+   "mass_units_draws": 2240
+  },
+  "to_6/8": {
+   "neighbourhood_error": {
+    "clean": 169.72232802491635,
+    "drift": 1820.970741793979,
+    "source_floor": 3588.17360469047
+   },
+   "neighbourhood_repair_gap": -0.49250762576994567,
+   "frame_repair_gap": -0.3311083610147224,
+   "mass_clean": 0.9850832615456432,
+   "mass_drift": 0.9754073552803366,
+   "mass_source": 0.9599436116937357,
+   "drift_mass_below_half": 0.007589285714285714,
+   "mass_units_draws": 2240
+  }
+ }
+]

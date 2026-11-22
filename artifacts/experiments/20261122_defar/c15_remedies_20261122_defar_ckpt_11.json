@@ -1,0 +1,101 @@
+{
+ "units": 2079,
+ "draws": 8,
+ "checkpoint": "/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/artifacts/experiments/20261122_defar/defar_run/ckpt_11.pt",
+ "smoke_checks": {},
+ "arms": {
+  "A0_unguided": {
+   "keep": {
+    "zombies|day": {
+     "world": 0.9848790322580645,
+     "real_frame": 1.0,
+     "units": 372
+    },
+    "zombies|night": {
+     "world": 0.8845744680851064,
+     "real_frame": 0.9787234042553191,
+     "units": 235
+    },
+    "zombies|night_edge": {
+     "world": 0.6822033898305084,
+     "real_frame": 0.9661016949152542,
+     "units": 59
+    },
+    "zombies|night_inner": {
+     "world": 0.9524147727272727,
+     "real_frame": 0.9829545454545454,
+     "units": 176
+    },
+    "cows|day": {
+     "world": 0.9105220667384284,
+     "real_frame": 1.0,
+     "units": 929
+    },
+    "cows|night": {
+     "world": 0.7318702290076335,
+     "real_frame": 0.9732824427480916,
+     "units": 262
+    },
+    "cows|night_edge": {
+     "world": 0.6526845637583892,
+     "real_frame": 0.959731543624161,
+     "units": 149
+    },
+    "cows|night_inner": {
+     "world": 0.8362831858407079,
+     "real_frame": 0.9911504424778761,
+     "units": 113
+    },
+    "skeletons|day": {
+     "world": 0.788659793814433,
+     "real_frame": 1.0,
+     "units": 97
+    },
+    "skeletons|night": {
+     "world": 0.569078947368421,
+     "real_frame": 0.8947368421052632,
+     "units": 38
+    },
+    "skeletons|night_edge": {
+     "world": 0.4523809523809524,
+     "real_frame": 0.8571428571428571,
+     "units": 21
+    },
+    "skeletons|night_inner": {
+     "world": 0.7132352941176471,
+     "real_frame": 0.9411764705882353,
+     "units": 17
+    }
+   },
+   "stay": {
+    "zombies": {
+     "world_share_of_kept_draws": 0.6773770491803278,
+     "real_frame": 0.5996677740863787,
+     "units": 602
+    },
+    "cows": {
+     "world_share_of_kept_draws": 0.6757572100880898,
+     "real_frame": 0.6021959459459459,
+     "units": 1184
+    }
+   },
+   "spurious_mobs_per_frame": 0.8572097420692444,
+   "token_error_by_region": {
+    "mob": 5.4802578937162805,
+    "changed_hud": 5.461776221084004,
+    "hud_static": 0.041610805851053374,
+    "entering_map": 3.4602486885282278,
+    "terrain_edit": 0.9464561202579976,
+    "map_static": 0.23175406867453666
+   },
+   "spread_by_region": {
+    "mob": 1.4467614627018892,
+    "changed_hud": 1.2156897852062696,
+    "hud_static": 0.023032671672036632,
+    "entering_map": 1.332173453788782,
+    "terrain_edit": 0.6334442858891894,
+    "map_static": 0.10977119020744652
+   }
+  }
+ }
+}

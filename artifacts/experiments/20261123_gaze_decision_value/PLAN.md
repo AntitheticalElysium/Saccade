@@ -40,6 +40,14 @@ same window and with the same encoder.
 - **The old chooser:** P1.5's checkpoint fixation controller, run on the real frames with its 8-frame history (as in
   `20261119_s2/s2b.py`), gives P(window) per decision.
 
+**Instrument repair (11-23, before any DEV result was read).**
+- The first run's probe memorised its training decisions: training cross-entropy fell from 1.90 to 0.07 nats over 16
+  epochs on 27,227 decisions. A memorising probe can't measure decision value.
+- The run was stopped during the DEV pass, unread.
+- The repair: 16 of the 128 train400 episodes are held out for validation. The probe keeps the epoch with the lowest
+  validation cross-entropy (all three conditions pooled), up to 16 epochs.
+- Nothing else changes.
+
 ## Readings (fixed before results)
 
 1. **Per decision, in nats:**

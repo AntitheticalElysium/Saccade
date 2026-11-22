@@ -127,8 +127,9 @@ def main():
     # ---- training rows: per decision, two real crops, one blurred, one none ----
     enc, ids, L, sub, eps, _ = data["train400"]
     so, ao = np.r_[0, np.cumsum(L["ep_T"] + 1)], np.r_[0, np.cumsum(L["ep_T"])]
-    Cb, Fb, flags, dec, acts = [], [], [], [], []
+    Cb, Fb, flags, dec, acts, val = [], [], [], [], [], []
     base = 0
+    held = set(range(len(ids))[-(2 if args.smoke else 16):])          # validation episodes (instrument repair, PLAN)
     for i, e in enumerate(ids):
         ts = decisions(enc[i], L, so, ao, e)
         if not len(ts):
@@ -140,9 +141,13 @@ def main():
             w = rng.integers(49, size=len(ts))
             g = glimpses(model, cfg, fr if flag == 0 else blurred(fr, acuity), C.CENTRES[w])
             Fb.append(fine_block(g, w).half()); flags.append(torch.full((len(ts),), flag)); dec.append(base + torch.arange(len(ts)))
+            val.append(torch.full((len(ts),), i in held))
         Fb.append(torch.zeros_like(Fb[-1])); flags.append(torch.full((len(ts),), 2)); dec.append(base + torch.arange(len(ts)))
+        val.append(torch.full((len(ts),), i in held))
         base += len(ts)
     Cb, Fb, flags, dec, acts = torch.cat(Cb).to(DEV), torch.cat(Fb).to(DEV), torch.cat(flags).to(DEV), torch.cat(dec).to(DEV), torch.cat(acts).to(DEV)
+    val = torch.cat(val).to(DEV)
+    fit_rows, val_rows = torch.nonzero(~val)[:, 0], torch.nonzero(val)[:, 0]
     cm, cs = Cb.float().mean(0), Cb.float().std(0).clamp_min(1e-3)
     seen = flags < 2
     fm, fs = Fb[seen].float().mean(0), Fb[seen].float().std(0).clamp_min(1e-3)
@@ -153,13 +158,22 @@ def main():
     probe = Probe(Cb.shape[1], Fb.shape[1]).to(DEV)
     opt = torch.optim.AdamW(probe.parameters(), lr=7e-4)
     gen = torch.Generator(device=DEV).manual_seed(SEED + 1)
+    best, best_state, curve = float("inf"), None, []
     for epoch in range(2 if args.smoke else 16):
-        tot = 0.0
-        for ix in torch.randperm(len(Fb), generator=gen, device=DEV).split(1024):
+        probe.train(); tot = 0.0
+        for ix in fit_rows[torch.randperm(len(fit_rows), generator=gen, device=DEV)].split(1024):
             loss = F.cross_entropy(probe(normc(Cb[dec[ix]]), normf(Fb[ix], flags[ix]), flags[ix]), acts[dec[ix]])
             opt.zero_grad(set_to_none=True); loss.backward(); opt.step(); tot += float(loss) * len(ix)
-        print(f"epoch {epoch} train CE {tot / len(Fb):.4f}", flush=True)
-    probe.eval()
+        probe.eval()
+        with torch.no_grad():
+            vl = sum(float(F.cross_entropy(probe(normc(Cb[dec[ix]]), normf(Fb[ix], flags[ix]), flags[ix]), acts[dec[ix]],
+                                           reduction="sum")) for ix in val_rows.split(4096)) / len(val_rows)
+        curve.append((epoch, tot / len(fit_rows), vl))
+        print(f"epoch {epoch} train CE {tot / len(fit_rows):.4f} validation CE {vl:.4f}", flush=True)
+        if vl < best:
+            best, best_state = vl, {k: v.clone() for k, v in probe.state_dict().items()}
+    probe.load_state_dict(best_state); probe.eval()
+    print("kept epoch", min(curve, key=lambda c: c[2])[0], flush=True)
 
     # ---- DEV: every window, real and blurred, and no crop ----
     enc, ids, L, sub, eps, grids = data["dev"]
@@ -203,7 +217,8 @@ def main():
                 print("dev episode", i, flush=True)
     z = {k: np.concatenate(v) for k, v in out.items()}
     np.savez_compressed(HERE / ("scores_smoke.npz" if args.smoke else "scores.npz"), **z)
-    (HERE / ("summary_smoke.json" if args.smoke else "summary.json")).write_text(json.dumps(summarise(z), indent=1) + "\n")
+    summ = summarise(z); summ["training_curve"] = curve
+    (HERE / ("summary_smoke.json" if args.smoke else "summary.json")).write_text(json.dumps(summ, indent=1) + "\n")
     print(json.dumps(summarise(z), indent=1), flush=True)
 
 

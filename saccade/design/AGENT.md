@@ -75,6 +75,66 @@ the source:
 components on measured triggers. The first proof the concept works at all is closing the loop: an agent that lives,
 dreams and improves.
 
+## Closing the loop: the minimal agent (design started 11-22)
+
+The first proof is an agent that lives, dreams and improves. Its decisions, in order:
+1. **The choice faculty:** where it lives, what it reads, the order of looking and acting within a step, and which
+   gradients it sends. (Below.)
+2. **Dreaming:** start states, horizon, outcomes from the world's state, how returns are formed.
+3. **Learning in dreams and in life:** the imitation head start, the policy objective, the value.
+4. **The awake/asleep cycle:** what runs when, the replay mix, plasticity.
+
+The episodic store, change detection and evidence-set update size are designed in from the start (their interfaces),
+and built when a measurement calls for them.
+
+### Decision 1: the choice faculty
+
+**Precedent, Dreamer 4, read at the source (2509.24527, section 3.3):**
+- Agent tokens are inserted "as an additional modality into the world model transformer". They "attend to themselves
+  and all other modalities, [but] no other modalities can attend back to the agent tokens. This is crucial for
+  avoiding causal confusion of the world model".
+- Phase 2 trains policy and reward heads on the agent tokens with multi-token prediction (L = 8), while "we continue
+  to apply the video prediction loss".
+- Phase 3 is reinforcement learning in imagination with PMPO (alpha 0.5), a reverse KL to a frozen copy of the policy
+  (beta 0.3), and a value head on lambda-returns (gamma 0.997). It updates only the policy and value heads; finetuning
+  the whole transformer "provides small additional benefits at higher computational cost".
+
+**What the choice must know, and where it is today (measured):**
+- **The belief holds the gist:**
+  - a zombie adjacent, AP 0.921;
+  - its cooldown, 0.952;
+  - but not which cell it is in: 0.116, against 0.99 from the current frame.
+- **It holds the HUD less well than the tokens:** energy exact 0.52 in the belief, against 0.92 from the percept.
+- **The whole screen enters Mamba through one 256-number projection,** measured as lossy for spatial detail.
+- **The hidden clock phases live in the record** (swap effect 0.99), and Mamba doesn't carry them (0.000).
+
+**Options:**
+- **A. The belief only** (STEP_SPEC section 5; m0.yaml p3.features). Simplest, but it reads through the 256-number
+  bottleneck, which lacks spatial detail and the clocks the world uses.
+- **B. The belief plus the current percept,** a separate network. It recovers current detail, but not the record or
+  the world's understanding, and it is an actor in all but name.
+- **C. Agent tokens inside the world (Dreamer 4).** The choice is a readout of the same computation the world uses
+  to imagine:
+  - it reads the current frame's tokens, the recent frames, the record (through each cell's read) and the belief
+    (through the memory tokens);
+  - one-way attention keeps the world's predictions from depending on the agent's own choices;
+  - our denoiser already has one-way groups (physical queries never read glimpse keys), and every real or dreamed
+    frame already gets one clean context pass, so reading it adds little cost.
+
+**Recommendation (11-22, for the user): C.** It is the precedent closest to "the whole system is the agent", it reads
+all three memories, and the measured belief bottleneck argues against A.
+
+**Two sub-decisions follow:**
+- **1b. Look, then act, within a step.** The agent sees the coarse frame, chooses where to look, takes the glimpse in,
+  then chooses its motor action. This matches look-ahead gaze (Hayhoe & Ballard 2005) and our sampler's
+  periphery-then-glimpse order (the chooser already picks between the two stages).
+- **1c. Gradients:**
+  - either the agent tokens get their own parameters and read the world's keys and values, with no gradient into the
+    world (our 10-24 rule: goals reach the world only through attention and data);
+  - or Dreamer 4's shared weights, trained by imitation and reward while the world's own loss continues.
+
+  Lean: start with no gradient into the world, and test sharing if the choice starves.
+
 ## Adaptation: how one experience changes the agent
 
 Two timescales, as in the brain's complementary learning systems:

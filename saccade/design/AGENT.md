@@ -895,10 +895,10 @@ References:
 1. **The choice faculty.** Agreed: agent tokens inside the world, look then act in a split pass, with build checks.
 2. **Dreaming.**
    - Agreed: the step commits to the outcome before the look.
-   - Open, together:
-     - starts, horizon, returns, what learns, the eye in dreams;
-     - practice or deliberation;
-     - isolation, trust, fresh starts.
+   - Decided: the glimpse reads nothing new, with no event code (11-23).
+   - Proposed together: starts, horizon, returns, value, what learns, the eye in dreams (first-loop table).
+   - Isolation, trust and fresh starts are recorded.
+   - Practice first; deliberation is parked (its own section).
 3. **Learning, awake and dreaming:**
    - the imitation head start (frozen world, fixed gaze first);
    - the policy objective in dreams, and the prior and how it fades in a life;

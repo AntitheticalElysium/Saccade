@@ -121,19 +121,54 @@ and built when a measurement calls for them.
   - our denoiser already has one-way groups (physical queries never read glimpse keys), and every real or dreamed
     frame already gets one clean context pass, so reading it adds little cost.
 
-**Recommendation (11-22, for the user): C.** It is the precedent closest to "the whole system is the agent", it reads
-all three memories, and the measured belief bottleneck argues against A.
+**Revised 11-22 (the user asked how agent tokens differ from the belief; Codex's review):**
+- **The belief and agent tokens overlap in role.** Both would be "what matters for the goals". The difference is
+  access and persistence:
+  - the belief is a compressed, persistent state carried through time;
+  - agent tokens are a fresh, non-persistent read of everything, made each step.
 
-**Two sub-decisions follow:**
-- **1b. Look, then act, within a step.** The agent sees the coarse frame, chooses where to look, takes the glimpse in,
-  then chooses its motor action. This matches look-ahead gaze (Hayhoe & Ballard 2005) and our sampler's
-  periphery-then-glimpse order (the chooser already picks between the two stages).
-- **1c. Gradients:**
-  - either the agent tokens get their own parameters and read the world's keys and values, with no gradient into the
-    world (our 10-24 rule: goals reach the world only through attention and data);
-  - or Dreamer 4's shared weights, trained by imitation and reward while the world's own loss continues.
+  Two "what matters" pathways would be two sources of truth. So: **the belief stays the agent's single "what
+  matters" state.**
+- **The choice reads the belief plus the current evidence:** the periphery and glimpse tokens with their coordinates
+  (Codex's richer read-only head, without a separate actor). The percept is evidence and the belief is memory; the
+  choice combines them.
+- **The record is read through the belief,** which already takes a read of it. If decision losses shape the belief
+  (below), it can learn to carry what the record holds that decisions need, such as the thirst phase. A direct record
+  read for the choice stays an option if that fails.
+- **Agent tokens inside the denoiser are dropped for now.** The context pass re-noises the finished frame to the
+  context level, so it isn't a clean decision representation, and it runs after the glimpse (Codex).
+- **Belief alignment:** the choice reads the belief after the percept and before the action (`y[:, 0::2]` in
+  `s1.encode`). The post-action state contains the action, which would leak the target (Codex, checked on a CPU
+  reference).
+- **1b, look then act, stands.** The gaze is chosen from the coarse view and the belief; the motor action is chosen
+  after the glimpse. For the first tests, gaze stays the existing controller.
 
-  Lean: start with no gradient into the world, and test sharing if the choice starves.
+**1c, gradients. Precedents, read at the source:**
+- **Dreamer 1-3:** the world is trained by its own losses, reward prediction included. The actor and critic "learn
+  behaviors purely from abstract trajectories of representations predicted by the world model" (DreamerV3).
+- **Dreamer 4:** in phase 2, imitation and reward prediction train the shared transformer while the video loss
+  continues. In phase 3, only the policy and value heads learn.
+- **MuZero:** the representation is trained entirely by reward, value and policy.
+- **Proposal:** goal losses (imitation, and later value) may shape the BELIEF, which is "what matters". They do not
+  reach the denoiser's own weights, which stay the general imagination engine. This is Dreamer 4's phase-2 move,
+  applied to the belief only. The 10-24 rule ("no BC head on the world's representation") is narrowed to the
+  denoiser.
+
+**Imitation as the head start (basis):**
+- Dreamer 4 (imitation, then imagination with a reverse KL to the frozen imitation prior) and AlphaGo (expert games,
+  then self-play).
+- Starting from scratch online costs real steps: PPO needs about a billion steps to reach 90% of Classic's optimum
+  (Craftax paper).
+- Our 09-02 actors lost to their own imitation policies (a 2-step horizon made sleep worthless), so imitation is the
+  bar to beat.
+- **In a continual life, a FIXED prior to the expert would cap improvement and block adaptation,** since the expert is
+  wrong under a changed rule. The prior should become the agent's own recent behaviour, or fade. This is a design
+  point for decision 3.
+
+**First build (not an ablation):** the imitation head start of the agent itself. The choice reads the belief plus the
+current percept, is trained on the corpus's expert-branch steps (29% of the training labels are exogenous, Codex), and
+is evaluated in real Craftax. It is the loop's first stage and the actor test's baseline. The belief-only comparison is
+dropped as a selection test: the measured belief gaps already settle it by reasoning.
 
 ## Adaptation: how one experience changes the agent
 

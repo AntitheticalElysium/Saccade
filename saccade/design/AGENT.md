@@ -45,6 +45,36 @@ world must be accurate where the agent goes, never optimistic, and consistent un
 Every faculty keeps learning in both modes. Freezing a part is something an experiment does to measure, not part of
 the agent.
 
+## What a continual learner needs, and what Saccade has (11-22; the user: architecture first, data later)
+
+Varying the pretraining world is a judge and an accelerant, not the mechanism. The design question is what the agent
+must contain to learn continually, adapt quickly, keep what it knows and keep improving. From the literature, read at
+the source:
+
+| Need | Evidence | Saccade today |
+|---|---|---|
+| Keep the ability to learn | Networks trained continually lose plasticity (Dohare et al.); the primacy bias (Nikishin et al.) | Training anneals the learning rate to a tenth by the end; nothing preserves plasticity |
+| Don't forget | Interleave old and new (CLS); slow learning on important weights (EWC, Kirkpatrick et al. 2017); generative replay, "inspired by the generative nature of hippocampus" (Shin et al. 2017), and replay of internal representations (van de Ven et al. 2020) | Training samples the corpus; no consolidation process. The world model could be its own generative replay: dreams that rehearse old situations |
+| Learn from one experience | Episodic memory: Neural Episodic Control "is able to rapidly assimilate new experiences and act upon them" (Pritzel et al. 2017); the hippocampus | The 10-23 design's location-keyed episodic store (DECISIONS, "Agreed"), deferred as increment I1. The record is a per-episode trace that resets |
+| Use evidence in context | Working memory; a slow learner trains a fast in-context learner (Wang et al. 2018) | Belief + record + recent frames. Works for hidden states that varied (clock phases), not for never-varied rules |
+| Notice change; attach learning to situations | Latent-cause inference (Gershman et al.) | Not built ("the model doesn't know" was agreed 10-23, never built) |
+| Evidence sets the update size | Learning rates follow volatility (Behrens); one-shot switching under causal uncertainty (Lee) | Not built: every experience moves the weights the same |
+| Assign credit across a life | Replay instead of backpropagation through all of time | Gradients are truncated at chunk boundaries. A thirst interval and its next drop share a 64-frame chunk only ~33% of the time (Codex) |
+| Consolidate offline | Sleep replay; replay ordered by utility (Mattar & Daw) | Not built: no sleep phase, no prioritised replay or dreams |
+| Seek information | The eye; curiosity (Plan2Explore) | The eye exists; curiosity doesn't |
+
+**What this implies, on three timescales, as in the brain:**
+- **Working memory** (activity): belief, record, recent frames. Exists.
+- **Episodic memory** (one-shot, survives episode resets, retrieved by situation or place): the deferred store. Central
+  to adapting in a few experiences, and to carrying knowledge across deaths.
+- **Knowledge** (slow weights of world, belief and choice): kept plastic, consolidated in sleep from replayed episodes
+  and generated dreams, protected by interleaving.
+- **Control:** noticing change, setting update size from evidence, curiosity. Missing.
+
+**Build order (the user's 10-26 principle):** design the whole system first, build minimal, then add designed
+components on measured triggers. The first proof the concept works at all is closing the loop: an agent that lives,
+dreams and improves.
+
 ## Adaptation: how one experience changes the agent
 
 Two timescales, as in the brain's complementary learning systems:
@@ -126,7 +156,7 @@ context-dependent" (Bouton 2004).
   experience fitting known structure can count (Tse; Lake).
 - Each requirement comes with a probe. A module is built only when a measurement shows the gap on the running loop.
 
-## Where variation comes from: the three options scoped (11-22)
+## Where variation comes from: the three options scoped (11-22; parked as the future judge)
 
 **Evidence availability** (`artifacts/experiments/20261122_rule_change/variation_eda.py`, DEV labels, 1,009
 expert-mixed episodes, median length 212 steps). For each rule: the share of episodes that see the event revealing its
@@ -173,6 +203,13 @@ value, and the median step of the first and second sighting.
 - **Hold water yield out entirely, as the transfer test.** If varying other rules teaches the agent to adapt to the
   never-varied water +2, then "things vary" generalised. The rule-change benchmark and its matched histories already
   exist.
+
+**Benchmark notes from Codex (11-22, kept for later):**
+- On ordinary replays, elapsed time plus the current drink digit identify the regime 81.8% of the time, so the test
+  must vary the earlier interval with the current evidence held fixed.
+- Start with thirst alone (930 DEV episodes with a clean interval, completed at a median step of 42), and test a
+  held-out thirst period before cross-family water.
+- Replayed actions were chosen for the old rule.
 
 **Open:** the record and the belief reset at every episode start. Rules that persist across a lifetime of episodes can
 only be carried by the weights unless some memory survives the reset.

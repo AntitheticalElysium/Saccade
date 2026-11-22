@@ -156,13 +156,15 @@ perception tensors, by up to 1.8%).
   perfect repair.
 - Also read: the cow's token-space mass in the drift estimate, against the source and clean estimates.
 
-**Declared reading.** The drift-row checkpoint's neighbourhood repair gap, against the continuation's (the fine-tune
-alone) and checkpoint 10's:
-- **Learned at this dose:** at either transition, at most 75% of the continuation's gap, or a drift-state mass at
-  least 0.05 above it. Then the primary readout runs.
-- **Not learned at this dose:** within 10% of the continuation's gap at both, and the mass within 0.02. Then the
-  readings are not run, and extending the dose (another interval from checkpoint 11) goes to the user.
-- **Between:** the primary runs, read with that caveat.
+**Use (revised 11-22, Codex's review, adopted).** The gap is a proxy and won't gate the primary. Its floor is the learned
+source-level predictor, not a Bayes bound, so the ratio also moves when that predictor changes. It also reads the finest
+output after one synthetic step, while deployment uses the quarter-step output along a chain from pure noise. The
+primary (native 4-step deletion and the guards, about 15 minutes) runs whatever the gap shows. The gap's raw clean,
+drift and source errors are reported beside it, and interpret it:
+- **Gap closed by 25% or more beyond the continuation, coin moved:** the repair was learned and reaches deployment.
+- **Gap closed, coin flat:** learned on the trained step, but it doesn't reach the 4-step chain.
+- **Gap within 10% of the continuation's, coin flat:** not learned at this dose, which bears on whether another
+  interval is worth it.
 
-**Staging.** The primary (native 4-step deletion and the guards) runs first. The explanatory readings (8 steps, the
-token-space chain) run only after it.
+**Staging.** The repair gap and the primary run first. The explanatory readings (8 steps, the token-space chain) run
+only after the primary.

@@ -93,6 +93,39 @@ Two timescales, as in the brain's complementary learning systems:
 - The record is sensory memory: it recorded the +2 jumps faithfully and shouldn't change its nature. What should move
   is the belief and the world's use of it, by the amount the agent's learnt volatility warrants.
 
+## Three kinds of learning a new rule (11-22; what we expect, stated before any fine-tune)
+
+A changed rule can be learnt in three different ways. They test different faculties, and each fine-tune must say
+which one it tests. Latent-cause theory (Gershman et al. 2010, 2017) frames the difference: old memories are modified
+when new observations are inferred to come from the same cause, and new memories are formed when a new cause is
+inferred. Extinction "does not destroy the original learning, but instead generates new learning that is especially
+context-dependent" (Bouton 2004).
+
+| Kind | Example | What the agent should do | What our world does today (measured) |
+|---|---|---|---|
+| Revision: the rule changed for good | Water now gives +2, everywhere | Update the old rule. Animals keep the old one, tied to its context (renewal); networks overwrite by default | Untested. A rule-B-only fine-tune measures speed and interference |
+| Differentiation: a new rule tied to a visible context | Water gives +2 at night | Learn a conditional rule beside the old one | Craftax already has such rules: zombie damage 7 asleep against 2 awake; hunger and thirst at half speed asleep; health recovery doubled asleep; zombie spawning 0.02 + 0.1 (1 - light)^2. Learnt slowly and partly: asleep beside a ready zombie, P1.5 draws death 0.844 (true 0.992) |
+| Inference: a hidden cause, inferred from evidence | In some places or episodes water gives +2, unannounced | Infer from a few observations which version holds here, and keep both | Works for hidden STATES that varied in training: clock phases (on-schedule pairs 0.995 / 0.000, carried by the record), cooldowns. Fails for a rule PARAMETER that never varied (water yield: 20261122_rule_change) |
+
+**Why these differ:**
+- Revision tests plasticity and interference.
+- Differentiation tests conditional learning without interference.
+- Inference is the fast channel, and the selling point ("adapts to a new situation") depends mostly on it.
+- A visible context (sleep, light) makes a rule a fixed function of what is seen: the slow channel learns it, and
+  nothing needs inferring. So a day/night rule cannot measure the fast channel.
+- The fast channel needs something hidden that varies.
+- In Craftax-Classic the hidden things that vary are states (phases, cooldowns, mob health), and our world infers
+  those. No rule parameter varies across episodes. Of the ones that could, day length and spawn chances are
+  already parameters of the environment.
+
+**Requirements this implies (blueprint, not modules yet):**
+- The agent needs some way to attach new learning to a situation (a latent cause or context), rather than only
+  overwriting or only averaging.
+- How much an experience moves it should depend on surprise and on its sense of volatility (Behrens; Lee).
+- Its representations should share structure across things (consumables, recipes, creatures), so that one
+  experience fitting known structure can count (Tse; Lake).
+- Each requirement comes with a probe. A module is built only when a measurement shows the gap on the running loop.
+
 ## How to judge it (proposal, not decided)
 
 The agent's lifetime, not module comparisons:

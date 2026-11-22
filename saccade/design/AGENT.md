@@ -121,7 +121,8 @@ and built when a measurement calls for them.
   - our denoiser already has one-way groups (physical queries never read glimpse keys), and every real or dreamed
     frame already gets one clean context pass, so reading it adds little cost.
 
-**Laid out again 11-22 (the user: "stop treating Saccade as actor + model"; "10-24 isn't a rule"). Undecided.**
+**Laid out again 11-22 (the user: "stop treating Saccade as actor + model"; "10-24 isn't a rule"). Sub-question 1
+agreed; 2 and 3 researched again (below).**
 
 *1. Should the agent's choices read the world model's internal understanding?*
 - **My "two sources of truth" objection was wrong.** Agent tokens are not a second memory; they persist nothing. They
@@ -148,34 +149,102 @@ and built when a measurement calls for them.
   - Factorised attention lets agent tokens in the physical stream choose the LOOK from the coarse frame before the
     glimpse, and a second set choose the MOTOR action after it, within one pass.
   - Cost: unmeasured. The P1.6 world-eye's +12 h came from a separate sequential estimate pass, not from this.
-- **Current lean:** agent tokens inside the world (C) are the one-agent design. Belief plus percept (B) is the cheaper
-  test that may miss the hidden timing.
+- **Agreed (user, 11-22): agent tokens inside the world (C).** The look becomes one of the agent's two outputs from
+  the start, chosen by the same computation that picks the motor action, and the glimpse informs that action. The
+  P1.6 world-eye's separate estimate pass goes.
+- **Ordering, to settle when built (Codex: the context pass runs after the crop):**
+  - look, then act: a first pass over the coarse frame chooses the look, a second, with the glimpse, the action
+    (two passes per real step);
+  - or plan the next look: with each frame's action the agent also chooses where to look in the next frame (one
+    pass; the look lags one frame).
+- **Costs to measure:** time per pass and per real step; memory at 6 GB; one-way attention verified (the world's
+  outputs unchanged when agent tokens change); prediction quality unchanged.
 
-*2. Which parts should the agent's goals shape, and how?*
+*2. Which parts should the agent's goals shape, and how? (Researched again 11-22.)*
+- **Naming:** my earlier labels G0/G1/G2 collided with the loss groups (G1 next percept, G2 grounding, G3
+  consequences). They are dropped; the question is laid out by route.
 - **10-24 was the user's hedged lean**, "I'd lean against making the actor stage influence the dynamics ... It might
   actually be something we do later down the line", not a rule.
-- **Positions, verified:**
-  - **Prediction-only world, behaviour on top.** In DreamerV3's reference code, actor-critic gradients through
-    imagined features are stopped (ac_grads False). But reward prediction AND a value loss on real replay do shape the
-    representation (reward_grad True; repval_loss and repval_grad True; scale 0.3).
-  - **Goals shape the shared network with prediction kept:** Dreamer 4, phase 2.
-  - **End-to-end goal-shaped:** MuZero; TD-MPC2's decoder-free latent.
-- **Continual-learning side:**
-  - Task-general world models adapt to new tasks fast (Plan2Explore).
-  - Task-specific models are simpler, but the class shrinks to the true model as tasks multiply (Grimm et al. 2020).
-  - Keeping the imagination engine general protects later tasks.
-- **Brain side:**
-  - Learning a task reshapes even V1 "to adjust its processing to task requirements" (Poort et al. 2015).
-  - The mechanism proposed is not replacing prediction with a task objective but gating plasticity: a global reward
-    signal times attentional feedback that "limits plasticity to those units ... crucial for the stimulus-response
-    mapping" (AGREL, Roelfsema & van Ooyen 2005).
-- **So there are three options, not two:** G0 detached; G1 goal gradients with prediction kept; G2 goal-gated
-  predictive learning (reward and attention set where and how much the world learns, while it learns prediction).
-- **Current lean:**
-  - G1 for the belief, on real experience (DreamerV3's replay-value precedent);
-  - G2 for the denoiser in time (the privileged route of 11-15 is G2);
-  - G0 until then.
-- Codex: goal-shaping the belief changes the world's conditioning (memory tokens), so prediction must keep training
+- **What P1.5 already does (saccade/train.py, losses.route_by_role):**
+  - the reward, continuation, forecast and gaze heads train Mamba and its input maps through a second pass over
+    detached percepts, never the encoder;
+  - so the belief is already goal-shaped on real experience. In P1-F6 the reward forecast's weighted gradient into
+    the belief was 4.54, against G1's 0.031 (cosine to the total 0.997);
+  - it is also the only loss that taught the belief clocks (recovery, cooldown; P1-F5);
+  - the denoiser is trained by prediction alone.
+- **Six routes by which a goal can shape what the agent learns:**
+  1. **Behaviour: what is experienced.** Inherent in a living agent. Dyna corrects model errors where the agent goes
+     (Sutton & Barto 9.3).
+  2. **Gaze: which evidence enters, and what is learnt in detail.**
+     - Brain: with identical stimuli, practising one attribute doesn't improve another (Ahissar & Hochstein 1993).
+     - Ours: P1-F2's gaze learns.
+     - The risk: looking must not change outcomes. On P1.5, two passive looks (map vs HUD) change the one-step
+       positive-reward probability by 0.12 pp on average, but by 5.0 pp at one branch (71.6% -> 76.6%, episode 546
+       frame 61; Codex, recomputed from the saved draws). A gaze trained on dream returns could learn to look where
+       the dream is kind.
+  3. **Practice selection: what is replayed and dreamt.**
+     - Field: prioritised replay (Schaul et al. 2016), which "introduces bias because it changes this distribution in
+       an uncontrolled fashion" and corrects it with importance weights.
+     - Brain: replay by utility (Mattar & Daw 2018). Sleep favouring memories expected to matter (Wilhelm et al. 2011)
+       did not replicate (Ashton & Cairney 2021).
+     - Ours: outcome-selected terminal tails installed an action-prior shortcut, and broad hazard-choice sampling
+       fixed it (08-29).
+  4. **Goal targets from real experience into shared modules.**
+     - Field:
+       - DreamerV3's reference code: reward and a value on real replay train the representation (scale 0.3);
+       - Dreamer 4 phase 2: imitation + reward on the agent tokens, video loss kept;
+       - MuZero / TD-MPC2: goal targets only.
+     - Cautions:
+       - a decoupled encoder "matches or outperforms end-to-end RL" (Stooke et al. 2021);
+       - reward-only latents warp (Visualizing MuZero);
+       - non-stationary targets cause "capacity loss" (Lyle et al. 2022), and value targets never stop moving in a
+         life.
+     - Brain:
+       - task learning reshapes V1 (Poort et al. 2015);
+       - dopamine paired with a tone enlarges that tone's cortical map and shrinks its neighbours' (Bao, Chan &
+         Merzenich 2001);
+       - only the feature paired with task targets is learnt, even when subliminal (Seitz & Watanabe 2003).
+       - Goals allocate representation; none of these makes predictions favour good outcomes.
+  5. **Outcome-weighted prediction: how much the world learns from each moment.**
+     - Field: VaGraM rescales the model's error by the value gradient (Voelcker et al. 2022).
+     - Brain: three-factor rules (Fremaux & Gerstner 2015).
+     - Ours: rare-event doses shifted priors (E14).
+  6. **Imagined returns into the world: what the world predicts.**
+     - Stopped in DreamerV3 (ac_grads False).
+     - Stopped in DayDreamer, stated as the reason, not ablated: "this would lead to incorrect and overly optimistic
+       model predictions".
+     - Dreamer 4 phase 3 trains heads only; fine-tuning the whole transformer gave "small additional benefits" in its
+       one-off offline setting.
+     - MnM trains model and policy on one bound, and its learned dynamics turn out "optimistic" (Eysenbach et al.
+       2022).
+     - Ours: every decision-critical error we know makes imagination safer than reality.
+- **Two principles that follow:**
+  1. **Goals shape shared modules only through targets the world didn't produce.**
+     - Real rewards, real terminations, demonstrated actions and values fitted on real experience can't make the world
+       believe something false about the world.
+     - An imagined return is the world's own output. Training the world on it teaches it to tell the choice what it
+       wants to hear.
+  2. **A goal may set how much the world learns from a moment, using only what is known before the outcome.**
+     - With a weight w(x) on the context, the per-context minimiser of a proper loss is still p(y|x). Each prediction
+       stays calibrated; only capacity moves.
+     - With a weight w(x, y) that depends on the outcome, the minimiser becomes w(x, y) p(y|x) / Z:
+       - weighting by realised reward is optimism by construction (Codex);
+       - weighting by surprise over-predicts rare outcomes (PER's bias; our E14).
+     - Allowed: where it looked, the value of the situation, the uncertainty before the outcome. The 11-15 privileged
+       glimpse route (attention as precision that gates learning) is of this kind.
+- **Proposed position (undecided):**
+  - routes 1-3 from the start, with outcome-consistent looks before any gaze is trained on dream returns (Codex), and
+    the world's own training data selected by context, a broad base kept;
+  - route 4 into the belief: keep reward and continuation; add the choice's imitation loss. A value on real replay is
+    left to decision 3, because of capacity loss;
+  - route 4 into the denoiser, at first: no. The agent tokens get their own weights. They read the denoiser's
+    activations detached and the belief's memory tokens attached, so the imitation gradient reaches the belief and
+    stops at the denoiser. Reason, measured in our own system: where goal and prediction losses already share a module
+    (the belief), the goal losses took about 98% of its gradient and crowded out every predictive request (P1-F6). The
+    denoiser is the module whose job is the world's rules. This differs from Dreamer 4 phase 2 (shared weights);
+    revisit if the choice lacks something the denoiser's features could give it;
+  - route 5 with context weights only; route 6 not at all (dreams train heads only).
+- **Codex:** goal-shaping the belief changes the world's conditioning (memory tokens), so prediction must keep training
   alongside it.
 
 *3. Where does the head start come from, realistically?*
@@ -196,14 +265,98 @@ and built when a measurement calls for them.
 - **Biology:**
   - children "copy others' actions with high fidelity", from observation, without the demonstrator's motor commands;
   - imitation at birth is contested (Oostenbroek et al. 2016).
-- **So:** imitation from labeled motor footage (our corpus's actions) is the comfortable option, realistic only where
-  teleoperation exists. The faithful path:
-  - the world learnt mostly from observation;
-  - its own actions' effects learnt from a little own interaction;
-  - behaviour learnt on the job, by living and dreaming;
-  - imitation, if any, by watching others and inferring their actions with the agent's own world model
-    (inverse dynamics, VPT's route).
-- **Design consequence:** labeled-demonstration imitation is a permitted accelerator, never a requirement.
+- **Revised 11-22 (the user: a robot isn't deployed untrained for its task; we must tell and show it what we want).**
+  I withdraw "labeled-demonstration imitation is a permitted accelerator, never a requirement". A deployed agent must
+  be told what to do, and the channels are few:
+  - a reward, designed or learnt;
+  - demonstrations (show);
+  - language (tell);
+  - goal examples;
+  - corrections (coach);
+  - preferences.
+  DayDreamer is the exception: hand-designed rewards per task (a five-term walking reward, sparse grasp rewards), one
+  task per run.
+- **Imitation has two separable roles:**
+  - **specification,** what to achieve, needed in some form;
+  - **competence,** how to do it, optional but large (VPT).
+- **Deployed practice combines showing, coaching and own experience:**
+  - pi*0.6 / RECAP (2511.14759): demonstrations, autonomous rollouts and expert corrections during execution, with an
+    advantage-conditioned policy. On the hardest tasks it more than doubles throughput and roughly halves failures;
+  - Sirius (Liu et al., RSS 2023): shared human-robot autonomy, and the policy improved from deployment data (+27%
+    success on real hardware);
+  - LWD (2605.00416): fleet offline-to-online learning.
+- **Humans are built to be taught:**
+  - natural pedagogy transmits "cognitively opaque" knowledge that observation alone would make hard to acquire (Csibra
+    & Gergely 2009);
+  - 3-4-year-olds copy demonstrated steps even when a transparent box shows them useless; chimpanzees drop them
+    (Horner & Whiten 2005).
+  - Teaching is a natural channel, not a crutch.
+- **The phases are not stages.** One loop with three sources whose mix shifts over a life:
+  - others' experience: watching, demonstrations, instructions;
+  - own experience: acting, looking, being corrected;
+  - imagined experience: dreaming.
+  The world learns from all real experience. The choice learns from whichever target is present: a demonstrated action,
+  its own outcome, an imagined return. The architecture is the same throughout; only the mix changes (early life
+  mostly watching, deployment mostly own experience, idle time dreaming).
+- **Watching without motor labels** (video, others acting) still needs inferred actions: VPT's inverse dynamics,
+  through the agent's own world model.
+- **For the first Craftax loop:**
+  - watching is the corpus with its actions (motor labels kept, Codex; realistic where teleoperation exists);
+  - own experience is live Craftax;
+  - specification is the reward plus the demonstrations.
+
+### What it is for: use cases and what they imply (11-22)
+
+- **Home and service robots:** every home is a new world (layout, objects, people, habits). The owner teaches by
+  showing and correcting. No dangerous trials. Learning stays on the device, which keeps it private. Idle and charging
+  time is when it dreams.
+- **Fleets (warehouses, factories):** many bodies sharing experience, frequent re-tasking (LWD).
+- **Remote and field robots (planetary, underwater, disaster sites):**
+  - no live teaching: Mars is up to 20 minutes away each way, so flight software "must be resident on the in space
+    asset" (NASA, ASCEND report);
+  - damage and wear: DayDreamer's stated limitation is wear "that may require human intervention or repair"; with a
+    prior, a damaged hexapod recovers in under two minutes (Cully et al. 2015);
+  - so competence must be in place before deployment;
+  - irreversible outcomes must never be under-predicted.
+- **Assistive devices:** personalisation to one body over time. Human-in-the-loop exoskeleton optimisation cut walking
+  metabolic cost by about 24% (Zhang et al. 2017).
+- **Games and virtual agents:** cheap, safe experience. Craftax sits here.
+
+**What they share, so what Saccade needs:**
+- **Real experience is the scarce resource**, so imagination and selective sensing are the levers (the intelligence
+  loop).
+- **A specification channel,** mostly demonstrations and corrections, with rewards learnt from them.
+- **No resets.** One continuous life needs memory that survives episodes (the episodic store). Craftax's episode reset
+  is a convenience, not the design.
+- **Safety:** errors on irreversible outcomes must never be optimistic. Ours are optimistic: deaths and hits are
+  under-drawn.
+- **Economy:** compute and energy on the device. In the brain, signalling takes a large share of the energy budget,
+  which favours energy-efficient codes (Attwell & Laughlin 2001). The eye is Saccade's version.
+- **A changing body and world:** DayDreamer's XArm lost performance at sunrise and recovered in about 5 hours, "faster
+  than it would be to train from scratch", "with no change to the learning algorithm".
+
+### DayDreamer, compared (2206.14176, read at the source 11-22)
+
+**The same as Saccade:**
+- online learning on the real system;
+- a world model learnt from a growing replay buffer, and behaviour learnt in imagination;
+- a learner thread and an actor thread in parallel;
+- the world model untouched by the actor-critic's gradients;
+- adaptation to pushes within 10 minutes.
+
+**Different:**
+- No head start: "without simulators or demonstrations", from scratch for each task, with hand-designed rewards.
+- One task per run, and no continual-learning machinery. It notes "promise for using Dreamer in continual learning
+  settings".
+- The whole observation every step; no active sensing.
+- An RSSM with reconstruction: short memory and no episodic store.
+- A world model plus a separate actor-critic.
+
+**So:** it proves the loop runs on real hardware in hours. Saccade's claim is the parts it lacks:
+- starting from watching;
+- selective sensing;
+- fast adaptation within one life;
+- keeping what it learnt.
 
 ## Adaptation: how one experience changes the agent
 
@@ -413,8 +566,9 @@ References:
 
 1. What counts as a new situation, and the lifetime judge.
 2. How one experience changes the agent quickly (fast and slow channels), informed by the measurements above.
-3. The choice faculty: one policy with two outputs, its inputs, how it learns awake and dreaming.
-4. Whether goals (the value of decisions) shape the belief; the denoiser stays general.
+3. The choice faculty: agent tokens inside the world, with two outputs (look and act); agreed 11-22. Open: the
+   look/act ordering and the measured costs.
+4. How goals shape learning: the six routes and two principles above; the proposed position awaits the user.
 5. The rules of dreaming: starts, horizon, outcomes from the world's state, look consistency.
 6. The life cycle: schedule, replay mix, plasticity.
 7. Knowing what it doesn't know, and curiosity.

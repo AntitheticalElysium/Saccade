@@ -792,7 +792,9 @@ proof.
 4. **The look:**
    - **While watching:**
      - cross-entropy toward the chooser's rule, 0.8 softmax(0.5 C + 0.5 S) + 0.2 / 49;
-     - S is the world's own error per window, which the P1 loss already computes per cell;
+     - S is the world's own error per window. The P1 loss computes per-cell error at randomly sampled noise levels,
+       which is noisy. The chooser's S was a deterministic forecast error. So S needs a defined estimator, such as a
+       fixed-level estimate, and a check that it ranks windows like the chooser's did;
      - C is the action's contingency, taken minus NOOP. It needs a NOOP forecast, which is the cost to measure
        (Codex);
      - plus the decision value of a crop, counterfactual on recorded frames.

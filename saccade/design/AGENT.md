@@ -121,54 +121,89 @@ and built when a measurement calls for them.
   - our denoiser already has one-way groups (physical queries never read glimpse keys), and every real or dreamed
     frame already gets one clean context pass, so reading it adds little cost.
 
-**Revised 11-22 (the user asked how agent tokens differ from the belief; Codex's review):**
-- **The belief and agent tokens overlap in role.** Both would be "what matters for the goals". The difference is
-  access and persistence:
-  - the belief is a compressed, persistent state carried through time;
-  - agent tokens are a fresh, non-persistent read of everything, made each step.
+**Laid out again 11-22 (the user: "stop treating Saccade as actor + model"; "10-24 isn't a rule"). Undecided.**
 
-  Two "what matters" pathways would be two sources of truth. So: **the belief stays the agent's single "what
-  matters" state.**
-- **The choice reads the belief plus the current evidence:** the periphery and glimpse tokens with their coordinates
-  (Codex's richer read-only head, without a separate actor). The percept is evidence and the belief is memory; the
-  choice combines them.
-- **The record is read through the belief,** which already takes a read of it. If decision losses shape the belief
-  (below), it can learn to carry what the record holds that decisions need, such as the thirst phase. A direct record
-  read for the choice stays an option if that fails.
-- **Agent tokens inside the denoiser are dropped for now.** The context pass re-noises the finished frame to the
-  context level, so it isn't a clean decision representation, and it runs after the glimpse (Codex).
-- **Belief alignment:** the choice reads the belief after the percept and before the action (`y[:, 0::2]` in
-  `s1.encode`). The post-action state contains the action, which would leak the target (Codex, checked on a CPU
-  reference).
-- **1b, look then act, stands.** The gaze is chosen from the coarse view and the belief; the motor action is chosen
-  after the glimpse. For the first tests, gaze stays the existing controller.
+*1. Should the agent's choices read the world model's internal understanding?*
+- **My "two sources of truth" objection was wrong.** Agent tokens are not a second memory; they persist nothing. They
+  are the choice computation placed where it can see:
+  - memory: the belief, through the memory tokens, and the record, through each cell's read;
+  - evidence: the current tokens and recent frames;
+  - understanding: the denoiser's contextual computation of what the world is doing.
+- **What the denoiser holds that the belief lacks (measured):**
+  - the hidden clocks: drawn from the record, swap effect 0.99, against 0.000 for Mamba;
+  - each mob's cell: belief 0.116, frame 0.99;
+  - the action-conditioned rules.
+- **Neuroscience: one substrate for perceiving and imagining.**
+  - "neural representations of imagined and perceived stimuli are similar in the visual, parietal, and frontal
+    cortex" (Dijkstra et al. 2019);
+  - perception uses the generative model's predictions (Rao & Ballard 1999).
+  - "The denoiser is only for imagination" is the actor + model view.
+- **World-model precedents:**
+  - the actor reads the world's own latent state (Dreamer 1-3); planning in the world's latent (TD-MPC2);
+  - agent tokens inside the world (Dreamer 4);
+  - DIAMOND's agent reads generated frames, not the diffusion model's internals.
+- **Practicalities:**
+  - Dreamer 4's agent tokens read slightly corrupted context too, so the context pass's mild noise is not
+    disqualifying (my concession to Codex was too quick).
+  - Factorised attention lets agent tokens in the physical stream choose the LOOK from the coarse frame before the
+    glimpse, and a second set choose the MOTOR action after it, within one pass.
+  - Cost: unmeasured. The P1.6 world-eye's +12 h came from a separate sequential estimate pass, not from this.
+- **Current lean:** agent tokens inside the world (C) are the one-agent design. Belief plus percept (B) is the cheaper
+  test that may miss the hidden timing.
 
-**1c, gradients. Precedents, read at the source:**
-- **Dreamer 1-3:** the world is trained by its own losses, reward prediction included. The actor and critic "learn
-  behaviors purely from abstract trajectories of representations predicted by the world model" (DreamerV3).
-- **Dreamer 4:** in phase 2, imitation and reward prediction train the shared transformer while the video loss
-  continues. In phase 3, only the policy and value heads learn.
-- **MuZero:** the representation is trained entirely by reward, value and policy.
-- **Proposal:** goal losses (imitation, and later value) may shape the BELIEF, which is "what matters". They do not
-  reach the denoiser's own weights, which stay the general imagination engine. This is Dreamer 4's phase-2 move,
-  applied to the belief only. The 10-24 rule ("no BC head on the world's representation") is narrowed to the
-  denoiser.
+*2. Which parts should the agent's goals shape, and how?*
+- **10-24 was the user's hedged lean**, "I'd lean against making the actor stage influence the dynamics ... It might
+  actually be something we do later down the line", not a rule.
+- **Positions, verified:**
+  - **Prediction-only world, behaviour on top.** In DreamerV3's reference code, actor-critic gradients through
+    imagined features are stopped (ac_grads False). But reward prediction AND a value loss on real replay do shape the
+    representation (reward_grad True; repval_loss and repval_grad True; scale 0.3).
+  - **Goals shape the shared network with prediction kept:** Dreamer 4, phase 2.
+  - **End-to-end goal-shaped:** MuZero; TD-MPC2's decoder-free latent.
+- **Continual-learning side:**
+  - Task-general world models adapt to new tasks fast (Plan2Explore).
+  - Task-specific models are simpler, but the class shrinks to the true model as tasks multiply (Grimm et al. 2020).
+  - Keeping the imagination engine general protects later tasks.
+- **Brain side:**
+  - Learning a task reshapes even V1 "to adjust its processing to task requirements" (Poort et al. 2015).
+  - The mechanism proposed is not replacing prediction with a task objective but gating plasticity: a global reward
+    signal times attentional feedback that "limits plasticity to those units ... crucial for the stimulus-response
+    mapping" (AGREL, Roelfsema & van Ooyen 2005).
+- **So there are three options, not two:** G0 detached; G1 goal gradients with prediction kept; G2 goal-gated
+  predictive learning (reward and attention set where and how much the world learns, while it learns prediction).
+- **Current lean:**
+  - G1 for the belief, on real experience (DreamerV3's replay-value precedent);
+  - G2 for the denoiser in time (the privileged route of 11-15 is G2);
+  - G0 until then.
+- Codex: goal-shaping the belief changes the world's conditioning (memory tokens), so prediction must keep training
+  alongside it.
 
-**Imitation as the head start (basis):**
-- Dreamer 4 (imitation, then imagination with a reverse KL to the frozen imitation prior) and AlphaGo (expert games,
-  then self-play).
-- Starting from scratch online costs real steps: PPO needs about a billion steps to reach 90% of Classic's optimum
-  (Craftax paper).
-- Our 09-02 actors lost to their own imitation policies (a 2-step horizon made sleep worthless), so imitation is the
-  bar to beat.
-- **In a continual life, a FIXED prior to the expert would cap improvement and block adaptation,** since the expert is
-  wrong under a changed rule. The prior should become the agent's own recent behaviour, or fade. This is a design
-  point for decision 3.
-
-**First build (not an ablation):** the imitation head start of the agent itself. The choice reads the belief plus the
-current percept, is trained on the corpus's expert-branch steps (29% of the training labels are exogenous, Codex), and
-is evaluated in real Craftax. It is the loop's first stage and the actor test's baseline. The belief-only comparison is
-dropped as a selection test: the measured belief gaps already settle it by reasoning.
+*3. Where does the head start come from, realistically?*
+- **What a deployed agent actually has:**
+  - abundant observation without action labels (video, others acting);
+  - a little of its own interaction;
+  - sometimes demonstrations on its own body, which are expensive teleoperation;
+  - its own life.
+- **Practice:**
+  - Dreamer 4 learns most of its world "from diverse unlabeled videos" with action conditioning from little labeled
+    data;
+  - R3M pretrains on human video (Ego4D) and then learns tasks "given just 20 demonstrations";
+  - Open X-Embodiment pools teleoperation from 22 robots;
+  - DayDreamer learns on the robot from scratch in hours.
+  - VPT trains an inverse dynamics model on a little labeled data to label "a huge unlabeled source", yielding a
+    behavioural prior for "hard-exploration tasks that are impossible to learn from scratch via reinforcement
+    learning".
+- **Biology:**
+  - children "copy others' actions with high fidelity", from observation, without the demonstrator's motor commands;
+  - imitation at birth is contested (Oostenbroek et al. 2016).
+- **So:** imitation from labeled motor footage (our corpus's actions) is the comfortable option, realistic only where
+  teleoperation exists. The faithful path:
+  - the world learnt mostly from observation;
+  - its own actions' effects learnt from a little own interaction;
+  - behaviour learnt on the job, by living and dreaming;
+  - imitation, if any, by watching others and inferring their actions with the agent's own world model
+    (inverse dynamics, VPT's route).
+- **Design consequence:** labeled-demonstration imitation is a permitted accelerator, never a requirement.
 
 ## Adaptation: how one experience changes the agent
 

@@ -402,6 +402,10 @@ prediction-only updates for the denoiser at first.
 
 ### Decision 2: dreaming (opened 11-22)
 
+**The user (11-22): don't build the dream design around P1.5's deficits.** The fading mobs and the day coin are a
+world-quality problem with measured causes, to be solved separately ("just a matter of building a good enough
+world"). The design below assumes a good enough world. P1.5's measurements locate it, nothing more.
+
 **What it is for:** practice for the choice and its value, branched from real moments, so that scarce real experience
 goes further. **The judge:** the same continuing agent with and without dreaming, at the same real-interaction budget,
 with compute reported (Codex; "How to judge it" below).
@@ -453,8 +457,8 @@ with compute reported (Codex; "How to judge it" below).
 - **Passive looks** move the one-step reward probability by 0.12 pp on average, and by 5.0 pp at one branch.
 
 **Sub-decisions, in order (each discussed on its own):**
-1. **What a dreamed step commits to** (first, Codex). In life, the consequences of the previous action exist before the
-   agent looks; looking only reveals them. Proposed order for a dreamed step:
+1. **What a dreamed step commits to. AGREED (user, 11-22).** In life, the consequences of the previous action exist
+   before the agent looks; looking only reveals them. The order for a dreamed step:
    - draw the coarse view and lighting;
    - draw the outcome of the previous action (reward, termination) from what is committed so far, never from the look;
    - choose the look;
@@ -463,23 +467,41 @@ with compute reported (Codex; "How to judge it" below).
    This factorises the same joint as reality (state, then outcome, then evidence at a look), so the outcome's
    distribution can't depend on the look. Dreamer is the extreme case: its outcomes come from a committed latent, and
    observations are never generated. Today the outcome is read from features that include the generated crop.
-   - **Measure first:**
-     - how much outcome information the pre-look state holds on real data;
-     - how often a glimpse drawn after a pre-look outcome contradicts it (reader-checked; today reward against read
-       health is inconsistent 0.0036, simulator 0.0034).
-     - If contradictions stay at the simulator's rate, the glimpse needs no new input. Otherwise it is conditioned on
-       the drawn outcome.
-   - **Multi-step:** the same actions under different look sequences must give the same distribution of later
-     outcomes. With mobs fading, a look that generates an unseen cell could make danger vanish more often than reality
-     does.
+   - **The two supporting checks (`artifacts/experiments/20261122_dream_commitment/RESULTS.md`).**
+     - In a perfect world both orders factorise the same joint. What differs is which property holds by construction:
+       - committing first makes the outcome exactly independent of the look;
+       - reading the crop (today) makes the evidence agree exactly, while look-independence rests on the model's
+         quality.
+       - An eye trained on dream returns will find any incoherence.
+     - **The committed state carries most of the outcome** (real frames, Codex's probes reproduced to four decimals):
+       - AP 0.966 for damage, 0.975 for rewards, 0.9999 for termination.
+     - **The look reveals what it lacks:**
+       - the fine crop determines damage exactly (fine reader 100%; P1.5's crop head AP 1.000);
+       - the coarse view does not (its reader misses 9.9% of real drops).
+       - A glimpse drawn *without* the committed outcome would therefore contradict it even in a perfect world:
+         4.7% of committed damage under the raw probe, up to 11.5% once its overconfidence is recalibrated.
+       - That is marginal by the rule fixed beforehand, and the user decides.
+     - **P1.5's dreams today:**
+       - the glimpse contradicts 3.6% [2.7, 4.6] of committed drops;
+       - the committed p tracks recorded outcomes with AP 0.950 (0.998 on the real successor).
+       - No blocker.
+   - **Proposed: the glimpse stage takes the committed outcome (reward, termination) as an input.** These are generic
+     quantities, so nothing Craftax-specific is needed. Evidence then agrees with the outcome by construction too.
+     - The general reason: the eye exists to see detail the coarse view lacks, and outcome detail is that kind of
+       detail.
+     - Awaiting the user.
+   - **Multi-step:** under a fixed action sequence, different look schedules must give the same distribution of later
+     physical outcomes, averaged over what the looks could reveal (Codex). Looks may legitimately change the belief and
+     what it predicts, but not the agent's luck.
    - **Codex:** keep "what happened" apart from "how the current goal scores it", for retasking. The first loop scores
      with the game's reward. A reward head that reads only committed state can be swapped for a new goal's.
 2. **Where dreams start:** real moments from replay, uniform at first. The 08-29 lesson favours a broad base, and
    starts chosen by what the value conditions on leave it calibrated. Prioritised starts come later, on a measured
    trigger. A start needs the real belief, record and context cache at that moment.
-3. **Horizon:** short at first, set by where decision-relevant consequences hold. First-step consequences hold; mobs
-   fade from step 1 and compound. A value carries what lies beyond. The precedents' 15-20 steps assume worlds without
-   our measured fade.
+3. **Horizon:** a value carries what lies beyond it. The general reason to keep it short holds even for a good world.
+   Model error grows with how far the learning policy has moved from the data ("the model error increases with the
+   divergence between the current policy π and the data-collecting policy", MBPO). A continual learner's world is
+   always wrong somewhere new. Precedents use 15-20 steps.
 4. **Returns:** λ-returns from dreamed rewards and continuation, bootstrapped by a value head (DreamerV3, Dreamer 4).
    Where the value is trained (dreams only, or real replay too) decides how much dream optimism it inherits. That
    belongs to decision 3.
@@ -487,6 +509,43 @@ with compute reported (Codex; "How to judge it" below).
    learn from its own dreams here; consolidation and generative replay belong to decision 4.
 6. **The eye in dreams:** the agent chooses the look, and the look decides which glimpse is drawn. It trains on dream
    returns only after looks pass the one-step and multi-step consistency checks.
+
+The sub-decisions depend on one another, so they are discussed together (user, 11-22). The step contract anchors them.
+
+**Dreams in the whole system (11-22): what the component view would miss.**
+- **Practice or deliberation.** Imagination can run in two places:
+  - offline, as practice that trains the choice and value (Dyna);
+  - at decision time, imagining before acting (TD-MPC2, MuZero).
+  
+  The brain does both. At maze choice points rats pause, and hippocampal sequences sweep ahead along the options;
+  "as behaviour automates, these sweeps transition from going in both directions to going only in one direction, and
+  then vanish" (Redish 2016). The pausing happens under uncertainty, and control passes between costly model-based
+  and cheap habitual systems by their uncertainty (Daw, Niv & Dayan 2005). This is Codex's efficiency question: think
+  only when a decision needs it. It changes the awake loop's compute, and is not settled.
+- **Dreams never enter real memory as real.**
+  - A dream runs on copies of the belief, the record and the context cache, and writes back only learning: the
+    choice and value weights.
+  - The future episodic store must not hold dreams, or must tag them.
+  - The world is not trained on its own dreams as if they were real experience. Indiscriminate training on generated
+    data makes "tails of the original distribution disappear" (Shumailov et al. 2024), and rare events are what
+    decisions hinge on.
+  - People face the same hazard: imagining an event inflates confidence that it happened (Garry et al. 1996); keeping
+    perceived and imagined apart is reality monitoring (Johnson & Raye 1981).
+  - Consolidation, if dreams ever train the world, is its own decision.
+- **Trusting a dream.** A continual learner's world lags reality wherever something is new: after a rule changes, in
+  places the policy has only just reached. There its dreams rehearse the old lesson and pull the choice against what
+  real experience is teaching. Dream learning should depend on where the world is reliable. That couples dreaming to
+  knowing what the agent doesn't know (uncertainty, change detection) and to the fast channel. If adaptation in
+  context worked, a dream started from a recent real history would carry the new evidence and dream the new rule
+  before the weights catch up.
+- **Fresh starts.** A start needs the belief, record and context at that moment, as computed by the current world. A
+  learning world makes stored states stale. DreamerV3 writes each replayed chunk's latent states back into replay
+  after training and reuses them as the next start's context (`replay_context`). Our staleness audit measured stale
+  substitutes as poor early in training and near fresh late (`artifacts/experiments/20261119_switching/STALENESS.md`).
+- **Schedule.** The awake step must stay bounded for a real-time body: the split pass and nothing more. Dreaming runs
+  in idle time or in a parallel learner, as in DayDreamer's learner and actor threads.
+- **The eye makes dreams cheap too.** A dreamed step generates the coarse view and one glimpse, not the full frame. The
+  dream's cost grows with looks, which the agent chooses. This is a synergy to keep.
 
 ## Adaptation: how one experience changes the agent
 
@@ -693,16 +752,42 @@ References:
 **Human reference:** Crafter's leaderboard lists humans at 50.5% with "Life experience" and 0 interaction, against
 21.8% for the best listed 1M-step agent (Lake et al. 2017: rapid learning needs causal models and learning-to-learn).
 
-## Open decisions, in order
+## The decision map (11-22)
 
-1. What counts as a new situation, and the lifetime judge.
-2. How one experience changes the agent quickly (fast and slow channels), informed by the measurements above.
-3. The choice faculty: agent tokens inside the world, with two outputs (look and act); agreed 11-22. Open: the
-   look/act ordering and the measured costs.
-4. How goals shape learning: the six routes and two principles above, with Codex's corrections. On hold (user 11-22)
-   until the rest of the system is laid out.
-5. Dreaming (decision 2, opened 11-22): first, what a dreamed step commits to; then starts, horizon, returns, what
-   learns, the eye in dreams.
-6. The life cycle: schedule, replay mix, plasticity.
-7. Knowing what it doesn't know, and curiosity.
-8. Acuity.
+**To close the loop (the first agent that lives, dreams and improves):**
+1. **The choice faculty.** Agreed: agent tokens inside the world, look then act in a split pass, with build checks.
+2. **Dreaming.**
+   - Agreed: the step commits to the outcome before the look.
+   - Open, together:
+     - starts, horizon, returns, what learns, the eye in dreams;
+     - practice or deliberation;
+     - isolation, trust, fresh starts.
+3. **Learning, awake and dreaming:**
+   - the imitation head start (frozen world, fixed gaze first);
+   - the policy objective in dreams, and the prior and how it fades in a life;
+   - where the value is trained;
+   - what teaches the look: dream returns once looks are consistent, real outcomes, information gained.
+4. **The life cycle:**
+   - what runs awake and what asleep;
+   - replay contents and mix (the corpus plus its own life);
+   - the world learning online without the learning rate annealing away (plasticity, optimizer continuity);
+   - refreshing stored states;
+   - the 6 GB budget.
+
+**Designed in from the start, built on a measured trigger:**
+
+5. **Knowing what it doesn't know:** uncertainty that sets how far to trust a dream and where to look or go to learn
+   (curiosity), and change detection.
+6. **Memory beyond the episode:** the episodic store (one-shot, survives resets, keeps dreams out), and what survives
+   Craftax's episode resets.
+7. **The fast channel:** how adapting in context is learnt (variation in training, scoped above).
+
+**Framing and judging:**
+
+8. **Task specification and retasking:** what happened versus how a goal scores it; how new tasks enter
+   (demonstrations, corrections, rewards).
+9. **How goals shape learning** (on hold).
+10. **The lifetime judge,** and what counts as a new situation.
+11. **Acuity.**
+
+**A separate track:** a good enough world. The day coin and the self-feeding fade are world quality, not agent design.

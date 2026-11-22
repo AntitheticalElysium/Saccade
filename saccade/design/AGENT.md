@@ -722,6 +722,90 @@ proof.
 - **The eye makes dreams cheap too.** A dreamed step generates the coarse view and one glimpse, not the full frame. The
   dream's cost grows with looks, which the agent chooses. This is a synergy to keep.
 
+### Decision 3: how each part learns, watching, living and dreaming (opened 11-23)
+
+**Precedents, read at the source 11-23:**
+- **Dreamer 4, section 3.3** (`third_party/papers/2509.24527v1.pdf`):
+  - Imitation and reward are learnt on the agent tokens with multi-token prediction of length 8, and "we continue to
+    apply the video prediction loss". No test of the prediction length is reported; it cites the LLM work.
+  - "The behavioral cloning loss is applied only on the relevant fraction, while the dynamics loss is applied only on
+    the uniform sequences to avoid optimistic generations" (data 50% uniform, 50% task-relevant). This is our
+    principle 2 in practice.
+  - The policy objective is PMPO, the sign of the advantages R^λ - v (eq. 11): (1 - α) / |D-| Σ_{D-} ln π - α / |D+|
+    Σ_{D+} ln π + β / N Σ KL[π ‖ π_prior], with α 0.5 and β 0.3. The KL is reversed "to better constrain the policy to
+    the space of reasonable behaviors". There is no return normalisation, and "the three objective terms ... are all
+    measured in nats".
+  - The value is trained on λ-returns with γ 0.997. Only the heads train, with one rollout per context.
+  - "The world model representations outperform the general representations of Gemma 3 for behavioral cloning."
+  - The JAX reimplementation (`third_party/sources/edwhu__dreamer4-jax/scripts/train_policy.py`) codes eq. 11 as
+    written, with its own horizon of 32.
+- **DreamerV3 code** (`third_party/sources/danijar__dreamerv3/dreamerv3/agent.py`, `imag_loss`, `repl_loss`):
+  - REINFORCE on advantages scaled by the 5th-95th percentile return range, with entropy 3e-4;
+  - a slow critic regulariser (slowreg 1.0);
+  - a replay value bootstrapped from the imagined return (Codex's caution).
+- **VPT** (Baker et al. 2022, read in the PDF):
+  - fine-tuning keeps a KL to the frozen pretrained policy, because without it the agent "obtains only items early in
+    the sequence" and later skills "are lost due to catastrophic forgetting";
+  - the KL replaces the entropy bonus, because the prior is "much more likely to take sequences of actions that lead
+    to interestingly new states";
+  - ρ starts at 0.2 and decays by 0.9995 per iteration. That "protects policy skills in early iterations while
+    guaranteeing that the policy can eventually maximize the reward function, regardless of how different its
+    behavior has to be".
+- **Teachers that fade:**
+  - in kickstarting, the teacher loss's weight "is allowed to change over time, so that the student can ... potentially
+    surpass the teacher" (Schmitt et al. 2018);
+  - in Jump-Start RL, the guide policy's role shrinks as the learner improves (Uchendu et al. 2023).
+- **Brain:**
+  - an actor-critic in the basal ganglia, with dopamine as the critic's prediction error (Joel, Niv & Ruppin 2002;
+    Schultz, Dayan & Montague 1997);
+  - habits and deliberation arbitrated by uncertainty (Daw, Niv & Dayan 2005);
+  - teaching as a natural channel (Csibra & Gergely 2009).
+
+**Our demonstrations (EDA 11-23, S0 labels).**
+- The expert is our PPO agent on symbolic observations. Alone (07-27) it scored 91.2, with 20.6 / 22 achievements and
+  diamonds in 44% of episodes.
+- The corpus mixes it with random actions at ε 0.1, 0.25, 0.5 and 1.0, a quarter of the 8,069 TRAIN episodes each.
+  71% of actions are the expert's.
+- At ε 0.1, 97% of episodes end in death (median length 478), with 17.6 achievements and diamonds in 9%. At ε 1.0 the
+  figures are 2.4 achievements and length 135.
+- So imitating the expert-flagged steps learns one strong policy over a broad, noise-perturbed spread of states. The
+  expert acted on full symbolic state, so wherever it used something the screen doesn't show, the belief and record
+  must carry it.
+
+**Proposed (undecided), part by part, in one system:**
+1. **The world** learns by the P1 losses on real experience: the corpus while watching, its own transitions while
+   living. Goal shaping is on hold, so it stays as today. Following Dreamer 4, no outcome-selected data reaches the
+   world's loss.
+2. **The motor choice:**
+   - **Watching:** imitation of expert-flagged actions, exogenous ones masked, with multi-token prediction of length
+     8 (Dreamer 4's default, untested there). The crop-swap and label-swap checks apply.
+   - **Dreams:** PMPO, α 0.5, plus a reverse KL with β 0.3 to an anchor policy (Dreamer 4).
+   - **The anchor over a life.** It starts as the imitation policy. VPT shows why the expert's pull must fade, and
+     Dreamer 4 why the anchor matters in dreams: it keeps the policy where the world is accurate, near the behaviour
+     the world learnt from. In a life that behaviour becomes the agent's own, so the anchor follows a slowly updated
+     copy of the agent's policy, and the expert's influence fades as the agent's own experience grows. The rate is
+     open (decision 4), and the rule-change benchmark judges it.
+   - **Real experience** reaches the choice through the world and the value, as in Dreamer 3 and 4. Demonstrations or
+     corrections that arrive in life go to imitation, the specification channel.
+3. **The value:** dreamed and real-replay λ-returns, through its own weights, with DreamerV3's slow regulariser and a
+   held-out check against real continuations.
+4. **The look:**
+   - **While watching:**
+     - cross-entropy toward the chooser's rule, 0.8 softmax(0.5 C + 0.5 S) + 0.2 / 49;
+     - S is the world's own error per window, which the P1 loss already computes per cell;
+     - C is the action's contingency, taken minus NOOP. It needs a NOOP forecast, which is the cost to measure
+       (Codex);
+     - plus the decision value of a crop, counterfactual on recorded frames.
+   - **In dreams:** PMPO on the look as part of the action, once look schedules can't change later outcomes.
+   - **Risk:** raw surprise draws the eye to irreducible noise, such as night static (Burda et al. 2018). Learning
+     progress (Gottlieb et al. 2013) is the replacement, on a measured trigger.
+5. **Order inside the run:**
+   - watching first: world, imitation and the look's signals together;
+   - dreaming once imitation is competent, as Dreamer 4's phases do;
+   - then life.
+
+   Whether dreaming starts during watching, and the mix, belong to decision 4.
+
 ## Parked: thinking when it's worth it (user 11-23, explore after the first proof)
 
 **The idea.** At decision time the agent may imagine before acting, using the denoiser on candidate futures, but only
@@ -990,11 +1074,12 @@ References:
      4 and 15 inside the run (Codex).
    - Isolation, trust and fresh starts are recorded.
    - Practice first; deliberation is parked (its own section).
-3. **Learning, awake and dreaming:**
-   - the imitation head start, learnt jointly with the world while watching, under the agent's own looks;
-   - the policy objective in dreams, and the prior and how it fades in a life;
-   - where the value is trained;
-   - what teaches the look: dream returns once looks are consistent, real outcomes, information gained.
+3. **Learning, awake and dreaming** (Decision 3, opened 11-23; proposal above, undecided):
+   - the world by the P1 losses on real data;
+   - the motor choice by imitation while watching, then PMPO with a reverse KL to an anchor that moves from the
+     imitation policy to the agent's own;
+   - the value from dreams and real replay;
+   - the look from surprise, contingency and decision value, then dream returns.
 4. **The life cycle:**
    - what runs awake and what asleep;
    - replay contents and mix (the corpus plus its own life);

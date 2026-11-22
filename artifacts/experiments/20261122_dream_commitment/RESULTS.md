@@ -60,10 +60,16 @@ estimates.
 |---|---:|---:|---:|---:|---:|---:|
 | Recorded drop (923) | 0.653 | 0.916 | 3.6% | 3.1% | 13.9% | 7.4% / 9.9% |
 | No recorded drop (923) | 0.0067 | 0.0018 | 0.53% | 43% of a small mass | 43% | 0.08% / 0.00% |
-| All | 0.330 | 0.459 | 2.1% | **3.6% [2.7, 4.6]** | 14.2% | 3.7% / 4.9% |
+| Balanced panel | 0.330 | 0.459 | 2.1% | 3.6% [2.7, 4.6] | 14.2% | 3.7% / 4.9% |
 
+- **The panel row is not a deployment rate** (corrected 11-23, Codex; recomputed from `draws.npz`).
+  - The panel is half drops by design.
+  - Reweighted to the event's frequency in full-context DEV (2.2%), the fine crop contradicts **15.7%** of committed
+    drops.
+  - Five of the 1,846 starts carry 82% of that mass: quiet starts where the dream commits some damage and the crop
+    shows none. So the estimate is unstable, and neither 3.6% nor 15.7% should be read as P1.5's rate.
 - The bracket is a start-level bootstrap.
-- On the same starts, the perfect-world value under the raw probe is 1.9%.
+- On the same panel, the perfect-world value under the raw probe is 1.9%.
 - **The dreamed p tracks the recorded outcome with AP 0.950**, against 0.998 for the probe on the real successor.
   - In the drop cohort the dream commits less damage (0.65 against 0.92). The real successor already shows the
     realised drop, while a dream estimates the chance of it, so this mixes legitimate uncertainty with error.
@@ -79,15 +85,21 @@ estimates.
 
 - **Committing before the look is supported.** The committed state carries most of the outcome: AP 0.966 for damage,
   0.975 for rewards, 0.9999 for termination.
-- **The glimpse should take the committed outcome (reward, termination) as an input.** By the declared rule this is
-  marginal, and the user decides. The case for it:
-  - even a perfect world would contradict roughly 5-12% of committed damage without it;
-  - the look exists to see what the coarse view can't, and outcome detail is that kind of detail.
-  - Generic inputs suffice, with nothing Craftax-specific.
-- **P1.5 is no blocker for the order.** Its dreamed glimpse contradicts 3.6% of committed drops, about twice the
-  perfect-world value on the same starts under the raw probe.
+- **The glimpse should read what was committed.** By the declared rule this is marginal; the user agreed (11-23).
+  - The case: a glimpse drawn independently of the commitment contradicts it whenever the committed state leaves the
+    outcome uncertain. The 4.7% and 11.5% illustrate that cost under a fitted probe. How much uncertainty P1.5's own
+    state leaves is open (Codex).
+  - **Corrected 11-23 (Codex): not the task's score.** Reward mixes facts: of 962 DEV health drops, 39 coincide with
+    an unlock and have nonnegative reward, so the negative-reward event used here misses them. A score also changes
+    with the goal while the scene doesn't. The glimpse should read "what happened", in a form the scorer reads too.
+- **P1.5 doesn't block building the order.** The first loop keeps the look fixed, so nothing yet trains the eye on
+  dreams. Its contradiction rate is unresolved (above).
+- **The conditioning should be judged** by agreement among the committed event, the coarse view and the fine evidence
+  (Codex). If the coarse successor already contradicts the commitment, conditioning the crop would make the two views
+  disagree.
 
 **Not covered:**
+- the 39 health drops that coincide with an unlock (the event is reward < -0.025);
 - unlocks, which show outside this window;
 - termination's visible evidence;
 - multi-step looks;

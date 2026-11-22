@@ -312,8 +312,8 @@ agreed; 2 and 3 researched again (below).**
   time is when it dreams.
 - **Fleets (warehouses, factories):** many bodies sharing experience, frequent re-tasking (LWD).
 - **Remote and field robots (planetary, underwater, disaster sites):**
-  - no live teaching: Mars is up to 20 minutes away each way, so flight software "must be resident on the in space
-    asset" (NASA, ASCEND report);
+  - no live teaching: Mars is up to about 20 minutes away each way, so flight software "must be resident on the in
+    space asset" (NASA mission-operations reports, via search; the exact report for each quote not pinned);
   - damage and wear: DayDreamer's stated limitation is wear "that may require human intervention or repair"; with a
     prior, a damaged hexapod recovers in under two minutes (Cully et al. 2015);
   - so competence must be in place before deployment;

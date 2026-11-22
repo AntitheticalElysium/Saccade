@@ -78,12 +78,23 @@ dreams and improves.
 ## Closing the loop: the minimal agent (design started 11-22)
 
 **What agentic Saccade needs, in four parts (the user, 11-23: "we might not necessarily want to overcomplicate
-this"; minimal first, extended on the failure modes we hit, as Saccade itself was built):**
+this"; minimal first, extended on the failure modes we hit, as Saccade itself was built).**
+
+**"Minimal" (the user, 11-23, correcting my "first loop").** The architecture has everything it needs to excel, and is
+extended only when a new problem appears. It is not an intentionally stripped-down version. The whole system is built
+and run. If a change touches the world, P1 is rerun, rather than ad-hoc half-truth tests on a frozen world. The
+exception is minimal changes, where running the existing world with the agent has value of its own. So there are no
+staged "first loop" variants (frozen world, uniform gaze); those were mine and are withdrawn.
 1. **Choosing looks and actions from the system itself.**
    - Agent tokens inside the world.
-   - The separate chooser and the P1.6 world-eye retire. The look tokens are the eye, so the world can pretrain
-     under uniform looks, which is cheapest and covers every window. The user dislikes the chooser as a separate
-     part.
+   - The separate chooser and the P1.6 world-eye retire as separate parts (the user dislikes the chooser being
+     separate). Their job moves into the agent's own look tokens. The look is **targeted from the start**, in
+     watching, in life and in dreams: it is one of the architecture's main points. A small uniform floor stays for
+     exploration, as the chooser kept 0.2 / 49.
+     - **Withdrawn: my "uniform in life and in dreams".** It was test hygiene, a fixed controller for a clean
+       comparison. It contradicted the 11-22 agreement ("the eye belongs to the agent, and its goal-directed attention
+       decides what the non-selective world learns in detail") and CURRICULUM ("part of the actor's action during
+       imagination").
      - What the old eyes bought the world was mixed: P1-F2's learned gaze against the same world under random gaze
        gained coal, iron, cows and skeletons, and lost wood, stone, zombies and waking. Under P1.6's world-eye "the eye
        looked more at mobs, and the world gained nothing on mobs from it" (P1.6 RESULTS).
@@ -94,9 +105,35 @@ this"; minimal first, extended on the failure modes we hit, as Saccade itself wa
        - the health cell after a drop 38% against 4%.
        - Kept as a reference for the new eye.
      - Uniform windows give an interior cell up to 9/49 coverage, a corner 1/49.
-   - Open: what teaches the look before dream returns can be trusted. Gaze has no demonstrations, and the look starts
-     uniform in life and in dreams. The first learned signal (Codex): which crop improves the next decision, measured
-     on real recorded frames by revealing different crops of the same frame to the same choice faculty.
+   - **What teaches the look (gaze has no demonstrations).** The look learns from the system's own signals, emergent
+     rather than top-down:
+     - **the world's surprise and the action's contingency**, inherited from the chooser (0.8 softmax(0.5 C + 0.5 S) +
+       0.2 / 49). This is the curriculum the user expects it gives the world, kept as the look's intrinsic objective
+       instead of as a separate network. Whether it beats uniform looks for the world's training is unmeasured on the
+       same recipe; P1-F2 against the same world under random gaze was mixed;
+     - **the decision value of a crop:** which crop improves the next decision, measured on real recorded frames by
+       revealing different crops of the same frame to the same choice faculty (Codex).
+       - The decision-value EDA (`artifacts/experiments/20261123_gaze_decision_value/RESULTS.md`, 11-23) found none
+         detectable: full resolution minus the same window at periphery acuity is -0.002 nats per decision, night
+         +0.0004, under P1.5's old chooser -0.002. The instrument is weak (a one-epoch probe, 0.45 nats of action
+         information), so this is a lower bound.
+       - With three earlier measurements (the coarse view holds every HUD value and the health digit exactly; the
+         best look saves 0.25-0.6% of next-frame loss), **Craftax-Classic at 3x3 acuity gives the eye little
+         information work.** The full system's own read will show whether decision value is there. If not, the look's
+         signal here is the world's surprise, and the eye's value is night creatures and economy (dreams generate
+         only the looked-at crop).
+       - This bears on acuity (decision 11) and on which environment can show what the eye is for. It is not a reason
+         to lower acuity just to make the fovea useful (the user, 11-21);
+     - **dream returns,** once look schedules can't change later outcomes. The step order already guarantees the
+       step's own outcome.
+   - **Precedents:**
+     - glimpse policies learnt from task reward (Mnih et al. 2014);
+     - people fixate near-optimally to gain information in search (Najemnik & Geisler 2005);
+     - information seeking ranges "from automatic biases toward novelty or surprise, to systematic search for learning
+       progress and information gain" (Gottlieb et al. 2013);
+     - infants may learn gaze following because looking where a caregiver looks yields interesting information, a
+       reinforcement account (Triesch et al. 2006, via a 2021 summary);
+     - eye movements in REM follow the dreamt gaze (Senzai & Scanziani 2022).
 2. **Turning new experience into something kept.** Three different speeds:
    - **in context:** memory that changes predictions with no weight change. The record and belief hold the evidence,
      but the world doesn't use it (measured); that needs training across variation;
@@ -104,15 +141,18 @@ this"; minimal first, extended on the failure modes we hit, as Saccade itself wa
    - **after one exposure:** an episodic store, later.
    - "How fast is fast" picks among these.
 3. **Learning continually.** What trains what is mostly set:
-   - the world by prediction on real experience;
-   - the choice and its value by imitation, and by dreams through their own weights only;
+   - the world by prediction on real experience, **and on its own dreams scored against what really followed** (P2,
+     below);
+   - the choice and its value by imitation, and by dreams through their own weights;
+   - the look by its signals (part 1);
    - goal shaping on hold.
 
    Open: the learning rate (no annealing to zero), plasticity tools on a measured trigger, and surprise-driven
    learning later.
-4. **Acting sparsely, practising long offline.** Mostly schedules, with two jobs offline:
+4. **Acting sparsely, practising long offline.** Mostly schedules, with three jobs offline:
    - replaying real experience for the world;
-   - dreaming for the choice.
+   - dreaming for the choice and the look;
+   - scoring the world's dreams against the real futures that followed them (P2).
 
    Dreams start from coherent snapshots.
 
@@ -211,9 +251,8 @@ agreed; 2 and 3 researched again (below).**
     brain arbitrates between costly model-based and cheap habitual control by their uncertainty (Daw, Niv & Dayan
     2005).
   - **The look has no demonstrations.** Craftax players saw the whole screen, so the corpus has no gaze to copy. The
-    look output therefore starts uniform (user 11-23: the separate chooser retires; the old chooser's per-frame
-    selectivity is kept as a reference, part 1 above). It learns from value only after passive looks preserve outcome
-    distributions. In P1.5's dream, reward and termination are sampled from features that include the generated crop
+    look learns from the system's own signals, targeted from the start (part 1 above: the chooser's surprise and
+    contingency, the decision value of a crop, and dream returns once look schedules can't change later outcomes). In P1.5's dream, reward and termination are sampled from features that include the generated crop
     (s2b.py `outcome.features`), which is where the 0.12 pp / 5 pp inconsistency enters.
 - **Build checks (Codex 11-22; I reran the four existing sampler tests it cites, test_m0.py: physical outputs ignore
   the glimpse and fixation, glimpse-only step equals the full step, streaming equals chunked, cascade equals recomputed
@@ -222,12 +261,30 @@ agreed; 2 and 3 researched again (below).**
     may change;
   - swap the recorded motor label: the logits predicting that action must be identical. A training batch holds the
     crop and the label together, so imitation can score well on information the awake agent only has later;
-  - the look starts uniform, a fixed controller, and the motor choice imitates the corpus under that same gaze.
+  - the motor choice imitates the corpus under the agent's own looks. The crop-swap check above keeps the imitation
+    honest whichever window was seen.
 
 *2. Which parts should the agent's goals shape, and how? (Researched again 11-22. ON HOLD, user 11-22: "put this on
-hold until we understand the rest of the system better".)* Nothing in the first build waits on it: the first imitation
-run freezes the world, Mamba included, and dreams train only the choice and its value. Codex agrees with
-prediction-only updates for the denoiser at first.
+hold until we understand the rest of the system better".)*
+- **What it is, plainly (the user asked, 11-23).** Every part learns from some loss:
+  - the world (encoder, denoiser, record) learns to predict what it will see;
+  - the choice and value learn what to do and how good situations are.
+
+  Goal shaping is whether the losses *about the goal* also reach the shared parts that model the world. Those losses
+  are reward prediction, the value, imitation of actions, and returns in dreams; the shared parts are the belief and
+  the denoiser. If they do, the agent's model of the world bends toward what matters for its current goal.
+  - **The upside:** a focused representation. The brain does reallocate: V1 is reshaped by a task (Poort 2015), and
+    dopamine paired with a tone enlarges its map (Bao 2001). Ours: the reward-forecast heads taught the belief the
+    clocks.
+  - **The downside:**
+    - predictions bent toward one goal transfer worse to the next;
+    - imagined returns make the world optimistic;
+    - value targets that never stop moving cost plasticity.
+  - **Today:** P1.5 already does a little. Its reward and continuation heads train Mamba (route_by_role, 98% of the
+    belief's gradient).
+- **The default while on hold** is today's: reward and continuation train Mamba; the choice's and the value's losses
+  stay in their own weights; the denoiser learns by prediction, including P2. Codex agrees with prediction-only
+  updates for the denoiser at first.
 - **Naming:** my earlier labels G0/G1/G2 collided with the loss groups (G1 next percept, G2 grounding, G3
   consequences). They are dropped; the question is laid out by route.
 - **10-24 was the user's hedged lean**, "I'd lean against making the actor stage influence the dynamics ... It might
@@ -547,12 +604,12 @@ with compute reported (Codex; "How to judge it" below).
      - What matters is a systematic bias an optimiser can exploit, so two readings in the loop:
        - dreamed against real returns from the same starts;
        - whether later outcomes depend on the look schedule.
-     - The first loop is a frozen world with a fixed look, plus a pre-look outcome head trained on frozen features
-       (head only).
+     - The outcome heads read the committed state (pre-look). In the full run they are trained that way from the
+       start.
    - **Multi-step:** under a fixed action sequence, different look schedules must give the same distribution of later
      physical outcomes, averaged over what the looks could reveal (Codex). Looks may legitimately change the belief and
      what it predicts, but not the agent's luck.
-   - **Codex:** keep "what happened" apart from "how the current goal scores it", for retasking. The first loop scores
+   - **Codex:** keep "what happened" apart from "how the current goal scores it", for retasking. Craftax scores
      with the game's reward. A reward head that reads only committed state can be swapped for a new goal's.
 2. **Where dreams start:** real moments from replay, uniform at first. The 08-29 lesson favours a broad base, and
    starts chosen by what the value conditions on leave it calibrated. Prioritised starts come later, on a measured
@@ -563,28 +620,49 @@ with compute reported (Codex; "How to judge it" below).
    always wrong somewhere new. Precedents use 15-20 steps.
 4. **Returns:** λ-returns from dreamed rewards and continuation, bootstrapped by a value head (DreamerV3, Dreamer 4).
    Where the value is trained (dreams only, or real replay too) decides how much dream optimism it inherits.
-5. **What learns from dreams:** the choice (the agent tokens' own weights and heads) and its value. The world doesn't
-   learn from its own dreams here; consolidation and generative replay belong to decision 4.
-6. **The eye in dreams:** the agent chooses the look, and the look decides which glimpse is drawn. It trains on dream
-   returns only after looks pass the one-step and multi-step consistency checks.
+5. **What learns from dreams: the world too (corrected 11-23; the user asked why it doesn't).** "The world learns from
+   dreams" means three different things:
+   - **Its dreams scored against what really followed. Yes.** This is P2 (CURRICULUM 2, planned since 10-27):
+     - dreams start at real moments and are compared with the recorded future by a joint-trajectory energy score;
+     - gradients run pathwise through the last 2 generated steps, and the horizon grows 2 -> 4 -> 8 -> 16;
+     - it trains exactly what dreams need and real-context training can't reach: the world conditioning on its own
+       outputs. S2 localised the self-feeding fade to the denoiser's read of the record of its own frames.
+     - Precedents:
+       - Self Forcing conditions "each frame's generation on previously self-generated outputs" during training and
+         matches slower models (Huang et al. 2025);
+       - DaD frames multi-step prediction as imitation learning, with the data "as a demonstrator" correcting the
+         model's own rollouts (Venkatraman et al. 2015).
+     - Our drift-row fine-tune failed because MSE on drifted states taught hedging. P2's proper (fair) score is the
+       answer to that.
+     - In a life this is natural: every dream from a recent real moment is followed by what really happens.
+   - **Its dreams as if they were real experience. No.** They carry no new information, and indiscriminate training
+     on generated data makes "tails of the original distribution disappear" (Shumailov et al. 2024). Our world's
+     errors already sit in the tails (deaths and hits under-drawn), so this would make it more optimistic.
+     - The exceptions, already or later: shortcut forcing's self-consistency (in use), and generative replay against
+       forgetting, a consolidation decision. The brain's sleep replays real experience; NREM replay "can abstract
+       rules from corpuses of learned information" (Lewis, Knoblich & Poe 2018).
+   - **Imagined returns into the world:** goal shaping, on hold.
+   - Cost is the remaining concern: P2 rolls out with gradients, which the full run's budget has to price.
+   - The choice and its value learn from dreams through their own weights.
+6. **The eye in dreams: targeted** (user 11-23). The agent chooses the look, and the look decides which glimpse is
+   drawn, so the eye practises in dreams as in REM sleep. It trains on dream returns once look schedules can't change
+   later outcomes. Before that it learns from its other signals (part 1).
 
 The sub-decisions depend on one another, so they are discussed together (user, 11-22). The step contract anchors them.
 
-**Proposed first loop for sub-decisions 2-6 (11-23, minimal, undecided).** Stages exist for measurement only:
-1. imitation, with the world frozen and gaze uniform;
-2. dream practice from real starts, judged against stage 1 in real Craftax at the same real budget, with compute
-   reported;
-3. the online loop (decision 4).
+**The dream settings for the full system (11-23; the user has no strong view; precedent defaults, declared in the
+yaml).** No staged variants. The judge is the whole agent in real Craftax, with dreamed against real action
+differences read in the run (Codex).
 
-| Sub-decision | Proposal | Source |
+| Sub-decision | Default | Source |
 |---|---|---|
-| Starts | Real moments, uniform over replay, one rollout per start; each rebuilt from its stored real history (exact while the world is frozen) | Dreamer 4: "one rollout from each context, prioritizing data diversity"; DreamerV3 starts from every replayed state |
-| Horizon | 15 steps; a committed termination stops the return; the value bootstraps at the cutoff (Codex) | DreamerV3 `imag_length: 15`; DayDreamer 16; IRIS 20 |
-| Returns | λ 0.95, γ 0.997, returns scaled by their 5th-95th percentile range | DreamerV3 (`horizon: 333`, `retnorm: perc 5-95`); Dreamer 4 γ 0.997 |
-| Value | Trained on dreamed λ-returns *and* on λ-returns from real replay; head only (no gradient into the belief while goal shaping is on hold) | DreamerV3 `repl_loss`, `repval` at 0.3, whose `repval_grad: True` is the later option; Codex: short dreams put more of the return on the value |
-| What learns | The agent tokens' own weights, policy and value heads. The world is frozen | Dreamer 4 phase 3 |
+| Starts | Real moments, uniform over replay, one rollout per start, each a coherent snapshot rebuilt from its stored real history | Dreamer 4: "one rollout from each context, prioritizing data diversity"; DreamerV3 starts from every replayed state |
+| Horizon | 15 steps; a committed termination stops the return; the value bootstraps at the cutoff | DreamerV3 `imag_length: 15`; DayDreamer 16; IRIS 20. With λ 0.95 the full 15-step return carries 0.95^14 = 49% of the target's weight (Codex), so late-dream errors reach the first decision. Read them in the run |
+| Returns | λ 0.95, γ 0.997, returns and advantages scaled by their 5th-95th percentile range | DreamerV3 (`horizon: 333`, `retnorm: perc 5-95`); Dreamer 4 γ 0.997 |
+| Value | Trained on dreamed λ-returns *and* on real-replay λ-returns, through its own weights while goal shaping is on hold. Checked against real continuations of the evaluated policy | DreamerV3 `repl_loss`, `repval` 0.3. Codex: DreamerV3's replay target bootstraps from the imagined return, so it can carry dream optimism back |
+| What learns | The world (real experience + P2 on its own dreams), and the choice, the look and the value | Sub-decision 5 |
 | Policy objective | Decision 3 (Dreamer 4's PMPO with a reverse KL to the imitation policy, or DreamerV3's actor-critic) | |
-| The eye | Uniform in life and in dreams. The first learned signal is which crop improves the next decision on real frames, before any dream return trains it | Codex |
+| The eye | Targeted in watching, life and dreams; trained by the world's surprise and contingency, the decision value of a crop, and dream returns once consistent | Part 1 |
 
 **Parked (user 11-23): thinking when it's worth it.** Recorded in its own section below, to explore after the first
 proof.
@@ -896,11 +974,12 @@ References:
 2. **Dreaming.**
    - Agreed: the step commits to the outcome before the look.
    - Decided: the glimpse reads nothing new, with no event code (11-23).
-   - Proposed together: starts, horizon, returns, value, what learns, the eye in dreams (first-loop table).
+   - Proposed together: starts, horizon, returns and value (precedent defaults); the world learns through P2 on its
+     dreams; the eye is targeted in dreams.
    - Isolation, trust and fresh starts are recorded.
    - Practice first; deliberation is parked (its own section).
 3. **Learning, awake and dreaming:**
-   - the imitation head start (frozen world, fixed gaze first);
+   - the imitation head start, learnt jointly with the world while watching, under the agent's own looks;
    - the policy objective in dreams, and the prior and how it fades in a life;
    - where the value is trained;
    - what teaches the look: dream returns once looks are consistent, real outcomes, information gained.

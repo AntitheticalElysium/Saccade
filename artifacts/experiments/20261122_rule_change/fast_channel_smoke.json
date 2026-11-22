@@ -1,0 +1,49 @@
+{
+ "episodes": 3,
+ "draws": 8,
+ "checks": {
+  "ruleA_replay_max_pixel_diff": 1
+ },
+ "groups": {
+  "A": {
+   "events": 46,
+   "reader_floor": 1.0,
+   "true_increment": 1.0,
+   "share_plus2": 0.0,
+   "share_plus1": 0.7663043478260869,
+   "share_zero": 0.22826086956521738,
+   "share_other": 0.005434782608695652
+  },
+  "B_first": {
+   "events": 3,
+   "reader_floor": 1.0,
+   "true_increment": 2.0,
+   "share_plus2": 0.0,
+   "share_plus1": 0.5833333333333334,
+   "share_zero": 0.4166666666666667,
+   "share_other": 0.0
+  },
+  "B_recent_evidence": {
+   "events": 17,
+   "reader_floor": 0.8823529411764706,
+   "true_increment": 2.0,
+   "share_plus2": 0.014705882352941176,
+   "share_plus1": 0.6985294117647058,
+   "share_zero": 0.25735294117647056,
+   "share_other": 0.029411764705882353
+  },
+  "B_older_evidence": {
+   "events": 12,
+   "reader_floor": 1.0,
+   "true_increment": 2.0,
+   "share_plus2": 0.0,
+   "share_plus1": 0.5520833333333334,
+   "share_zero": 0.40625,
+   "share_other": 0.041666666666666664
+  }
+ },
+ "reading": {
+  "B_recent_evidence": 0.014705882352941176,
+  "B_older_evidence": 0.0
+ }
+}

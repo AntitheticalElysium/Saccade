@@ -46,13 +46,23 @@ the log `run.log`.
 **Declared reading:** 4.7% of committed health drops lies in the marginal band (1-5%), which the plan leaves to the
 user.
 
-**Beyond the declared reading, all three instruments agree:**
-- the fine crop determines the outcome exactly (fine reader 100%; P1.5's crop-reading head AP 1.000);
-- the committed coarse state does not (probe AP 0.966; coarse reader misses 9.9% of real drops);
-- on real frames, coarse and fine disagree on 9.9% of drops.
+**Corrected 11-23: the committed coarse view determines damage exactly.** My first reading said the coarse state
+does not, citing the probe's AP of 0.966 and the coarse reader's 9.9% miss. Both are readers, and they read the coarse
+view imperfectly.
 
-So the look reveals outcome information that the committed state lacks: about 5-12% of committed damage, by the two
-estimates.
+`coarse_health_codebook.py` reads the health cell's periphery token by nearest exact renderer glyph, through P1.5's
+frozen encoder with the frame's own lighting (the method of `20261104_learned_fine_candidates/hud_codebook.py`). On
+the same 160 DEV episodes:
+- exact on all 43,115 frames;
+- all 962 true drops read;
+- no false drops.
+
+This agrees with the 11-04 acuity finding that coarse tokens carry every HUD value. So:
+- the 4.7% / 11.5% "perfect world" figures measure the probe's reading limits, not information missing from the
+  committed state;
+- for Craftax damage, a world that draws the glimpse given the committed coarse view has no irreducible
+  contradiction;
+- what remains is model error: the outcome readout misreading the coarse view, or the generator disagreeing with it.
 
 ## Check 2: what P1.5's one-step dreams do today (1,846 starts, half with a recorded drop, 4 draws each)
 
@@ -85,18 +95,18 @@ estimates.
 
 - **Committing before the look is supported.** The committed state carries most of the outcome: AP 0.966 for damage,
   0.975 for rewards, 0.9999 for termination.
-- **The glimpse should read what was committed.** By the declared rule this is marginal; the user agreed (11-23).
-  - The case: a glimpse drawn independently of the commitment contradicts it whenever the committed state leaves the
-    outcome uncertain. The 4.7% and 11.5% illustrate that cost under a fitted probe. How much uncertainty P1.5's own
-    state leaves is open (Codex).
-  - **Corrected 11-23 (Codex): not the task's score.** Reward mixes facts: of 962 DEV health drops, 39 coincide with
-    an unlock and have nonnegative reward, so the negative-reward event used here misses them. A score also changes
-    with the goal while the scene doesn't. The glimpse should read "what happened", in a form the scorer reads too.
+- **The glimpse needs nothing new (user, 11-23, after the codebook check).**
+  - The glimpse is already drawn given the committed coarse view, and that view holds the damage outcome exactly.
+  - Contradictions in P1.5's dreams are model error, which training and a better world reduce.
+  - Conditioning would be needed only where a committed outcome depends on detail the committed state can't carry
+    and the eye can reveal. That is measured absent for Craftax damage, and is a trigger to measure for other senses.
+  - Two earlier points still hold:
+    - **not the task's score** (Codex): of 962 DEV health drops, 39 coincide with an unlock and have nonnegative
+      reward, and a score changes with the goal while the scene doesn't;
+    - agreement among the committed event, the coarse view and the fine evidence is the judge (Codex).
 - **P1.5 doesn't block building the order.** The first loop keeps the look fixed, so nothing yet trains the eye on
-  dreams. Its contradiction rate is unresolved (above).
-- **The conditioning should be judged** by agreement among the committed event, the coarse view and the fine evidence
-  (Codex). If the coarse successor already contradicts the commitment, conditioning the crop would make the two views
-  disagree.
+  dreams. Its contradiction rate is unresolved (above). The codebook makes an exact coarse-view reading available to
+  localise it.
 
 **Not covered:**
 - the 39 health drops that coincide with an unlock (the event is reward < -0.025);

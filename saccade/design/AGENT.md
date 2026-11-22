@@ -83,11 +83,20 @@ this"; minimal first, extended on the failure modes we hit, as Saccade itself wa
    - Agent tokens inside the world.
    - The separate chooser and the P1.6 world-eye retire. The look tokens are the eye, so the world can pretrain
      under uniform looks, which is cheapest and covers every window. The user dislikes the chooser as a separate
-     part. Both existing eyes sample almost uniformly (window entropy 5.58 of 5.61 bits). Under P1.6's world-eye
-     "the eye looked more at mobs, and the world gained nothing on mobs from it", and its clock gains are not the
-     world-eye's (P1.6 RESULTS).
+     part.
+     - What the old eyes bought the world was mixed: P1-F2's learned gaze against the same world under random gaze
+       gained coal, iron, cows and skeletons, and lost wood, stone, zombies and waking. Under P1.6's world-eye "the eye
+       looked more at mobs, and the world gained nothing on mobs from it" (P1.6 RESULTS).
+     - My first argument, that the old eyes "sample almost uniformly" (window entropy 5.58 of 5.61 bits), was wrong
+       (Codex, 11-23, `20261119_s2/RESULTS.md`, coverage audit). Entropy is broad over frames; per frame the chooser
+       was selective:
+       - entities covered 56% against 20% under uniform windows;
+       - the health cell after a drop 38% against 4%.
+       - Kept as a reference for the new eye.
+     - Uniform windows give an interior cell up to 9/49 coverage, a corner 1/49.
    - Open: what teaches the look before dream returns can be trusted. Gaze has no demonstrations, and the look starts
-     uniform.
+     uniform in life and in dreams. The first learned signal (Codex): which crop improves the next decision, measured
+     on real recorded frames by revealing different crops of the same frame to the same choice faculty.
 2. **Turning new experience into something kept.** Three different speeds:
    - **in context:** memory that changes predictions with no weight change. The record and belief hold the evidence,
      but the world doesn't use it (measured); that needs training across variation;
@@ -202,10 +211,10 @@ agreed; 2 and 3 researched again (below).**
     brain arbitrates between costly model-based and cheap habitual control by their uncertainty (Daw, Niv & Dayan
     2005).
   - **The look has no demonstrations.** Craftax players saw the whole screen, so the corpus has no gaze to copy. The
-    look output therefore starts uniform (user 11-23: the separate chooser retires). Both existing eyes are nearly
-    uniform anyway: window entropy 5.58 bits for P1.5's chooser and for P1.6's world-eye, against a maximum of 5.61
-    (P1.6 RESULTS 7). It learns from value only after passive looks preserve outcome distributions. In P1.5's dream, reward and termination are sampled from features that
-    include the generated crop (s2b.py `outcome.features`), which is where the 0.12 pp / 5 pp inconsistency enters.
+    look output therefore starts uniform (user 11-23: the separate chooser retires; the old chooser's per-frame
+    selectivity is kept as a reference, part 1 above). It learns from value only after passive looks preserve outcome
+    distributions. In P1.5's dream, reward and termination are sampled from features that include the generated crop
+    (s2b.py `outcome.features`), which is where the 0.12 pp / 5 pp inconsistency enters.
 - **Build checks (Codex 11-22; I reran the four existing sampler tests it cites, test_m0.py: physical outputs ignore
   the glimpse and fixation, glimpse-only step equals the full step, streaming equals chunked, cascade equals recomputed
   history: all pass):**
@@ -504,40 +513,42 @@ with compute reported (Codex; "How to judge it" below).
        - reading the crop (today) makes the evidence agree exactly, while look-independence rests on the model's
          quality.
        - An eye trained on dream returns will find any incoherence.
-     - **The committed state carries most of the outcome** (real frames, Codex's probes reproduced to four decimals):
-       - AP 0.966 for damage, 0.975 for rewards, 0.9999 for termination.
-     - **The look reveals what it lacks:**
-       - the fine crop determines damage exactly (fine reader 100%; P1.5's crop head AP 1.000);
-       - the coarse view does not (its reader misses 9.9% of real drops).
-       - A glimpse drawn *without* the committed outcome would therefore contradict it even in a perfect world:
-         4.7% of committed damage under the raw probe, up to 11.5% once its overconfidence is recalibrated.
-       - That is marginal by the rule fixed beforehand, and the user decides.
+     - **The committed coarse view holds the damage outcome exactly.** An exact renderer-glyph read of P1.5's coarse
+       health token is right on all 43,115 DEV frames, catching all 962 drops with no false drops
+       (`coarse_health_codebook.py`), as the 11-04 acuity finding said.
+       - My first reading ("the coarse view does not"; "even a perfect world contradicts 4.7-11.5%") measured the
+         weak readers' limits, the probe's AP of 0.966 and the coarse reader's 9.9% miss. It was corrected 11-23.
      - **P1.5's dreams today:**
        - the committed p tracks recorded outcomes with AP 0.950 (0.998 on the real successor);
        - the crop contradicts 3.6% of committed drops on the balanced panel, but **15.7%** reweighted to the event's
-         real frequency, with five starts carrying 82% of it (Codex, verified). Unresolved, not a deployment rate.
-       - The 4.7% / 11.5% illustrate the cost of drawing one uncertain event twice. How much uncertainty P1.5's own
-         state leaves is open.
-   - **AGREED (user, 11-23): the glimpse reads what was committed.** Evidence then agrees with the outcome by
-     construction too. The general reason: the eye exists to see detail the coarse view lacks, and outcome detail is
-     that kind of detail.
-     - **What it reads (Codex, checked): "what happened", not the task's score.**
-       - Reward mixes facts: 39 of 962 DEV health drops coincide with an unlock and have nonnegative reward.
-       - A score changes with the goal while the scene doesn't, so a renderer that reads the score would draw different
-         scenes for the same event after retasking.
-     - **Not hand-picked world facts either** (the health change is Craftax's HUD; the generality rule).
-     - **The generic form:** a per-step stochastic code for what happened, drawn once from the committed state. Both
-       the scorer (reward, termination) and the glimpse read it. Precedents:
-       - Dreamer, whose reward and observation are both decoded from the same sampled latent;
-       - Stochastic MuZero, whose learnt chance outcome follows the afterstate.
-     - **When:** it is a world change, so it belongs to the next world training (the world-quality track). The first
-       loop keeps the world frozen and the look fixed, so nothing yet trains the eye on dreams:
-       - a pre-look outcome head is trained on frozen features (head only);
-       - the glimpse reads nothing new;
-       - the three-way agreement between committed event, coarse view and fine evidence is measured in the loop
-         (Codex).
-     - If the coarse successor already contradicts a commitment, conditioning the crop would make the two views
-       disagree, so the coarse successor and the outcome must agree first.
+         real frequency, with five starts carrying 82% of it (Codex, verified).
+       - This is model error, unresolved, and not a deployment rate.
+   - **DECIDED (user, 11-23): the glimpse reads nothing new; no event code.**
+     - The glimpse is already drawn given the committed coarse view, which holds the outcome. So the remaining
+       contradictions are model error, which training and a better world reduce: the world-quality track.
+     - An input would not enforce agreement anyway. Only the information structure and a measurement do.
+     - Conditioning would be needed only where a committed outcome depends on detail that the committed state can't
+       carry and the eye can reveal: two independent draws of one uncertain event, which no training can align. That
+       is measured absent for Craftax damage. It is a trigger to measure for other senses and bodies, not a module.
+     - Still true:
+       - never the task's score (Codex: 39 of 962 DEV drops coincide with an unlock and have nonnegative reward, and a
+         score changes with the goal while the scene doesn't);
+       - the judge is agreement among the committed event, the coarse view and the fine evidence (Codex).
+   - **Is incoherence a big problem?** Mostly not.
+     - The step order already guarantees that a look can't change the step's outcome.
+     - What remains is noise, not a bias toward good outcomes. The one second-order risk: a contradicting glimpse
+       carried into the next step dilutes the committed consequence there, which thins the bad tail slightly.
+     - The brain's dreams are far from coherent, and they still teach:
+       - "memory consolidation in sleep is not necessarily associated with the veridical reiteration of an experience"
+         (Wamsley et al. 2010, where maze dreams were fragments and predicted improvement);
+       - dreams are "sparse, hallucinatory, and narrative" (Hoel 2021, who argues their strangeness helps
+         generalisation);
+       - Ha & Schmidhuber made dreams noisier on purpose to stop the controller exploiting them.
+     - What matters is a systematic bias an optimiser can exploit, so two readings in the loop:
+       - dreamed against real returns from the same starts;
+       - whether later outcomes depend on the look schedule.
+     - The first loop is a frozen world with a fixed look, plus a pre-look outcome head trained on frozen features
+       (head only).
    - **Multi-step:** under a fixed action sequence, different look schedules must give the same distribution of later
      physical outcomes, averaged over what the looks could reveal (Codex). Looks may legitimately change the belief and
      what it predicts, but not the agent's luck.
@@ -551,14 +562,32 @@ with compute reported (Codex; "How to judge it" below).
    divergence between the current policy π and the data-collecting policy", MBPO). A continual learner's world is
    always wrong somewhere new. Precedents use 15-20 steps.
 4. **Returns:** λ-returns from dreamed rewards and continuation, bootstrapped by a value head (DreamerV3, Dreamer 4).
-   Where the value is trained (dreams only, or real replay too) decides how much dream optimism it inherits. That
-   belongs to decision 3.
+   Where the value is trained (dreams only, or real replay too) decides how much dream optimism it inherits.
 5. **What learns from dreams:** the choice (the agent tokens' own weights and heads) and its value. The world doesn't
    learn from its own dreams here; consolidation and generative replay belong to decision 4.
 6. **The eye in dreams:** the agent chooses the look, and the look decides which glimpse is drawn. It trains on dream
    returns only after looks pass the one-step and multi-step consistency checks.
 
 The sub-decisions depend on one another, so they are discussed together (user, 11-22). The step contract anchors them.
+
+**Proposed first loop for sub-decisions 2-6 (11-23, minimal, undecided).** Stages exist for measurement only:
+1. imitation, with the world frozen and gaze uniform;
+2. dream practice from real starts, judged against stage 1 in real Craftax at the same real budget, with compute
+   reported;
+3. the online loop (decision 4).
+
+| Sub-decision | Proposal | Source |
+|---|---|---|
+| Starts | Real moments, uniform over replay, one rollout per start; each rebuilt from its stored real history (exact while the world is frozen) | Dreamer 4: "one rollout from each context, prioritizing data diversity"; DreamerV3 starts from every replayed state |
+| Horizon | 15 steps; a committed termination stops the return; the value bootstraps at the cutoff (Codex) | DreamerV3 `imag_length: 15`; DayDreamer 16; IRIS 20 |
+| Returns | λ 0.95, γ 0.997, returns scaled by their 5th-95th percentile range | DreamerV3 (`horizon: 333`, `retnorm: perc 5-95`); Dreamer 4 γ 0.997 |
+| Value | Trained on dreamed λ-returns *and* on λ-returns from real replay; head only (no gradient into the belief while goal shaping is on hold) | DreamerV3 `repl_loss`, `repval` at 0.3, whose `repval_grad: True` is the later option; Codex: short dreams put more of the return on the value |
+| What learns | The agent tokens' own weights, policy and value heads. The world is frozen | Dreamer 4 phase 3 |
+| Policy objective | Decision 3 (Dreamer 4's PMPO with a reverse KL to the imitation policy, or DreamerV3's actor-critic) | |
+| The eye | Uniform in life and in dreams. The first learned signal is which crop improves the next decision on real frames, before any dream return trains it | Codex |
+
+**Parked (user 11-23): thinking when it's worth it.** Recorded in its own section below, to explore after the first
+proof.
 
 **Dreams in the whole system (11-22): what the component view would miss.**
 - **Practice or deliberation.** Imagination can run in two places:
@@ -603,6 +632,57 @@ The sub-decisions depend on one another, so they are discussed together (user, 1
   in idle time or in a parallel learner, as in DayDreamer's learner and actor threads.
 - **The eye makes dreams cheap too.** A dreamed step generates the coarse view and one glimpse, not the full frame. The
   dream's cost grows with looks, which the agent chooses. This is a synergy to keep.
+
+## Parked: thinking when it's worth it (user 11-23, explore after the first proof)
+
+**The idea.** At decision time the agent may imagine before acting, using the denoiser on candidate futures, but only
+when the decision is worth the compute. Easy situations get a habit; hard or new ones get thought. This is the same
+question as an LLM that thinks longer on hard problems. Looking is the same economics: a glimpse is information bought
+at a cost. So one rule could serve the eye and deliberation alike.
+
+**What is known (read at the source unless noted):**
+- **The value of computation.** A computation is worth running while its expected improvement of the decision
+  exceeds its cost: "continue the available computation with the highest value until all remaining computations have
+  negative value" (Russell & Wefald 1991, via a summary; not read in full). People plan in a way broadly consistent
+  with resource-rational planning, though not with any single heuristic (Callaway et al. 2022).
+- **Learnt control of imagination.**
+  - Hamrick et al. 2017: a model-free metacontroller decides how many imagined simulations to run and which model to
+    consult. It adapts its computation to difficulty, weighs each model's reliability against its cost, and reaches a
+    lower total cost than fixed policies.
+  - Thinker (Chung, Anokhin & Krueger 2023) wraps the environment with the learnt world model and adds planning
+    actions, so the agent learns to plan itself; state of the art on Sokoban.
+- **Learnt halting.**
+  - ACT (Graves 2016) learns a halting probability; PonderNet's authors call it "notably unstable".
+  - PonderNet (Banino et al. 2021) learns the number of steps end to end, balancing accuracy, cost and
+    generalisation.
+  - HRM (Wang et al. 2025) halts by Q-learning; the benefit of its halting is contested.
+  - TRM (Jolicoeur-Martineau 2025) is a two-layer, 7M-parameter recursive network.
+- **LLMs.**
+  - Recurrent-depth latent reasoning iterates a recurrent block to arbitrary depth at test time, with per-token
+    adaptive compute (Geiping et al. 2025).
+  - The failure mode is not knowing when to stop: o1-like models spent 1,953% more tokens on "2 + 3" with little
+    gain, and overthinking was more frequent on simple problems (Chen et al. 2024).
+- **Brain.**
+  - Rats deliberate at choice points under uncertainty, with hippocampal sweeps along the options that vanish as
+    behaviour automates (Redish 2016).
+  - Control passes between costly goal-directed and cheap habitual systems by their uncertainty (Daw, Niv & Dayan
+    2005), or by trading decision speed against accuracy (Keramati, Dezfouli & Piray 2011).
+
+**Saccade's compute knobs, already there:**
+- whether the agent tokens read the denoiser's activations at all (Codex's efficiency question);
+- how far ahead, and how many candidate actions, to imagine;
+- how many denoising steps per imagined frame. Shortcut forcing trains the denoiser for any power-of-two step count up
+  to `k_max` (8; K = 4 today), so the sampler is already an iterative refinement whose depth can vary, which is the
+  recursive-architecture link;
+- where to look, and whether to look.
+
+**The open decision when it resumes:**
+- how the agent estimates whether thinking will change its decision: learnt halting, a metacontroller, or
+  uncertainty-based arbitration;
+- what it pays.
+
+The first proof stays offline practice (Codex). Deliberation is priced once imagined action comparisons show decision
+value.
 
 ## Adaptation: how one experience changes the agent
 

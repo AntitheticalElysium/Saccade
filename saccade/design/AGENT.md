@@ -109,11 +109,11 @@ and built when a measurement calls for them.
 - **The hidden clock phases live in the record** (swap effect 0.99), and Mamba doesn't carry them (0.000).
 
 **Options:**
-- **A. The belief only** (STEP_SPEC section 5; m0.yaml p3.features). Simplest, but it reads through the 256-number
+- **The belief only** (STEP_SPEC section 5; m0.yaml p3.features). Simplest, but it reads through the 256-number
   bottleneck, which lacks spatial detail and the clocks the world uses.
-- **B. The belief plus the current percept,** a separate network. It recovers current detail, but not the record or
+- **The belief plus the current percept,** a separate network. It recovers current detail, but not the record or
   the world's understanding, and it is an actor in all but name.
-- **C. Agent tokens inside the world (Dreamer 4).** The choice is a readout of the same computation the world uses
+- **Agent tokens inside the world (Dreamer 4).** The choice is a readout of the same computation the world uses
   to imagine:
   - it reads the current frame's tokens, the recent frames, the record (through each cell's read) and the belief
     (through the memory tokens);
@@ -154,7 +154,7 @@ agreed; 2 and 3 researched again (below).**
     - the completed-frame context pass runs after the crop. Splitting it the same way puts look tokens in its physical
       half, before the crop, and motor tokens after.
   - Cost: unmeasured. The P1.6 world-eye's +12 h came from a separate sequential estimate pass, not from this.
-- **Agreed (user, 11-22): agent tokens inside the world (C).** The look becomes one of the agent's two outputs from
+- **Agreed (user, 11-22): agent tokens inside the world.** The look becomes one of the agent's two outputs from
   the start, chosen by the same computation that picks the motor action, and the glimpse informs that action. The
   P1.6 world-eye's separate estimate pass goes.
 - **Ordering:** look then act, inside the split pass above. (My 11-22 "two passes per real step" overstated the cost.)
@@ -164,9 +164,9 @@ agreed; 2 and 3 researched again (below).**
   - prediction quality unchanged.
 - **Codex (11-22), not yet answered before this note:**
   - **Information versus computation.** Codex would start from belief + acquired spatial evidence + a record read, then
-    test what denoiser activations add on that same interface: an A-versus-C comparison changes the information and
-    the architecture at once. The user chose C. Once C works, the clean reading is agent tokens attending to the
-    denoiser's inputs only versus to its activations, with the same weights and heads.
+    test what denoiser activations add on that same interface: comparing the belief alone against agent tokens changes
+    the information and the architecture at once. The user chose agent tokens. Once they work, the clean reading is
+    agent tokens attending to the denoiser's inputs only versus to its activations, with the same weights and heads.
   - **Efficiency.** Measure the decision gain and the extra cost while awake. Reading the denoiser may pay mostly on
     rare, consequential decisions, so the question is how often the agent needs that computation to act well. The
     brain arbitrates between costly model-based and cheap habitual control by their uncertainty (Daw, Niv & Dayan
@@ -175,8 +175,19 @@ agreed; 2 and 3 researched again (below).**
     look output therefore starts from the existing chooser as its default. It learns from value only after passive
     looks preserve outcome distributions. In P1.5's dream, reward and termination are sampled from features that
     include the generated crop (s2b.py `outcome.features`), which is where the 0.12 pp / 5 pp inconsistency enters.
+- **Build checks (Codex 11-22; I reran the four existing sampler tests it cites, test_m0.py: physical outputs ignore
+  the glimpse and fixation, glimpse-only step equals the full step, streaming equals chunked, cascade equals recomputed
+  history: all pass):**
+  - swap the current crop with the pre-look inputs held fixed: the look's logits must be identical, the motor logits
+    may change;
+  - swap the recorded motor label: the logits predicting that action must be identical. A training batch holds the
+    crop and the label together, so imitation can score well on information the awake agent only has later;
+  - the look starts as the existing chooser, and the motor choice imitates the corpus under that same gaze.
 
-*2. Which parts should the agent's goals shape, and how? (Researched again 11-22.)*
+*2. Which parts should the agent's goals shape, and how? (Researched again 11-22. ON HOLD, user 11-22: "put this on
+hold until we understand the rest of the system better".)* Nothing in the first build waits on it: the first imitation
+run freezes the world, Mamba included, and dreams train only the choice and its value. Codex agrees with
+prediction-only updates for the denoiser at first.
 - **Naming:** my earlier labels G0/G1/G2 collided with the loss groups (G1 next percept, G2 grounding, G3
   consequences). They are dropped; the question is laid out by route.
 - **10-24 was the user's hedged lean**, "I'd lean against making the actor stage influence the dynamics ... It might
@@ -224,7 +235,7 @@ agreed; 2 and 3 researched again (below).**
   5. **Outcome-weighted prediction: how much the world learns from each moment.**
      - Field: VaGraM rescales the model's error by the value gradient (Voelcker et al. 2022).
      - Brain: three-factor rules (Fremaux & Gerstner 2015).
-     - Ours: rare-event doses shifted priors (E14).
+     - Ours: rare-event doses shifted priors (the 10-02 consequence-learning study).
   6. **Imagined returns into the world: what the world predicts.**
      - Stopped in DreamerV3 (ac_grads False).
      - Stopped in DayDreamer, stated as the reason, not ablated: "this would lead to incorrect and overly optimistic
@@ -245,9 +256,22 @@ agreed; 2 and 3 researched again (below).**
        stays calibrated; only capacity moves.
      - With a weight w(x, y) that depends on the outcome, the minimiser becomes w(x, y) p(y|x) / Z:
        - weighting by realised reward is optimism by construction (Codex);
-       - weighting by surprise over-predicts rare outcomes (PER's bias; our E14).
+       - weighting by surprise over-predicts rare outcomes (PER's bias; the 10-02 consequence-learning study).
      - Allowed: where it looked, the value of the situation, the uncertainty before the outcome. The 11-15 privileged
        glimpse route (attention as precision that gates learning) is of this kind.
+- **Codex's corrections to both principles (11-22, checked, conceded), for when this resumes:**
+  - Principle 1 is too broad. Shortcut forcing already trains the denoiser on its own detached predictions
+    (model.py `shortcut_loss`, the bootstrap target), which teaches it to reproduce a predictive computation more
+    cheaply. The line is the incentive, not who produced the target. Codex's version: grounded prediction trains the
+    denoiser; imagined returns train the choice and its value.
+  - Principle 2 must say "information the predictor conditions on", not "known before the outcome". If the selector
+    sees a cue the predictor's input lacks, w(x, z) with z unseen gives E[w p(y|x, z) | x] / E[w | x], not p(y|x).
+    This bites with the eye: a collector that sees a danger cue the foveated input missed would change the world's
+    apparent damage rate even when it selects before the hit.
+  - The P1-F6 share (reward forecast 4.54 vs G1 0.031 into the belief) shows dominance on the measured chunk, and the
+    token forecast's tiny dose. Whether that dominance hurt prediction is untested: the matched continuation
+    (20261115_g1_share_control) was stopped before any reading. A stopped gradient at the denoiser still leaves a
+    route through Mamba's changing state.
 - **Proposed position (undecided):**
   - routes 1-3 from the start, with outcome-consistent looks before any gaze is trained on dream returns (Codex), and
     the world's own training data selected by context, a broad base kept;
@@ -257,9 +281,9 @@ agreed; 2 and 3 researched again (below).**
     replay is left to decision 3, because of capacity loss;
   - route 4 into the denoiser, at first: no. The agent tokens get their own weights. They read the denoiser's
     activations detached and the belief's memory tokens attached, so the imitation gradient reaches the belief and
-    stops at the denoiser. Reason, measured in our own system: where goal and prediction losses already share a module
-    (the belief), the goal losses took about 98% of its gradient and crowded out every predictive request (P1-F6). The
-    denoiser is the module whose job is the world's rules. This differs from Dreamer 4 phase 2 (shared weights);
+    stops at the denoiser. Reason, from our own system: where goal and prediction losses already share a module (the
+    belief), the goal losses took about 98% of its gradient (P1-F6; whether that hurt prediction is untested, above).
+    The denoiser is the module whose job is the world's rules. This differs from Dreamer 4 phase 2 (shared weights);
     revisit if the choice lacks something the denoiser's features could give it;
   - route 5 with context weights only; route 6 not at all (dreams train heads only).
 - **Codex:** goal-shaping the belief changes the world's conditioning (memory tokens), so prediction must keep training
@@ -376,6 +400,94 @@ agreed; 2 and 3 researched again (below).**
 - fast adaptation within one life;
 - keeping what it learnt.
 
+### Decision 2: dreaming (opened 11-22)
+
+**What it is for:** practice for the choice and its value, branched from real moments, so that scarce real experience
+goes further. **The judge:** the same continuing agent with and without dreaming, at the same real-interaction budget,
+with compute reported (Codex; "How to judge it" below).
+
+**Precedents, read at the source:**
+- **DreamerV3 reference code:**
+  - imagination starts from every replayed state (`imag_last: 0`);
+  - 15 steps (`imag_length`), λ 0.95, a 333-step horizon (γ ≈ 0.997), continuation predicted (`contdisc`);
+  - actor-critic gradients stop at the world (`ac_grads: False`).
+- **Dreamer 4:**
+  - "Imagined rollouts start from contexts of the dataset";
+  - "we start only one rollout from each context, prioritizing data diversity";
+  - rewards come from the reward head, values from λ-returns with γ 0.997, and the transformer is frozen;
+  - the main text gives no horizon.
+- **DayDreamer:** H = 16. **IRIS:** starts from "a real observation sampled from past experience", H = 20, and stops at
+  a predicted episode end.
+- **MBPO:** "short model-generated rollouts branched from real data"; short rollouts with ensembles are "sufficient to
+  prevent model exploitation"; it separates the task horizon from the model horizon.
+- **Ha & Schmidhuber:** they raise a temperature to make the dream "noisier and more uncertain", so that the
+  controller can't exploit its imperfections.
+- **Dreamer** never generates observations in imagination: the reward comes from the sampled latent state, and "the
+  decoder ... is not needed while learning behaviors from latent rollouts" (DayDreamer).
+
+**Brain:**
+- replay starts where the animal is and runs toward remembered goals (Pfeiffer & Foster 2013), ordered by gain times
+  need (Mattar & Daw 2018);
+- eye movements in REM sleep follow the dreamt gaze (Senzai & Scanziani 2022; Andrillon et al. 2015): the eye acts in
+  dreams too.
+
+**What P1.5's dreams do today (measured, 20261119_s2):**
+- **First-step consequences match the simulator:**
+  - damage beside a zombie 0.170 / 0.169;
+  - death 0.0069 / 0.0069;
+  - unlock 0.017 / 0.017;
+  - return per 16-step future 0.146 / 0.156.
+- **Mobs fade on the world's own history:**
+  - 0.94 / 0.83 / 0.71 / 0.55 mobs per frame at steps 1 / 4 / 8 / 16, against the simulator's 1.03-1.14;
+  - cows are -11% at step 1;
+  - the denoiser's read of the record of its own generated frames carries this loss.
+  - The error is optimistic: danger disappears.
+- **Zombie cooldown is wrong at depth:** 3.6x false hits while cooling, too few when ready.
+- **Coal and iron follow DO at depth 1** only 0.34 / 0.22, against 0.88 / 0.92.
+- **Decision value (Codex, 764 DO/NOOP starts):**
+  - choosing the first action by 8 dreamed futures is slightly worse than always DO at every horizon (-0.011 at 16
+    steps);
+  - the simulator's own futures gain +0.008 [0.003, 0.014];
+  - at one step the dream ties 74% of the time.
+  - A narrow cohort, but no decision value yet.
+- **Passive looks** move the one-step reward probability by 0.12 pp on average, and by 5.0 pp at one branch.
+
+**Sub-decisions, in order (each discussed on its own):**
+1. **What a dreamed step commits to** (first, Codex). In life, the consequences of the previous action exist before the
+   agent looks; looking only reveals them. Proposed order for a dreamed step:
+   - draw the coarse view and lighting;
+   - draw the outcome of the previous action (reward, termination) from what is committed so far, never from the look;
+   - choose the look;
+   - draw the glimpse given everything committed, the outcome included.
+
+   This factorises the same joint as reality (state, then outcome, then evidence at a look), so the outcome's
+   distribution can't depend on the look. Dreamer is the extreme case: its outcomes come from a committed latent, and
+   observations are never generated. Today the outcome is read from features that include the generated crop.
+   - **Measure first:**
+     - how much outcome information the pre-look state holds on real data;
+     - how often a glimpse drawn after a pre-look outcome contradicts it (reader-checked; today reward against read
+       health is inconsistent 0.0036, simulator 0.0034).
+     - If contradictions stay at the simulator's rate, the glimpse needs no new input. Otherwise it is conditioned on
+       the drawn outcome.
+   - **Multi-step:** the same actions under different look sequences must give the same distribution of later
+     outcomes. With mobs fading, a look that generates an unseen cell could make danger vanish more often than reality
+     does.
+   - **Codex:** keep "what happened" apart from "how the current goal scores it", for retasking. The first loop scores
+     with the game's reward. A reward head that reads only committed state can be swapped for a new goal's.
+2. **Where dreams start:** real moments from replay, uniform at first. The 08-29 lesson favours a broad base, and
+   starts chosen by what the value conditions on leave it calibrated. Prioritised starts come later, on a measured
+   trigger. A start needs the real belief, record and context cache at that moment.
+3. **Horizon:** short at first, set by where decision-relevant consequences hold. First-step consequences hold; mobs
+   fade from step 1 and compound. A value carries what lies beyond. The precedents' 15-20 steps assume worlds without
+   our measured fade.
+4. **Returns:** λ-returns from dreamed rewards and continuation, bootstrapped by a value head (DreamerV3, Dreamer 4).
+   Where the value is trained (dreams only, or real replay too) decides how much dream optimism it inherits. That
+   belongs to decision 3.
+5. **What learns from dreams:** the choice (the agent tokens' own weights and heads) and its value. The world doesn't
+   learn from its own dreams here; consolidation and generative replay belong to decision 4.
+6. **The eye in dreams:** the agent chooses the look, and the look decides which glimpse is drawn. It trains on dream
+   returns only after looks pass the one-step and multi-step consistency checks.
+
 ## Adaptation: how one experience changes the agent
 
 Two timescales, as in the brain's complementary learning systems:
@@ -388,7 +500,7 @@ Two timescales, as in the brain's complementary learning systems:
   episode.
 - **The deployed world does not revise its predictions from an observed rule change** (`artifacts/experiments/
   20261122_rule_change/RESULTS.md`).
-  - Rule B: water gives +2 drink. In 150 replayed DEV episodes, the frozen P1.5 world draws +2 in 0.08% of draws
+  - The changed rule: water gives +2 drink. In 150 replayed DEV episodes, the frozen P1.5 world draws +2 in 0.08% of draws
     at the first drink and 0.2-1.8% after the new rule has been seen in the same episode.
   - Even after 8 or more observations it is 0.7%, and the trained +1 is still drawn 70% of the time.
   - We have memory (record, belief, context), not adaptation: nothing ever asked the world to infer rules from
@@ -396,7 +508,7 @@ Two timescales, as in the brain's complementary learning systems:
 - **The slow channel is untested:** how many updates, and how much replay, it takes to absorb a new rule without
   losing old ones.
 - **The two channels depend on each other.** Corrected 11-22 (Codex): unlabelled mixed experience doesn't teach an
-  average. A generative model trained on rule-A and rule-B drinks with no way to tell them apart learns a calibrated
+  average. A generative model trained on +1 and +2 drinks with no way to tell them apart learns a calibrated
   coin (+1 or +2). It is still right only at the base rate. Recognising from context which rule holds is what would
   let it be right in each.
 
@@ -434,7 +546,7 @@ context-dependent" (Bouton 2004).
 
 | Kind | Example | What the agent should do | What our world does today (measured) |
 |---|---|---|---|
-| Revision: the rule changed for good | Water now gives +2, everywhere | Update the old rule. Animals keep the old one, tied to its context (renewal); networks overwrite by default | Untested. A rule-B-only fine-tune measures speed and interference |
+| Revision: the rule changed for good | Water now gives +2, everywhere | Update the old rule. Animals keep the old one, tied to its context (renewal); networks overwrite by default | Untested. A fine-tune on the changed rule alone measures speed and interference |
 | Differentiation: a new rule tied to a visible context | Water gives +2 at night | Learn a conditional rule beside the old one | Craftax already has such rules: zombie damage 7 asleep against 2 awake; hunger and thirst at half speed asleep; health recovery doubled asleep; zombie spawning 0.02 + 0.1 (1 - light)^2. Learnt slowly and partly: asleep beside a ready zombie, P1.5 draws death 0.844 (true 0.992) |
 | Inference: a hidden cause, inferred from evidence | In some places or episodes water gives +2, unannounced | Infer from a few observations which version holds here, and keep both | Works for hidden STATES that varied in training: clock phases (on-schedule pairs 0.995 / 0.000, carried by the record), cooldowns. Fails for a rule PARAMETER that never varied (water yield: 20261122_rule_change) |
 
@@ -524,7 +636,8 @@ The agent's lifetime, not module comparisons:
 - **never stops:** improvement continues, plasticity holds;
 - **economy:** computation per real step.
 
-**Codex's protocol (11-22):** rule A -> rule B -> an unannounced return to A -> a held-out related variant, all inside
+**Codex's protocol (11-22):** the trained rule -> a changed rule -> an unannounced return to the trained rule -> a
+held-out related variant, all inside
 Craftax-Classic with the same senses and actions.
 
 References:
@@ -586,8 +699,10 @@ References:
 2. How one experience changes the agent quickly (fast and slow channels), informed by the measurements above.
 3. The choice faculty: agent tokens inside the world, with two outputs (look and act); agreed 11-22. Open: the
    look/act ordering and the measured costs.
-4. How goals shape learning: the six routes and two principles above; the proposed position awaits the user.
-5. The rules of dreaming: starts, horizon, outcomes from the world's state, look consistency.
+4. How goals shape learning: the six routes and two principles above, with Codex's corrections. On hold (user 11-22)
+   until the rest of the system is laid out.
+5. Dreaming (decision 2, opened 11-22): first, what a dreamed step commits to; then starts, horizon, returns, what
+   learns, the eye in dreams.
 6. The life cycle: schedule, replay mix, plasticity.
 7. Knowing what it doesn't know, and curiosity.
 8. Acuity.

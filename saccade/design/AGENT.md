@@ -64,10 +64,34 @@ Two timescales, as in the brain's complementary learning systems:
     context.
 - **The slow channel is untested:** how many updates, and how much replay, it takes to absorb a new rule without
   losing old ones.
-- **The two channels depend on each other.** Interleaving old and new experience protects old knowledge. But if the
-  agent can't tell from context which rule applies, interleaving rule-A and rule-B experience can only teach an
-  average of the two. So recognising the current situation in context (the fast channel) is what lets the slow channel
-  keep both, and lets an unannounced return to A be recognised. This is reasoning, not yet measured.
+- **The two channels depend on each other.** Corrected 11-22 (Codex): unlabelled mixed experience doesn't teach an
+  average. A generative model trained on rule-A and rule-B drinks with no way to tell them apart learns a calibrated
+  coin (+1 or +2). It is still right only at the base rate. Recognising from context which rule holds is what would
+  let it be right in each.
+
+### What the research says about the two channels (read at the source, 11-22)
+- **How much one experience should move a belief is itself learnt.**
+  - People "assess volatility in an optimal manner", and their learning rates follow it (Behrens et al. 2007).
+  - Uncertainty about a causal relationship "induces rapid changes in the rate of learning", switching between
+    incremental and one-shot learning (Lee, O'Doherty & Shimojo 2015).
+  - In a world that has never varied, a single surprising outcome should move a learner very little.
+- **Fast learning sticks when it fits existing structure.** Rats trained on a flavour-place schema learned new
+  associations "for only one trial" and consolidated them rapidly (Tse et al. 2007). Neocortical learning "can be
+  rapid for information that is consistent with known structure" (Kumaran, Hassabis & McClelland 2016, CLS updated).
+- **Slow learning builds the fast learner.** Dopamine-driven plasticity trains the prefrontal cortex "to operate as
+  its own free-standing learning system" in its activity (Wang et al. 2018). This is learning to learn, as in Harlow's
+  learning sets (Harlow 1949, not read; the phenomenon is confirmed in Murray & Gaffan 2006).
+- **Machine precedents:** AdA and Nagabandi et al. get in-context adaptation by training across many variants, and it
+  works within the family of variation they trained on.
+
+**For Saccade:**
+- The frozen world behaved as a learner raised in a world that never changed should: its experience gave it no
+  volatility and no schema in which drink value is a variable.
+- A quantity that never varied is indistinguishable from a law, so in-context adaptation to a rule needs some prior
+  experience of variation, or prior structure that treats the quantity as a variable.
+- Open: how much variation, of what kind, and whether variation in some quantities teaches "things vary" in general.
+- The record is sensory memory: it recorded the +2 jumps faithfully and shouldn't change its nature. What should move
+  is the belief and the world's use of it, by the amount the agent's learnt volatility warrants.
 
 ## How to judge it (proposal, not decided)
 

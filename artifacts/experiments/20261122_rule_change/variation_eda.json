@@ -1,0 +1,101 @@
+{
+ "episodes": 1009,
+ "episode_length_median": 212.0,
+ "episode_length_quartiles": [
+  132.0,
+  296.0
+ ],
+ "rules": {
+  "water_yield": {
+   "share_of_episodes_seeing_it": 0.48265609514370666,
+   "events_per_episode_mean": 4.469772051536174,
+   "first_step_median": 117.0,
+   "second_step_median": 208.0,
+   "share_seeing_two": 0.3508424182358771
+  },
+  "cow_food_yield": {
+   "share_of_episodes_seeing_it": 0.23290386521308226,
+   "events_per_episode_mean": 0.4578790882061447,
+   "first_step_median": 293.0,
+   "second_step_median": 623.0,
+   "share_seeing_two": 0.08622398414271557
+  },
+  "plant_food_yield": {
+   "share_of_episodes_seeing_it": 0.15163528245787908,
+   "events_per_episode_mean": 0.18434093161546086,
+   "first_step_median": 152.0,
+   "second_step_median": 767.0,
+   "share_seeing_two": 0.02576808721506442
+  },
+  "zombie_damage_awake": {
+   "share_of_episodes_seeing_it": 0.9504459861248761,
+   "events_per_episode_mean": 3.580773042616452,
+   "first_step_median": 112.0,
+   "second_step_median": 155.0,
+   "share_seeing_two": 0.7879088206144698
+  },
+  "zombie_damage_asleep": {
+   "share_of_episodes_seeing_it": 0.6828543111992071,
+   "events_per_episode_mean": 0.8087215064420218,
+   "first_step_median": 194.0,
+   "second_step_median": 272.0,
+   "share_seeing_two": 0.11199207135777998
+  },
+  "thirst_rate": {
+   "share_of_episodes_seeing_it": 1.0,
+   "events_per_episode_mean": 10.674925668979187,
+   "first_step_median": 21.0,
+   "second_step_median": 42.0,
+   "share_seeing_two": 0.9762140733399405
+  },
+  "hunger_rate": {
+   "share_of_episodes_seeing_it": 1.0,
+   "events_per_episode_mean": 9.229930624380575,
+   "first_step_median": 26.0,
+   "second_step_median": 57.0,
+   "share_seeing_two": 0.9484638255698712
+  },
+  "fatigue_rate": {
+   "share_of_episodes_seeing_it": 1.0,
+   "events_per_episode_mean": 6.5163528245787905,
+   "first_step_median": 31.0,
+   "second_step_median": 80.0,
+   "share_seeing_two": 0.9018830525272548
+  },
+  "zombie_cooldown": {
+   "share_of_episodes_seeing_it": 0.7770069375619425,
+   "events_per_episode_mean": 1.6055500495540138,
+   "first_step_median": 148.0,
+   "second_step_median": 166.0,
+   "share_seeing_two": 0.45490584737363726
+  },
+  "zombie_health_kill": {
+   "share_of_episodes_seeing_it": 0.5381565906838454,
+   "events_per_episode_mean": 1.5213082259663033,
+   "first_step_median": 106.0,
+   "second_step_median": 196.0,
+   "share_seeing_two": 0.30327056491575816
+  },
+  "cow_health_kill": {
+   "share_of_episodes_seeing_it": 0.557978196233895,
+   "events_per_episode_mean": 1.529236868186323,
+   "first_step_median": 92.0,
+   "second_step_median": 175.0,
+   "share_seeing_two": 0.30426164519326065
+  },
+  "table_cost": {
+   "share_of_episodes_seeing_it": 0.755203171456888,
+   "events_per_episode_mean": 2.170465807730426,
+   "first_step_median": 28.0,
+   "second_step_median": 99.0,
+   "share_seeing_two": 0.5807730426164519
+  },
+  "night_onset": {
+   "share_of_episodes_seeing_it": 0.711595639246779,
+   "events_per_episode_mean": 1.0346878097125867,
+   "first_step_median": 148.0,
+   "second_step_median": 448.0,
+   "share_seeing_two": 0.13577799801783944
+  }
+ }
+}

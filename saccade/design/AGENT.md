@@ -126,6 +126,57 @@ context-dependent" (Bouton 2004).
   experience fitting known structure can count (Tse; Lake).
 - Each requirement comes with a probe. A module is built only when a measurement shows the gap on the running loop.
 
+## Where variation comes from: the three options scoped (11-22)
+
+**Evidence availability** (`artifacts/experiments/20261122_rule_change/variation_eda.py`, DEV labels, 1,009
+expert-mixed episodes, median length 212 steps). For each rule: the share of episodes that see the event revealing its
+value, and the median step of the first and second sighting.
+
+| Rule | How its value shows | Seen in episodes | First / second sighting | Native parameter? |
+|---|---|---|---|---|
+| Thirst / hunger / fatigue period (20 / 25 / 30) | Interval between HUD drops | 100% / 100% / 100% | 21, 42 / 26, 57 / 31, 80 | No |
+| Zombie damage awake (2) | Health drop beside a zombie | 95% | 112, 155 | No |
+| Table cost (2 wood) | Inventory drop on placing | 76% | 28, 99 | No |
+| Zombie cooldown (5) | Repeat hits by one zombie | 78% | 148, 166 | No |
+| Night onset (day length 300) | Lighting | 71% | 148, 448 | Yes |
+| Zombie damage asleep (7) | Health drop beside a zombie | 68% | 194, 272 | No |
+| Cow / zombie health (3 / 5) | Hits until it dies | 56% / 54% | 92, 175 / 106, 196 | Yes |
+| Water yield (+1) | Drink digit after drinking | 48% | 117, 208 | No |
+| Cow / plant food (+6 / +4) | Food digit after eating | 23% / 15% | 293 / 152 | No |
+| Spawn chances | Statistical; fresh spawns are never seen in view (Codex) | — | 29-199 trials for 80% (Codex) | Yes |
+
+**The options:**
+- **Native parameters only** (day length, mob health, spawn chances): least hand-made, but few. Spawn rates give very
+  weak evidence, and day length matters mostly near dusk (Codex). Too narrow to teach that things vary.
+- **A family of hidden rules varied per episode** (native where they exist, written by us otherwise): this is domain
+  randomization. The robotics precedents:
+  - Peng et al. 2018: randomizing dynamics yields "policies that are capable of adapting to very different dynamics";
+  - OpenAI 2019: memory models trained on randomized environments "show clear signs of emergent meta-learning at test
+    time";
+  - Tobin et al. 2017: "the real world may appear to the model as just another variation".
+
+  It works with our senses, actions and corpus: exact replay of recorded actions under changed rules is verified, and
+  so is the in-logic patch (Codex). It spans several evidence channels: timers, creatures, yields, lighting.
+- **Craftax-Classic, then full Craftax:** natural novelty that fits Classic's schemas, but it changes the screen (130 x
+  110, 9 x 11 view, 10-pixel blocks, 4 inventory rows) and the actions (43). There is no expert corpus for it, and the
+  Craftax authors report existing methods "fail to make material progress". Best kept as the later lifetime test of
+  transfer, once perception is geometry-general.
+
+**Proposal (11-22, undecided):**
+- The family of hidden rules is where the fast channel would come from.
+- Start with the rules whose evidence comes earliest and most often, and whose channel the world already uses for
+  inference:
+  - the clock periods. The world already infers clock phases in context; inferring the period from the interval
+    between drops is the next step on the same channel;
+  - then creature rules (damage, health, cooldown);
+  - then yields and day length.
+- **Hold water yield out entirely, as the transfer test.** If varying other rules teaches the agent to adapt to the
+  never-varied water +2, then "things vary" generalised. The rule-change benchmark and its matched histories already
+  exist.
+
+**Open:** the record and the belief reset at every episode start. Rules that persist across a lifetime of episodes can
+only be carried by the weights unless some memory survives the reset.
+
 ## How to judge it (proposal, not decided)
 
 The agent's lifetime, not module comparisons:

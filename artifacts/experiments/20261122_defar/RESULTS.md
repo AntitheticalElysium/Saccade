@@ -21,9 +21,17 @@ outputs' unit identities equal the rebuilt panel. Intervals resample the 166 pai
 
 - **Declared success** (a fall of 1 point or more against both references): no.
 - **Declared null** (within +-0.5 of the continuation): no.
-- Day cows are deleted 3 points more often. Zombies are unchanged against checkpoint 10, and night zombies are worse
-  than the continuation.
-- The real-frame floor stays at 1.000 for day cows, so the reader still reads real cows. The loss is the world's.
+- Zombies are unchanged against checkpoint 10, and night zombies are worse than the continuation.
+- **Corrected the same day: the +2.95 is mostly faint cows, not more vanished ones.** Read in token space on the
+  560 cows of the token re-read, independent of the reader (see the explanatory readings below):
+  - finals with cow mass below 0.3 (clean deletions) are unchanged, 6.14% -> 5.92%;
+  - mass below 0.5 rises by +1.21 points (se 0.29), 6.79% -> 7.99%;
+  - half-drawn cows (mass 0.2-0.6) nearly quadruple, 1.23% -> 4.51%.
+
+  The new checkpoint's refitted reader calls a cow only from a blend weight of 0.40, against 0.30 for checkpoint
+  10's. It counts 3.4% of draws as deleted that hold half a cow or more, against 1.4%.
+- The real-frame floor stays at 1.000 for day cows: real cows still read correctly. What changed is that the
+  world's final frames commit less.
 
 **Guards (against checkpoint 10), both held:**
 - spurious mobs per frame 0.841 -> 0.857 (x1.02, bar x1.10);
@@ -69,6 +77,46 @@ after one deployed quarter-step from the real frame at the source level. "Source
 - **Whether DEFAR's own form avoids this is untested.** This is an interpretation of the gap, not a measured cause.
   The token-space chain on this checkpoint tests the hedging part.
 
-## Explanatory readings
+## Explanatory readings: the world draws cows faint, and its history-only posterior hedges too
 
-(Running: the token-space chain on the new checkpoint, then 8-step deletion.)
+**8-step deletion** (the finest output throughout, the one the drift term trained), read with the same reader:
+
+| | Drift rows | Checkpoint 10 | Change | Continuation | Change |
+|---|---|---|---|---|---|
+| Cows, day | 7.95% | 5.06% | +2.89 [+2.44, +3.38] | 4.74% | +3.22 |
+| Cows, night | 23.62% | 21.76% | +1.86 | 19.13% | +4.48 |
+| Zombies, day / night | 1.51% / 10.43% | 1.21% / 10.74% | +0.30 / -0.32 | 1.08% / 9.31% | +0.44 / +1.12 |
+
+The trained output fails the same way, so this is not the shortcut's quarter-step failing to inherit a gain. These are
+reader-based numbers; the reader caveat above applies.
+
+**The token-space chain** (`midsignal_tokens` on the new checkpoint, the same 560 cows):
+
+| | Checkpoint 10 | Drift rows |
+|---|---|---|
+| History-only posterior mass M_0, same-terrain / all neighbours | 0.978 / 0.996 | **0.938 / 0.951** |
+| Own-cell weight at tau = 0 (data's staying share 0.603) | 0.623 | 0.591 |
+| Final cow mass, mean | 0.965 | 0.920 |
+| Deleted draws' mass at estimates 0-3 | 0.90, 0.75, 0.44, 0.23 | 0.88, 0.75, 0.64, 0.38 |
+| Reader drops at 2/8 (finest): rate; their median mass | 7.5%; 0.92 | 12.8%; 0.90 |
+
+- **The hedging reaches the history-only posterior.** The drift term trained only at 4/8 and 6/8, yet M_0 fell 4
+  points: given history alone, the model now expects about 5% of visible day cows to be gone.
+- **The chain drains more slowly, but ends on blends.** In deleted draws the mass falls more gently (0.64 against 0.44
+  at the third estimate) and stops at 0.38. The sampler's last step lands on its estimate at 6/8, a posterior mean,
+  so hedged estimates become faint final cows.
+- **So the drift rows didn't teach repair.** They taught every mid-level estimate to blend, and the world's samples
+  now commit less.
+
+**What this settles, and what it doesn't.**
+- **Settles:**
+  - training on the model's own drifted states with an x-space squared error toward the real frame makes the world
+    hedge, and that raises reader-counted deletion (+2.9 at 4 and at 8 steps);
+  - the dose moved the model, so this is not under-training;
+  - the guards held.
+- **Doesn't settle:**
+  - whether DEFAR's direction-only loss, or a gradient through the simulated step, would avoid the hedging;
+  - whether a faint cow matters to an actor.
+- One seed, one checkpoint interval, day cows for the token readings.
+- Reader lesson: a change that can blur outputs must be read in token space. The refitted reader's threshold (0.40
+  against 0.30) inflates "deletion" exactly where outputs blur.

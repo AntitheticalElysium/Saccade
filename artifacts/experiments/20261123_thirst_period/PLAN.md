@@ -4,8 +4,9 @@
 default changes. This one asks whether evidence in the history can change the prediction at once, with fixed weights,
 once training has seen variation (Codex: "thirst tells us whether history can change a prediction immediately").
 
-In P1.5 the drink digit drops every 21 awake steps and has never varied. The world draws drops on schedule from the
-record (on-schedule pairs 0.995).
+In P1.5 the drink digit drops every 21 awake steps and has never varied. P1.5 draws the drink drop at the event on 0.580 of
+quiet frames, with false drops at 0.045 (`20261116_p15/RESULTS.md`; its 0.995 is energy's on-schedule pairs). The
+timing lives in the record.
 
 **The rule** (Craftax-Classic `update_player_intrinsics`):
 - the thirst counter grows by 1 per awake step and 0.5 asleep;

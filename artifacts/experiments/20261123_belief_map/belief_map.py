@@ -48,18 +48,18 @@ def targets(L, e, so, stride, first=16):
                     d = np.hypot(dr, dc); k = int(np.argmin(d))
                     if d[k] <= 24:
                         row[name] = (int(sector(dr[k], dc[k])), float(np.log(d[k])), int(t - seen[m][k]))
-            best = None
-            for mname in MOBS:
+            for mname in MOBS:                                              # the nearest of each kind
+                best = None
                 mp, mm = L[f"s_{mname}_p"][a + t].astype(int), L[f"s_{mname}_m"][a + t]
                 for s in range(len(mm)):
                     out = abs(mp[s, 0] - pos[t, 0]) > 3 or abs(mp[s, 1] - pos[t, 1]) > 4
                     if mm[s] and out and t - mob_seen[mname][s] <= 32:
                         dr, dc = mp[s, 0] - pos[t, 0], mp[s, 1] - pos[t, 1]
                         d = float(np.hypot(dr, dc))
-                        if best is None or d < best[2]:
-                            best = (mname, int(sector(dr, dc)), d)
-                if best is not None and best[0] == mname:
-                    row[mname] = (best[1], float(np.log(best[2])), 0)
+                        if best is None or d < best[1]:
+                            best = (int(sector(dr, dc)), d, int(t - mob_seen[mname][s]))
+                if best is not None:
+                    row[mname] = (best[0], float(np.log(best[1])), best[2])
             rows.append(row)
         ok = (pos[t, 0] + rr >= 0) & (pos[t, 0] + rr < 64) & (pos[t, 1] + cc >= 0) & (pos[t, 1] + cc < 64)
         grid[pos[t, 0] + rr[ok], pos[t, 1] + cc[ok]] = view[t][ok]

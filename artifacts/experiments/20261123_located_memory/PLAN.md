@@ -175,8 +175,11 @@ out, because no policy or value exists yet to teach it.
       sharp 16-dimension density made the per-cell evidence a lottery.
     - The binary form also has blocked day 0.982, moved dark 0.798 and blocked dark 0.951.
   - Reading 2 then runs on the full panel with the bar unchanged, plus episodes 23-119 (unseen by every check).
-    Whether the read is retrained with this localizer is the user's call in the morning. The current fine-tune uses the
-    second localizer.
+  - **Decided 11-24 at 06:35, before the fifth localizer's reading 2:** the 06:20 rule applies (the read runs with
+    the localizer that scores best on reading 2's bar measure).
+    - If the fifth localizer's lookups beat the second's (0.434), the second localizer's fine-tune is stopped. The
+      read is then retrained, and readings 1, 3 and 4 rerun, with the fifth, by the same recipe and code.
+    - Otherwise the second localizer's run continues.
 - **The geometry, declared:**
   - which screen cells view the world (the 7 × 9 map cells), and their offsets, are the sensor's embodiment facts;
   - the status rows are not written to the place memory;

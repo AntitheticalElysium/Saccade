@@ -1507,10 +1507,19 @@ use.**
    - **No ensemble by default.** Outcome-head ensembles stay an evaluation tool, used if the world's own signals fail
      their validation. That follows Hansen & Wang's single-model route and Codex's caution.
 2. **Validation before any use (Codex):** a signal earns a use only after it predicts what that use needs.
-   - **For dream trust: wrong action orderings on held-out real forks.** The archived 764 DO/NOOP forks keep 8 P1.5
-     dreams per action and 16 simulator futures (`20261119_s2/RESULTS.md`, return-order audit), so the spread of
-     those dreams can be scored against the 27.0% of depth-15 orderings that came out opposite. That is a CPU
-     analysis of saved data, proposed and not run.
+   - **For dream trust: wrong action orderings on real forks. Run 11-23 (`20261123_dream_trust/RESULTS.md`).**
+     - Data: P1.5's archived 764 DO/NOOP forks, 8 dreams per action against 16 simulator futures.
+     - **Raw spread fails:** the spread of the dreamed returns scores AUROC 0.48 at depth 15. Spread tracks how
+       eventful a start is.
+     - **The world's confidence in the comparison passes.** That is the dreamed gap over its own sampling error
+       across the draws.
+       - It scores 0.85 at depth 4 and 0.76 at depth 15. The simulator's own spread scores 0.76 and 0.59.
+       - Confident orderings (abs z >= 2) are right 97% and 94% of the time; unconfident ones 72% and 58%.
+     - **Confidently wrong orderings are 8% of the errors at depth 15**, Biased Dreams' false negatives. The checks
+       against reality stay.
+     - **Not separated:** part of low confidence is the 8 draws' own sampling noise. The use is the same either way.
+     - **So the validated signal is a decision's confidence across several dreams.** It costs several draws per
+       start, and it fits the evaluation readings at once and dream-trust weighting on its trigger.
    - For change: learning progress on the next real observations.
 3. **Uses, each on its trigger:**
    - **Dream trust.**

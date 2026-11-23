@@ -1977,12 +1977,20 @@ time, trust is learned from what each entry carries.
 fine-tune of P1.5. On hard revisits after 2-16 steps, at 4,000 updates, the world draws the cell right 0.927 of the
 time with the correct entry, against 0.310 with none and 0.307 with a shifted one (0.924 at 17-64 steps).
 
-**The location form, agreed 11-23 and built whole for the world's side (`20261123_located_memory/`):**
+**The location form agreed 11-23, as built for the world's side (`20261123_located_memory/`):**
 - **Self-location:** Markov localization on the agent's own grid at the sensor's resolution (Fox, Burgard & Thrun
   1999), trained label-free.
   - A motion prior from the current view and the command (the same head dreams use) predicts the pose.
   - The new view, matched against the memory under every grid hypothesis, corrects it. Recovery at a remembered place
     and frame-to-frame odometry are one rule.
+  - **Not as agreed: the match.** The agreed match was a learned heavy-tailed score whose width grows with the entry's
+    age. That was the first localizer. The fifth and sixth replace it with a closed-form match calibrated from the
+    agent's own data: binary evidence and no age term, with nothing in it learned. Those changes were made overnight
+    11-24 and are pending the user's review (`20261123_located_memory/PLAN.md`).
+  - **Not as agreed: the read's reach.** The agreed read reached within two cells. The PLAN narrowed it to 3 × 3 with
+    no reason recorded. With the fifth localizer that loses 1.2 points of reach (0.546 against 0.558).
+- **Not yet measured:** the design's own judges, readings 1 (revisits drawn with the agent's own addresses), 3 (return
+  after an error) and 4 (dreams). They are running.
 - **The store:** native coarse tokens, and fine tokens where the eye looked. Each entry has its time, write
   confidence, source frame and context (lighting, the screen cell it was seen at, the glimpse's crop position).
   Writes made under doubt stay pending and move with a correction.

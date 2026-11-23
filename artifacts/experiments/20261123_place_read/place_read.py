@@ -303,7 +303,7 @@ def evaluate(update, smoke=False):
 
 def cells(L, so, rows, drawn, rterr):
     """place_memory's cell rule: map cells entering view at t + 1, real reader class, inward neighbour, gap group."""
-    rec = {k: [] for k in ("episode", "group", "context", "cls", "agree")}
+    rec = {k: [] for k in ("episode", "group", "context", "cls", "agree", "drawn", "wcls", "wgap")}
     RRn, CCn = np.meshgrid(np.arange(7) - 3, np.arange(9) - 4, indexing="ij")
     by_ep = {}
     for e, t in rows:
@@ -333,7 +333,38 @@ def cells(L, so, rows, drawn, rterr):
                         rec["episode"].append(int(e)); rec["group"].append(group)
                         rec["context"].append("predictable" if real[i, j] == real[ii, jj] else "surprising")
                         rec["cls"].append(int(real[i, j])); rec["agree"].append(float((np.asarray(drawn[(e, t)])[:, i, j] == real[i, j]).mean()))
+                        rec["drawn"].append(np.asarray(drawn[(e, t)])[:, i, j].astype(int))
+                        w = (cell[0] + SHIFT[0], cell[1] + SHIFT[1])              # the swap's wrong address
+                        s0 = last.get(w)                                          # its entry: last sighting before t + 1
+                        vi, vj = (w[0] - pos[s0][0] + 3, w[1] - pos[s0][1] + 4) if s0 is not None else (-1, -1)
+                        rec["wcls"].append(int(rterr[e][s0][vi, vj]) if s0 is not None else -1)
+                        rec["wgap"].append(t + 1 - s0 if s0 is not None else -1)
     return {k: np.asarray(v) for k, v in rec.items()}
+
+
+def identity(update=4000, reps=1000):
+    """The swap's class reading (PLAN 2) with Codex's match (11-23): on surprising revisits whose wrong-address entry is
+    present, of another class, and of the same age band as the correct entry, the share of draws taking the wrong
+    entry's class under each variant (same cells, same seeds). Base rate = the empty variant's share."""
+    z = {v: dict(np.load(HERE / f"cells_{update}_{v}.npz")) for v in ("correct", "empty", "wrong")}
+    for v in ("empty", "wrong"):
+        assert all((z[v][k] == z["correct"][k]).all() for k in ("episode", "cls", "wcls", "wgap", "group"))
+    c = z["correct"]
+    band = np.array([next((f"{lo}-{hi}" for lo, hi in PM.BUCKETS if lo <= g <= hi), "none") if g > 0 else "none" for g in c["wgap"]])
+    base = (c["context"] == "surprising") & (c["group"] != "first") & (c["wcls"] >= 0) & (c["wcls"] != c["cls"])
+    takes = {v: (z[v]["drawn"] == c["wcls"][:, None]).mean(1) for v in z}
+    right = {v: (z[v]["drawn"] == c["cls"][:, None]).mean(1) for v in z}
+    res = {"update": update}
+    for name, sel in (("present_other_class", base), ("age_matched", base & (band == c["group"]))):
+        rng, eps = np.random.default_rng(0), np.unique(c["episode"][sel])
+        idx = {e: np.flatnonzero(sel & (c["episode"] == e)) for e in eps}
+        boots = [np.concatenate([idx[e] for e in rng.choice(eps, len(eps))]) for _ in range(reps)]
+        m, d = np.flatnonzero(sel), takes["wrong"] - takes["empty"]
+        res[name] = {"cells": int(len(m)), "episodes": int(len(eps)),
+                     "takes_wrong_class": {v: float(takes[v][m].mean()) for v in z}, "right_class": {v: float(right[v][m].mean()) for v in z},
+                     "wrong_minus_empty_takes": {"mean": float(d[m].mean()), "ci95": np.quantile([d[b].mean() for b in boots], [.025, .975]).tolist()}}
+    (HERE / f"identity_{update}.json").write_text(json.dumps(res, indent=1) + "\n")
+    print(json.dumps(res, indent=1))
 
 
 def smoke():
@@ -347,4 +378,5 @@ def smoke():
 
 
 if __name__ == "__main__":
-    {"train": lambda: train(), "eval": lambda: evaluate(int(sys.argv[2])), "smoke": smoke}[sys.argv[1]]()
+    {"train": lambda: train(), "eval": lambda: evaluate(int(sys.argv[2])), "smoke": smoke,
+     "identity": lambda: identity(int(sys.argv[2]))}[sys.argv[1]]()

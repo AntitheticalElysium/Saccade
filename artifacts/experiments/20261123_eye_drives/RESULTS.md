@@ -52,3 +52,29 @@ the real crop at every window:
   - or precision that depends on content.
 - **Limits:** one checkpoint; real frames only; the readers are the S1 entity grids from labels; window lifts are
   frame-averaged.
+
+## Fixed-state static control (11-23)
+
+Rescored the archived four renderer-noise repeats per scene, with P1.5 checkpoint 10 frozen.
+Eight scenes were dark (seven at light 0, one at 0.123). Eight earlier scenes from the same
+episodes were at night onset (light 0.495). For each scene, the physical state, draw-independent
+recorded history, and predicted belief are shared. One arm holds the original coarse tokens
+and lighting fixed. The other re-encodes periphery and lighting from each noisy render, so
+the coarse view can use the noise it would actually see. All 49 windows are scored with
+the same trans-saccadic pixel likelihood as the prior reading.
+
+| Periphery inputs | Period | Mean per-window range across repeats (nats per RGB component) | Highest-NLL window switches, repeat pairs | Scenes with any switch |
+|---|---|---:|---:|---:|
+| Recorded, held fixed | Dark | 0.133 | 26/48 | 7/8 |
+| Re-encoded each repeat | Dark | 0.123 | 31/48 | 8/8 |
+| Recorded, held fixed | Night onset | 0.0020 | 0/48 | 0/8 |
+| Re-encoded each repeat | Night onset | 0.0111 | 0/48 | 0/8 |
+
+These are hindsight rankings of the realized pixel loss, with six correlated repeat pairs
+per scene. They demonstrate sensitivity to sensor noise at a fixed physical state. They
+leave the learned policy's fixation distribution and the ranking of expected information
+gain unmeasured. The scene selection and exact replay checks are in the existing
+[renderer repeat audit](../20261102_p1f15_readiness/static_repeats.py).
+
+Reproduce both this control and the positive-replay audit with
+`JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 MAMBA_DETERMINISTIC=1 .venv/bin/python -m artifacts.experiments.20261123_eye_drives.drive_credit_audit`.

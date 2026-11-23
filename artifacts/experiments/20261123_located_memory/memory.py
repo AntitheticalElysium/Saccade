@@ -38,6 +38,7 @@ CPOS = 120                                                              # the sc
 NE, FEAT, COMMIT = 121, 143, 0.5
 COARSE = torch.zeros(NE, dtype=torch.bool); COARSE[:27] = True; COARSE[CTRUE] = True; COARSE[CPOS] = True
 LOC_DEV = torch.device(os.environ.get("LOC_DEVICE", "cuda"))           # the localizer may train on the CPU
+LOC_CKPT = os.environ.get("LOC_CKPT", "localizer.pt")                   # its checkpoint under run/
 FINE_FEATS = slice(31, 135)                                             # the read feature's fine part (the fine swap)
 GEOM = slice(138, 141)                                                  # relative offset and current pose confidence
 CELLS = torch.arange(MAP)
@@ -587,8 +588,8 @@ def train_localizer(passes=4, batch=16, chunk=32):
                     tot += float(loss_acc.detach()); cnt += n_acc; loss_acc, n_acc = 0.0, 0
             print(f"pass {ps} batch {bi} nll/frame {tot / max(cnt, 1):.2f} {time.time() - t0:.0f}s", flush=True)
         log.append({"pass": ps, "nll_per_frame": tot / cnt, "eps": float(torch.sigmoid(loc.logit_eps))})
-        torch.save(loc.state_dict(), RUN / "localizer.pt")
-    (RUN / "localizer_log.json").write_text(json.dumps(log, indent=1) + "\n")
+        torch.save(loc.state_dict(), RUN / LOC_CKPT)
+    (RUN / LOC_CKPT.replace(".pt", "_log.json")).write_text(json.dumps(log, indent=1) + "\n")
 
 
 @torch.no_grad()
@@ -597,7 +598,7 @@ def score_localizer(memory_term=True, tag="full"):
     (prior) and after it (posterior) on movement commands, moved / blocked / dark; exact relative pose over 16 steps;
     correct revisit lookups (the entry at the inferred address is the same world cell), by the prior's address."""
     DEV = LOC_DEV
-    loc = Localizer().to(DEV); loc.load_state_dict(torch.load(RUN / "localizer.pt", map_location=DEV)); loc.eval()
+    loc = Localizer().to(DEV); loc.load_state_dict(torch.load(RUN / LOC_CKPT, map_location=DEV)); loc.eval()
     data = torch.load(DATA / "tokens_panel.pt")
     st = {k: [] for k in ("prior_ok", "post_ok", "moved", "move_cmd", "dark", "rel16_ok", "lookup_ok", "lookup_n", "ep")}
     for ei, r in enumerate(data):
@@ -662,7 +663,7 @@ def score_localizer(memory_term=True, tag="full"):
                                     "posterior_moved": a["post_ok"][un & mv].mean(), "posterior_dark": a["post_ok"][un & dk].mean(),
                                     "prior_moved": a["prior_ok"][un & mv].mean()}
     res = json.loads(json.dumps(res, default=float))
-    (HERE / f"localizer_{tag}.json").write_text(json.dumps(res, indent=1) + "\n")
+    (HERE / f"{LOC_CKPT.replace('.pt', '')}_{tag}.json").write_text(json.dumps(res, indent=1) + "\n")
     print(json.dumps(res), flush=True)
     return res
 
@@ -716,7 +717,7 @@ def reference():
 # ---------------------------------------------------------------- the read's fine-tune (stage 1's recipe)
 
 def load_localizer(dev=DEV):
-    loc = Localizer().to(dev); loc.load_state_dict(torch.load(HERE / "run" / "localizer.pt", map_location=dev)); loc.eval()
+    loc = Localizer().to(dev); loc.load_state_dict(torch.load(RUN / LOC_CKPT, map_location=dev)); loc.eval()
     return loc.requires_grad_(False)
 
 

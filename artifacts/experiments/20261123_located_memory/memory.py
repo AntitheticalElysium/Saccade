@@ -615,6 +615,51 @@ def score_localizer(memory_term=True, tag="full"):
     print(json.dumps(res), flush=True)
     return res
 
+@torch.no_grad()
+def reference():
+    """Reading 2's reference: S2's simulator-trained camera-shift reader with the action constraint (an argmax
+    incompatible with the command becomes no motion; `20261123_place_memory`), on the same panel and the same
+    measures. Its pose is integrated from the shift it reads from the frame pair, so its lookups use the pose after
+    the frame (the localizer's use the address before it)."""
+    model, cfg = S2.load(); R = S2.load_readers(model, cfg)
+    data = torch.load(DATA / "tokens_panel.pt")
+    cls = {c: torch.tensor(d) for d, c in S2.SHIFT.items()}
+    st = {k: [] for k in ("ok", "moved", "dark", "rel16_ok")}; lk_ok = lk_n = 0
+    for r in data:
+        T, pos, p = r["T"], r["pos"], r["p"][:, :MAP].float().to(DEV)
+        c_ = R["shift"](S2.shift_x(p[:-1], p[1:]).half())["shift"].argmax(-1).cpu()   # [T] the read shift class (as S2)
+        P, store, seen = [torch.tensor([0, 0])], {}, {}
+        for t in range(T + 1):
+            if t > 0:
+                a = int(r["prev_action"][t]); c = int(c_[t - 1])
+                if c != 0 and c != a:                                               # the action constraint
+                    c = 0
+                d = cls[c]; P.append(P[-1] + d); dtrue = (pos[t] - pos[t - 1]).tolist()
+                if a in GT.MOVE:
+                    st["ok"].append(int(d.tolist() == dtrue)); st["moved"].append(int(dtrue != [0, 0]))
+                    st["dark"].append(int(float(r["light"][t]) < 0.5))
+                prev = {(int(pos[t - 1][0]) + int(KR[k]), int(pos[t - 1][1]) + int(KC[k])) for k in range(MAP)}
+                for k in range(MAP):
+                    w = (int(pos[t][0]) + int(KR[k]), int(pos[t][1]) + int(KC[k]))
+                    if w in prev or w not in seen:
+                        continue
+                    lk_n += 1
+                    lk_ok += int(store.get((int(P[t][0]) + int(KR[k]), int(P[t][1]) + int(KC[k]))) == w)
+            for k in range(MAP):
+                w = (int(pos[t][0]) + int(KR[k]), int(pos[t][1]) + int(KC[k]))
+                store[(int(P[t][0]) + int(KR[k]), int(P[t][1]) + int(KC[k]))] = w; seen[w] = t
+        P_ = torch.stack(P)
+        st["rel16_ok"] += ((P_[16:] - P_[:-16]) == (pos[16:] - pos[:-16])).all(1).int().tolist()
+    a = {k: np.array(v) for k, v in st.items()}
+    mv, dk = a["moved"].astype(bool), a["dark"].astype(bool)
+    res = {"tag": "reference_s2_shift_reader", "movement_commands": int(len(mv)),
+           "after_frame": {"all": a["ok"].mean(), "moved": a["ok"][mv].mean(), "blocked": a["ok"][~mv].mean(),
+                           "dark": a["ok"][dk].mean(), "moved_day": a["ok"][mv & ~dk].mean(), "moved_dark": a["ok"][mv & dk].mean()},
+           "relative_pose_exact_16": a["rel16_ok"].mean(), "revisit_lookups": lk_n, "lookup_correct": lk_ok / max(lk_n, 1)}
+    res = json.loads(json.dumps(res, default=float))
+    (HERE / "localizer_reference.json").write_text(json.dumps(res, indent=1) + "\n")
+    print(json.dumps(res), flush=True)
+    return res
 
 
 # ---------------------------------------------------------------- the read's fine-tune (stage 1's recipe)
@@ -1094,7 +1139,7 @@ def identity(update):
 
 if __name__ == "__main__":
     {"tokens": tokens, "localizer": lambda: (train_localizer(), score_localizer(True, "full"), score_localizer(False, "odometry")),
-     "score": lambda: score_localizer(True, "full"), "train": lambda: train(), "eval": lambda: evaluate(int(sys.argv[2])),
+     "score": lambda: score_localizer(True, "full"), "reference": reference, "train": lambda: train(), "eval": lambda: evaluate(int(sys.argv[2])),
      "identity": lambda: identity(int(sys.argv[2])), "smoke": lambda: smoke(), "inject": lambda: inject(int(sys.argv[2])),
      "dream": lambda: dream(int(sys.argv[2])), "readings": lambda: (evaluate(int(sys.argv[2])), identity(int(sys.argv[2])),
                                                                   inject(int(sys.argv[2])), dream(int(sys.argv[2])))}[sys.argv[1]]()

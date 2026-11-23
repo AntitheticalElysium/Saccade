@@ -41,6 +41,8 @@ def targets(L, e, so, stride, first=16):
         inview = (np.abs(gr - pos[t, 0]) <= 3) & (np.abs(gc - pos[t, 1]) <= 4)
         if t >= first and (t - first) % stride == 0:
             row = {"t": t, "drink": int(L["s_body"][a + t, 2]), "self": (pos[t] - pos[0]).tolist()}
+            zp, zm = L["s_zombies_p"][a + t].astype(int), L["s_zombies_m"][a + t]   # positive control (added after reading 1)
+            row["zombie_adjacent"] = int(any(zm[s] and np.abs(zp[s] - pos[t]).max() <= 1 for s in range(len(zm))))
             for name, c in CLASSES.items():
                 m = (grid == c) & ~inview
                 if m.any():
@@ -137,7 +139,7 @@ def main():
     role[perm[int(n * 220 / 360):int(n * 260 / 360)]] = 1; role[perm[int(n * 260 / 360):]] = 2
     enc = S.encode(model, S2.sublabels(L, eps), cfg)
     feats = {"belief": [], "view": [], "view_record": []}
-    meta = {"episode": [], "split": [], "drink": [], "self": []}
+    meta = {"episode": [], "split": [], "drink": [], "self": [], "zombie_adjacent": []}
     tg = {k: [] for k in (*CLASSES, *MOBS)}
     for i, e in enumerate(eps):
         rows = targets(L, int(e), so, 3)
@@ -148,6 +150,7 @@ def main():
             rd = en["reads"][t].float().numpy()
             feats["belief"].append(b); feats["view"].append(np.r_[p, v]); feats["view_record"].append(np.r_[p, v, rd])
             meta["episode"].append(i); meta["split"].append(role[i]); meta["drink"].append(r["drink"]); meta["self"].append(r["self"])
+            meta["zombie_adjacent"].append(r["zombie_adjacent"])
             for k in tg:
                 tg[k].append(r.get(k, (-1, np.nan, -1)))
     X = {k: np.stack(v) for k, v in feats.items()}
@@ -192,6 +195,18 @@ def main():
             p = fit(Xf[have], yd[:, None], sp, "reg", 1)[:, 0]
             res["log_distance_r2"][k][name] = float(1 - ((p - yd[te]) ** 2).sum() / ((yd[te] - yd[te].mean()) ** 2).sum())
         print(k, json.dumps(out)[:400], flush=True)
+    res["positive_controls"] = {}                                           # added after reading 1: does the probe work?
+    for name_t, ncls in (("drink", 10), ("zombie_adjacent", 2)):
+        y = M[name_t].astype(int); sp = M["split"]; te = sp == 2
+        maj = np.bincount(y[sp == 0], minlength=ncls).argmax()
+        res["positive_controls"][name_t] = {"majority": float((y[te] == maj).mean()), "positives_test": int((y[te] > 0).sum()) if ncls == 2 else None,
+                                            **{nm: float((fit(Xf, y, sp, "cls", ncls) == y[te]).mean()) for nm, Xf in X.items()}}
+        if ncls == 2:                                                       # balanced accuracy for the rare positive
+            for nm, Xf in X.items():
+                pr = fit(Xf, y, sp, "cls", 2)
+                res["positive_controls"][name_t][nm + "_balanced"] = float(((pr == 1) & (y[te] == 1)).sum() / max((y[te] == 1).sum(), 1) / 2
+                                                                          + ((pr == 0) & (y[te] == 0)).sum() / max((y[te] == 0).sum(), 1) / 2)
+    print(json.dumps(res["positive_controls"]), flush=True)
     ys = M["self"].astype(float); sp = M["split"]; te = sp == 2
     for name, Xf in X.items():
         p = fit(Xf, ys, sp, "reg", 2)

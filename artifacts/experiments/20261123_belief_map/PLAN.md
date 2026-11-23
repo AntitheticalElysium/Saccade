@@ -51,3 +51,12 @@ different.
 - Targets come from simulator labels; the probes are diagnostic.
 
 **Run:** `JAX_PLATFORMS=cpu MAMBA_DETERMINISTIC=1 .venv/bin/python -m artifacts.experiments.20261123_belief_map.belief_map`
+
+## Positive controls (added 11-23 after the first reading, before rerunning)
+
+The first reading found nothing decodable in the belief, so the probe pipeline itself needs checking. Two quantities
+the belief is known to carry:
+- the drink value (10 classes); the belief reads the HUD, with energy exact at 0.52 earlier;
+- a zombie adjacent to the player (AP 0.92 on 11-22), scored by balanced accuracy.
+
+If the belief probe decodes these well, the map null is real. If not, the probe is the problem.

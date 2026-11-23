@@ -1541,6 +1541,145 @@ use.**
    - Mamba's Δ, rejected as an uncertainty signal on 07-06;
    - the pixel decoder's scale, which is blind to content (and the 10-31 pitfall);
    - raw prediction error as curiosity.
+5. **Learning faster when uncertain: an extension, built on a measured trigger (the user, 11-23: "something we might
+   have to measure once agentic Saccade has its first runs").**
+   - **The brain:**
+     - learning rates follow volatility (Behrens et al. 2007);
+     - an approximately Bayesian delta rule sets the rate from change-point probability (Nassar et al. 2010);
+     - acetylcholine and norepinephrine carry expected and unexpected uncertainty (Yu & Dayan 2005).
+   - **In machine learning:**
+     - Adam normalises step sizes by gradient magnitude, not by uncertainty;
+     - IDBD meta-learns per-feature step sizes (Sutton 1992);
+     - Degris et al. 2024 argue that RMSProp-like normalisation doesn't move step sizes toward their optimal values in
+       continual learning.
+
+     It is an open problem, not a solved component.
+   - **What the design already does:**
+     - new experience is trained on first (the online queue);
+     - the change trigger above replays a changed context more. That raises its learning through data, as the brain's
+       novelty-gated replay does (Lisman & Grace 2005), with no step-size knob.
+   - **The trigger:** the hidden-rule benchmark shows adaptation too slow even with that replay. Then the candidate is
+     per-module step-size adaptation (IDBD-like), on evidence.
+
+### Decision 6: memory beyond the frame and the episode (opened 11-23; research and proposal, undecided)
+
+**What it is for: four jobs.**
+1. **Places beyond the frame, within an episode.** The world has to redraw what it has seen, in life (prediction) and
+   in dreams. A dream that walks away and comes back should find the same place. Hippocampal amnesics' imagined scenes
+   have details but no spatial coherence (Hassabis et al. 2007, READING.md).
+2. **What the eye saw:** the glimpse's privileged memory route (Decision 3). It matters little in Classic, where the
+   periphery shows it again, and more where acuity is low.
+3. **One fact from one experience:** a single event that changes later predictions. This overlaps the fast channel
+   (Decision 7).
+4. **Across episodes.**
+   - Craftax-Classic makes a new world every episode: all 1,009 DEV episodes start from distinct views at the same
+     position. Places can't carry over; rules and skills can, through the weights.
+   - A hidden rule that persists across episodes would need a memory that survives the reset. RL² keeps its hidden
+     state "preserved to the next episode, but not preserved between trials" (Duan et al. 2016).
+   - A robot's life has no resets.
+
+**What the environment demands** (October's EDA, simulator replay, `20261023_system_design/OPTION3_NOTES.md`):
+- **Re-entries:**
+  - 56% of cells entering view are revisits (median gap 20 steps, p90 177);
+  - in 16-step windows, entering terrain was last seen never 41%, within 16 steps 27%, at 16-64 14%, at 64-256 12%,
+    and beyond 256 5% (M2).
+- **Terrain is stable and self-motion is exact:**
+  - terrain on revisits essentially never changes (S3: 0-0.07%);
+  - self-motion is exactly determined by the action and the visible target cell (S1);
+  - an identical view at another position happens on 0.03% of frames (S2).
+- **What predicts re-entering terrain:** visible neighbours predict its block 77% of the time, and memory plus
+  neighbours 91% (S5).
+- **Entities** drift while out of view (S4: zombies median 3 cells at 16-64 steps), so they need a position belief
+  that widens with absence.
+- **Behaviour versus imagination:**
+  - the expert loses nothing measurable when its memory beyond 64 steps is cut (M1: achievements within ±0.15);
+  - except that water last seen 64-256 steps before took 20.8 more steps to reach with no memory at t0 = 1000;
+  - so competent behaviour barely uses long memory, but imagination's fidelity does (M2, S5).
+
+**What P1.5 does today:**
+- Inside self-fed dreams, re-entering cells agree with their last clear sighting 0.68 of the time within 16 steps and
+  0.60 at 17-64, against 0.94 / 0.88 for the simulator through the same readers (S2).
+- **Measured 11-23 from real history** (`20261123_place_memory/RESULTS.md`; one-step dreams, 35,170 entering terrain
+  cells, revisits against first sightings, matched by class):
+  - P1.5 doesn't recall places at all, even after a few steps away;
+  - where the visible neighbour doesn't give a cell away, revisits are drawn right 0.347 of the time at gaps 2-16,
+    against 0.341 for cells never seen (class-matched difference +0.000 [-0.017, +0.019]);
+  - where it does, both sit at 0.83.
+  - So re-entering terrain is drawn from context alone, and S2's 0.68 was context, not recall.
+
+**Precedents, read at abstract level unless noted:**
+- **Video world models with memory:**
+  - WorldMem keeps "a memory bank consisting of memory units that store memory frames and states (e.g., poses and
+    timestamps)", retrieved by "field-of-view (FOV) overlap and temporal proximity". The generated frames attend to the
+    retrieved frames as clean latents inside the diffusion denoiser (Xiao et al. 2025);
+  - Context-as-Memory retrieves past frames by camera field-of-view overlap, rule-based (Yu et al. 2025);
+  - both say a longer temporal window is too expensive.
+- **Agents:**
+  - Neural Episodic Control writes every experience into a dictionary that "does not learn when to write", so reads
+    change faster than weights (Pritzel et al. 2017);
+  - MERLIN finds "memory is not enough; it is critical that the right information be stored in the right format",
+    and forms memories by predictive modelling (Wayne et al. 2018);
+  - RL² carries memory across episodes;
+  - TEM binds a path-integrated location code to content and predicts the view from location (Whittington et al.
+    2020, READING.md).
+- **Robots:**
+  - maps keyed by pose (SLAM);
+  - ReMEmbR stores captioned video segments with "timestamps and robot coordinates" in a vector database and queries
+    them (Anwar et al. 2024).
+- **The brain:**
+  - **indexing:** the hippocampus stores an index to the neocortical patterns an experience activated, and "a partial
+    cue that activated the index could activate the neocortical patterns" (Teyler & DiScenna 1986; Teyler & Rudy
+    2007);
+  - **novelty gates entry:** the hippocampus flags information its long-term store lacks, and the resulting dopamine
+    enhances LTP (Lisman & Grace 2005);
+  - **frames of reference:** long-term spatial memory is allocentric, short-term egocentric, translated by parietal
+    and retrosplenial areas (Byrne, Becker & Burgess 2007);
+  - **reality monitoring:** whether a memory was perceived or imagined is inferred from its qualities, not tagged
+    (Johnson & Raye 1981);
+  - **imagination recombines** remembered details (Schacter & Addis 2007).
+
+**Proposed (undecided), building on the 10-23 choice (attention over (location, content) entries):**
+1. **The store:**
+   - per world cell, what was last seen there: the coarse token, plus the glimpse tokens where the eye looked;
+   - stamped with the time;
+   - read by location for the cells in view.
+
+   It is WorldMem's form at our scale. A Classic map is 64 × 64 cells, so an episode's store is small enough to keep
+   whole.
+2. **Location by path integration from the world's own estimate of its displacement.**
+   - Craftax makes this exact (S1, S2), and S2's camera-shift reader shows the shift is readable from the periphery.
+   - Learned and inferred, never given, so it carries over to robots, where self-motion is noisy (the 10-23 decision:
+     "coherent with noisy motion later").
+3. **Read path:** the denoiser's cell tokens attend to their retrieved entries, keyed by location relative to the
+   current position. This is the world's long-term memory; the record stays the screen-fixed short-term trace (clocks,
+   recent change). The two jobs differ, as allocentric and egocentric memory do in the brain.
+4. **Write policy:** every real frame writes what it shows (NEC's rule, no learned gate). Novelty-gated writing (Lisman
+   & Grace) is a later refinement for capacity on long lives.
+5. **Dreams write to a branch-local copy, never merged into real memory** (October's D5; reality monitoring).
+6. **Scope:**
+   - in Classic the store is cleared at a reset, because the next episode is a new world;
+   - what persists across episodes is the weights and the replay;
+   - a robot's store persists;
+   - cross-episode fast memory for hidden rules is Decision 7's.
+7. **Entities:** object records with a last-seen place and time and a widening belief (S4). These are designed in and
+   built after the place store.
+8. **Built on its trigger, which is met.**
+   - The world has no recall beyond the frame (above), while the environment offers it: memory plus neighbours 91%
+     against neighbours 77% (S5), terrain stable (S3), more than half of re-entries being revisits (E2).
+   - The world is retrained for the agent anyway, so the store joins that run, as the record joined P1.5 on its
+     trigger (10-27: "add I1 store / I2 records on measured triggers").
+   - **Its judges:**
+     - this measurement: the revisit-minus-first-sighting difference in the surprising context, which must rise
+       above zero;
+     - dreamed revisit agreement against the simulator's (S2);
+     - dreamed against real action differences on routes back to remembered resources.
+9. **Open for the user: how location is known.**
+   - **Alignment of consecutive coarse frames over the candidate shifts.** It is visual odometry, exact in Craftax
+     (S1, S2) and the standard robot estimate beside wheel or IMU odometry.
+   - **Learned path integration (TEM-like).** It is the brain's way, and general, but it needs a training signal
+     for the location code.
+
+   Either way the position is inferred by the agent, never read from the simulator.
 
 ## Parked: thinking when it's worth it (user 11-23, explore after the first proof)
 
@@ -1833,8 +1972,9 @@ References:
 5. **Knowing what it doesn't know** (Decision 5, opened 11-23; proposal above, undecided): readings from the start
    (surprise on arrival, learning progress, the world's own flow instability and inter-seed variance), validation
    before use, uses on triggers (dream trust, curiosity, change); ensembles only as an evaluation tool.
-6. **Memory beyond the episode:** the episodic store (one-shot, survives resets, keeps dreams out), and what survives
-   Craftax's episode resets.
+6. **Memory beyond the frame and the episode** (Decision 6, opened 11-23; proposal above, undecided): a
+   location-keyed place store (trigger met: P1.5 recalls nothing beyond the frame), dreams on a branch copy, cleared at
+   Classic's resets (new world each episode); location by frame alignment or learned path integration (open).
 7. **The fast channel:** how adapting in context is learnt (variation in training, scoped above).
 
 **Framing and judging:**

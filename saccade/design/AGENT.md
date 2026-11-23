@@ -1991,9 +1991,8 @@ time with the correct entry, against 0.310 with none and 0.307 with a shifted on
   confidence. The address comes from the motion prior, before the frame is seen.
 - **Dreams** read the same way, through a copy-on-write overlay.
 - **The agent's cell is declared an embodiment fact** (11-24). The agent's own sprite is neither matched nor
-  written: it moves with the sensor, and it biased the first two localizers toward "no motion" (about 30 nats; +27.5 at
-  night). The user may
-  veto this.
+  written: it moves with the sensor, and it biased the first two localizers toward "no motion" (about 30 nats; +27.5
+  at night). The user may veto this.
 
 **Its result (11-24): not working yet; the chain breaks at localization** (`20261123_located_memory/RESULTS.md`).
 - Five localizers, each diagnosed and amended before its successor's result. The best finds the right entry on 0.438

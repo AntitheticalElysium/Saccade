@@ -1,0 +1,26 @@
+{
+ "batch_1": {
+  "world_step_ms": 13.23133700134349,
+  "glimpse_tokens_ms": 8.674445001815911,
+  "glimpse_encoder_ms": 1.256835999811301,
+  "record_belief_ms": 12.721421999231097,
+  "dream_frame_ms": 115.04776200126798,
+  "peak_gib": 0.31972551345825195
+ },
+ "batch_16": {
+  "world_step_ms": 13.703885000722948,
+  "glimpse_tokens_ms": 8.439043500402477,
+  "glimpse_encoder_ms": 1.279430000067805,
+  "record_belief_ms": 13.198441001804895,
+  "dream_frame_ms": 116.52550550024898,
+  "peak_gib": 0.31972551345825195
+ },
+ "batch_64": {
+  "world_step_ms": 29.087882499879925,
+  "glimpse_tokens_ms": 8.736533500268706,
+  "glimpse_encoder_ms": 1.3133034990460146,
+  "record_belief_ms": 13.957899001979968,
+  "dream_frame_ms": 201.82285950068035,
+  "peak_gib": 0.5116348266601562
+ }
+}

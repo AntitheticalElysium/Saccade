@@ -43,7 +43,7 @@ def main():
         for t in sorted(rng.choice(ts, min(len(ts), 6 if args.smoke else 40), replace=False)) if ts else []:
             rows.append((int(e), int(L["ep_shard"][e]), int(L["ep_slot"][e]), int(t), T, 1))
             plans.append([int(L["t_action"][so[e] - e + t])])
-    rows, plans = np.array(rows, np.int32), np.array(plans, np.int8)
+    rows, plans = np.array(rows, np.int32), np.array(plans, np.int64)
     sub = {e: i for i, e in enumerate(eps)}
     enc = S.encode(model, S2.sublabels(L, eps), cfg)
     grids = G.episode_grids(L)                                              # indexed by the labels' episode index

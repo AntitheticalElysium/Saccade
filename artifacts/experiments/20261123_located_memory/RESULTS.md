@@ -14,7 +14,10 @@
   the entries this localizer puts in reach. The fine-tune ends about 10:30, and the readings follow. They are added
   here when they land.
 
-- **The sixth localizer is training** (PLAN, amended 08:05 before its results). It replaces only the match's metric,
+- **The sixth localizer's reading 2 (09:00): lookups 0.584, still failing the bar.** It beats the fifth (0.438), so the
+  PLAN's rule would restart the read with it. That switch is held: on 11-24 the user reopened the localizer's
+  direction (the grid and the hand-built match), and the rule waits for that decision.
+- **The sixth localizer** (PLAN, amended 08:05 before its results). It replaces only the match's metric,
   with the within-place scatter below. With the fifth's trained prior and only the metric swapped, a development
   check on the diagnosis episodes raised lookups from 0.429 to 0.569. Cells stored six or more cells away fell from
   0.316 to 0.088, and the dark's moved posterior rose from 0.688 to 0.911 (`diagnosis_v5/metric_chain.py`). Its
@@ -36,6 +39,7 @@ correct lookups of at least 0.95. Each version's code is pinned beside its diagn
 | 3: plus a sensor-fixed null component | 0.764 / 0.788 / 0.582 | 0.750 / 0.855 / 0.584 | 0.435 | 3,829 (0.001) | 0.345 | 0.353 |
 | 4: sensor-fixed scored by memory's own function; content trust | 0.899 / 0.133 / 0.625 | 0.887 / 0.276 / 0.643 | 0.037 | 7,083 (0.003) | 0.120 | 0.118 |
 | 5: closed-form calibrated match, binary evidence | 0.769 / 0.860 / 0.642 | 0.852 / 0.959 / 0.732 | 0.603 | 1,116 (0.070) | **0.438** | 0.440 |
+| 6: the fifth with the within-place metric | 0.781 / 0.841 / 0.638 | 0.959 / 0.956 / 0.908 | 0.739 | 701 (0.101) | **0.584** | 0.587 |
 
 **The switch rule** (PLAN, 06:35, before the fifth's result): the fifth's lookups (0.4378) beat the second's (0.4343).
 - The margin is small, but the rule is binding, so it was applied at 07:31.

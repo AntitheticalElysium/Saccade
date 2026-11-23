@@ -1561,7 +1561,7 @@ use.**
    - **The trigger:** the hidden-rule benchmark shows adaptation too slow even with that replay. Then the candidate is
      per-module step-size adaptation (IDBD-like), on evidence.
 
-### Decision 6: memory beyond the frame and the episode (opened 11-23; research and proposal, undecided)
+### Decision 6: memory beyond the frame and the episode (opened 11-23; agreed 11-23, the first test running)
 
 **What it is for: four jobs.**
 1. **Places beyond the frame, within an episode.** The world has to redraw what it has seen, in life (prediction) and
@@ -1823,6 +1823,144 @@ depends on it teaches the choice wrong things: that the table it built vanishes,
    - **Would ours trust it?** Our own evidence says yes when the memory is read where it is predictive. P1.5 learned
      its clocks from the record because the record is read at the cell (swap 0.99). P1.6's foveal record went unread
      because what it held was rarely at the cell being predicted.
+
+**Agreed (the user, 11-23: "I think this design works well enough"; Codex approves). Completed below: recent
+precedents, the end-to-end flow, the readers, updating.**
+
+**Recent work, read at the source 11-23:**
+- **Memory Forcing** (Minecraft, 2025):
+  - **stores frames**, each with depth and a confidence map, in a global point cloud whose points point back to their
+    source frames;
+  - **writes** a frame only if it adds novel coverage, or the history is short: "IsKeyframe(t) = NovelCoverage(It,
+    𝒢global) or (|ℋt| < τhist)";
+  - **reads** "the top-8 most frequently referenced historical frames" among the points visible from the current
+    camera;
+  - **"Hybrid Training"** gives half the context to recent frames and half to spatial memory or extended context,
+    by regime;
+  - **"Chained Forward Training"** replaces ground truth with the model's own predictions across windows, so pose
+    drift grows and memory is needed;
+  - **the trade-off it names:** "adding spatial memory strengthens consistency but may degrade new scene generation
+    quality when the model over-relies on insufficient spatial context";
+  - **result:** better than WorldMem on long-term memory, generalisation and new scenes (FVD 84.9 against 122.2 on
+    long-term memory), 7.3x faster.
+- **Executable Perceptual Memory** (2026):
+  - an explicit memory (landmark slots with known flag, bearing, log-distance and log-age, plus pose) beside the
+    latent dynamics;
+  - it advances in imagination by closed-form geometry driven by a learned motion head's predicted displacement;
+  - the reward head, policy, critic and replay value read it;
+  - the reward target is paired with the memory "before the new observation writes evidence";
+  - on Memory Maze it beats the same agent with an evolving latent memory by +6.1 (9x9) and +7.0 (13x13) points;
+  - limits: hand-written slots and geometry per domain; perception calibrated on simulator labels.
+- **SearchWorld** (UAV search, 2026):
+  - an explicit bird's-eye exploration and obstacle map, written deterministically from the given pose and depth,
+    enters the world model as an input stream and is reconstructed by a decoder;
+  - its training stages match ours: world model, then expert imitation, then imagination refinement;
+  - without the explicit map, success fell from 23.8% to 16.0% (the ablation figure comes from a model summary of
+    the paper, not verified verbatim).
+- **What they converge on:**
+  - **Memory:** explicit spatial memory written from observations at a pose-derived address, read by the world and
+    by the agent.
+  - **Training:** situations where only memory can supply the prediction (GTM-SM's split, chained forward training).
+  - **Imagination:** the memory advanced there by predicted motion.
+- **What ours adds:**
+  - the eye decides what detail enters;
+  - the address is inferred, never given;
+  - the stored content is the world's own tokens;
+  - dreams write only to an overlay.
+- **Adopted from them:**
+  - **Memory Forcing's novelty-of-coverage write rule,** as the write-time selectivity when capacity binds (instead of
+    a learned strength);
+  - **Memory Forcing's balance,** as a reading: new-place quality must not fall;
+  - **EPM's "score before the new observation writes".**
+
+**The end-to-end flow.**
+
+*Awake, one real step (frame t):*
+1. **Perceive:** the coarse tokens of the whole view and the lighting.
+2. **Locate:** estimate the displacement since t - 1 by aligning this view with the last over the legal shifts,
+   rejecting shifts the action rules out. Then refine against the memory: the shift whose view agrees best with the
+   stored entries, since the 7 x 9 view is almost never ambiguous (S2: 0.03%). That gives the pose and a pose
+   confidence.
+3. **Read** (the world's read): for each view cell, the entry at its address, as it was before this frame. The
+   denoiser's cell tokens receive it. The look tokens read it too, together with off-screen entries, so they can
+   choose to look again where memory is stale.
+4. **Look**, then **glimpse**: the agreed split pass.
+5. **Act:** the act tokens read the current evidence, the belief and the memory, off-screen included (the agent's
+   read).
+6. **Write:**
+   - every view cell's coarse token replaces its address's coarse entry, with time, pose confidence and provenance
+     "real";
+   - the glimpsed cells' fine tokens replace their fine entries, with their own time;
+   - a fine entry whose cell's new coarse token contradicts it is marked stale.
+7. **The belief and the record update** as today.
+
+*Dreaming, from a real moment:*
+1. Copy the belief, the record and the place memory (copy-on-write).
+2. Each dreamed step:
+   - **predict the displacement** from the state and the motor action (EPM's motion head; in Craftax a function of the
+     action and the target cell);
+   - **read** the memory at the new addresses;
+   - **draw** the coarse view, then the outcome, the look and the glimpse (the agreed step contract);
+   - **write:** new places (no entry yet) and changes the dream's own actions caused (a mined stone, a placed table)
+     go to the overlay with provenance "dream"; a drawn place that already has a real entry is not overwritten
+     (Codex's write audit: 32.2% of returning places would otherwise be contradicted).
+3. At the dream's end the overlay is discarded. Nothing returns to real memory.
+
+*Learning:*
+- **The world:**
+  - the read is trained by the world's own loss on real data, scored before the returning observation is written;
+  - within a chunk, the read's gradient reaches the stored tokens' encoder;
+  - across chunks, replay pairs supply the signal: an old observation re-encoded as the entry, with the loss on its
+    revisit (GTM-SM's split; Codex);
+  - chained forward training on the world's own short rollouts is the precedent if reliance stays low (Memory
+    Forcing).
+- **The agent:** its read is trained by the agent's losses: imitation while watching, PMPO and real advantages in
+  life. The value and policy reading off-screen memory are what can teach "where water is" (the belief probe: today
+  nothing does).
+- **The motion head** is trained on real displacements, from the odometry's estimates (inferred, not simulator
+  positions).
+
+*Episodes:*
+- in Classic, the belief, the record and the place memory reset at each episode end (a new world);
+- on a robot, none resets.
+
+**The readers (the user, 11-23: "the readers can make the age of a memory an analogue of strength?").** Yes: at read
+time, trust is learned from what each entry carries.
+- **The world's read:**
+  - a per-cell network over the entry's features, added to the cell's denoiser token, as the record's read is
+    (test 3). The coarse token, the fine token where present, their two ages, pose confidence, provenance and
+    presence;
+  - zero-initialised, so it starts inert;
+  - how much an entry moves the cell is a learned function of its content, age, confidence and provenance: the
+    read-time strength;
+  - past glimpses reach the physical tokens through memory. That is allowed: the factorisation forbids reading the
+    current crop, so a look can't change what happens; remembered evidence is ordinary evidence.
+- **The agent's read:**
+  - the act and look tokens attend over the entries (at most 4,096 in Classic);
+  - keys from content, the age code and a code of the relative position to the current pose; values from content
+    and age;
+  - this is the off-screen retrieval Codex asked for, and EPM's agent-side read.
+- **Write-time strength:** deferred. The eye already selects what detail is written. When capacity binds, Memory
+  Forcing's novelty-of-coverage rule (write what adds coverage) comes first, and a learned salience after it.
+- **Age:** explicit write times. Codex suggests starting with log age, which our 21-feature read in the running test
+  does (presence, log age, three decays). A richer multi-timescale code has to earn its place.
+
+**Updating and pose errors (the user: "is it based on the record's position?").**
+- **Not the record's.** The record is fixed to the screen. The place memory's address is the agent's inferred world
+  position plus the cell's offset.
+- **If the pose is wrong,** writes land at wrong addresses. Four things limit that:
+  1. **Action-constrained visual odometry** is right on 97.2% of revisit lookups, and the relative position is exact
+     at step 16 in 95.96% of cases (Codex's audits, reproduced).
+  2. **Relocalisation against the memory:** choose the shift whose view agrees with the stored entries. GTM-SM's
+     appendix uses memory to correct position, and EPM corrects heading from images at real observations.
+  3. **Pose confidence travels with each entry,** so the reader discounts entries written under doubt.
+  4. **A revisit that disagrees overwrites** (newest wins), so a mislocated entry is corrected when the place is seen
+     again.
+- On a robot, loop closure belongs to self-location (10-23).
+
+**The first test is running (`20261123_place_read/PLAN.md`):**
+- the coarse half, with simulator addresses, as a denoiser fine-tune of P1.5 by test 3's recipe;
+- judged by the revisit difference and the correct / empty / wrong-address swap.
 
 **GTM-SM read in full (Fraccaro et al. 2018, ar5iv, 11-23).**
 - **The model** has two latents per step:
@@ -2295,11 +2433,10 @@ References:
 5. **Knowing what it doesn't know** (Decision 5, opened 11-23; proposal above, undecided): readings from the start
    (surprise on arrival, learning progress, the world's own flow instability and inter-seed variance), validation
    before use, uses on triggers (dream trust, curiosity, change); ensembles only as an evaluation tool.
-6. **Memory beyond the frame and the episode** (Decision 6, opened 11-23; proposal above, undecided): Mamba keeps
-   nothing spatial beyond the view, not even last sightings (measured); a place memory of the world's own tokens (coarse
-   replaced, fine with its own time), exact inferred addresses with pose confidence, explicit age in a multi-timescale
-   code, relevance learned at retrieval, use forced by revisit pairs (GTM-SM's split); read by the denoiser and the act
-   tokens; dreams write to an overlay; reset with the episode in Classic, never on a robot.
+6. **Memory beyond the frame and the episode** (Decision 6, agreed 11-23; first test running): a place memory of
+   the world's own tokens at inferred addresses (odometry refined against the memory, with pose confidence); the
+   world's read per cell and the agent's read over all entries, trust learned at read time; writes from every real
+   frame, detail where the eye looked, dreams to an overlay; reset with the episode in Classic, never on a robot.
 7. **The fast channel:** how adapting in context is learnt (variation in training, scoped above).
 
 **Framing and judging:**

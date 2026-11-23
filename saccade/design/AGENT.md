@@ -1564,7 +1564,7 @@ use.**
    - **The trigger:** the hidden-rule benchmark shows adaptation too slow even with that replay. Then the candidate is
      per-module step-size adaptation (IDBD-like), on evidence.
 
-### Decision 6: memory beyond the frame and the episode (opened 11-23; agreed 11-23; location form agreed 11-23; its world-side test fails at localization 11-24)
+### Decision 6: memory beyond the frame and the episode (opened 11-23; agreed 11-23; the design locked 11-24, below)
 
 **What it is for: four jobs.**
 1. **Places beyond the frame, within an episode.** The world has to redraw what it has seen, in life (prediction) and
@@ -1580,6 +1580,98 @@ use.**
    - A hidden rule that persists across episodes would need a memory that survives the reset. RL² keeps its hidden
      state "preserved to the next episode, but not preserved between trials" (Duan et al. 2016).
    - A robot's life has no resets.
+
+**The design, locked 11-24 (the user: "this is a good design"; Codex agrees).** It supersedes every earlier
+location, address and read form in this decision. The test plan tests this design; it doesn't redefine it.
+
+The principle: the agent learns how its observations line up across time. Where it is, is a learned code, not
+coordinates. Memory does two jobs: it recalls what was seen, and it helps the agent find where it is. That is TEM's
+form (Whittington et al. 2020, read in full 11-24) in its attention version, TEM-t (Whittington, Warren & Behrens
+2022). Nothing in it is a grid, an integer address or a Craftax fact.
+
+1. **Self-motion, two inputs.**
+   - The command the agent issued: the intention.
+   - What the body sensed of the result, where the body senses motion: wheel odometry and an IMU on a robot; the
+     vestibular and proprioceptive senses in an animal; in Classic, a motion sensor reporting the displacement, which
+     is the command and whether it moved. A blocked command still turns the player, so the two are distinct facts.
+   - In dreams there is no sense, so the motion is predicted from the view and the command.
+2. **Location: a learned position code.**
+   - Path-integrated by a learned transition from the previous code, the command and the sensed (or, dreaming,
+     predicted) motion, with the current view as input.
+   - Corrected by memory: a learned recognition key of the new view retrieves the codes stored with matching entries.
+     A learned gate combines them with the path-integrated code, as TEM-t does (g = g_path + f(·)(g_retrieved -
+     g_path)).
+   - It may be approximate where precision isn't needed (recollection, the agent's read). It must express a precise
+     correspondence where the evidence supports one (drawing).
+3. **Entries: what was seen, anchored to where it was seen from.**
+   - Native tokens: every view cell's coarse token, and fine tokens where the eye looked.
+   - Each entry keeps its time, write confidence, context (lighting, the screen cell it was seen at, the glimpse's
+     crop position), a replay pointer and its source frame.
+   - Its location is its source frame's code composed with the cell's offset in that view, never an absolute address.
+   - An entry is written when it adds evidence: a new place, or new evidence about a familiar place (a new glimpse, a
+     changed cell), even when recognition says "same place" (Codex).
+4. **The trail, and repair.**
+   - Frames keep their relations to their neighbours: the relative motion between consecutive frames, and
+     recognitions between distant ones. That is keyframe SLAM's graph of frames (ORB-SLAM, read 11-24).
+   - A recognition is accepted only when it holds over a few frames: FAB-MAP needs "two or three corresponding images",
+     and ORB-SLAM3 verifies in three covisible keyframes.
+   - A confirmed return revises the affected stretch of the trail, spreading the error back along it. The entries move
+     with their frames, as ORB-SLAM's map points do: "each map point is transformed according to the correction of one
+     of the keyframes that observes it".
+   - When the agent is lost, it starts a fresh local trail and joins it to the old one once it recognises a place,
+     rather than writing into the wrong place (ORB-SLAM3's multi-map Atlas).
+5. **The world's read.**
+   - Each drawn cell's token attends over stored entries, keyed by their position code relative to the cell being
+     drawn and by content. The keys also carry age, confidence, provenance and context; the values are the entries'
+     tokens.
+   - There is a learned null slot, and the output is zero-initialised.
+   - One motion hypothesis serves the whole drawn view.
+6. **The teacher is the world's own prediction, causally.**
+   - Frame t is predicted from what is known before it: the command, the sensed motion when the body has it, and
+     memory read at the path-integrated code.
+   - Once frame t arrives, it corrects the location. The correction is judged by a later prediction or by withheld
+     evidence, never by redrawing the frame that made it (Codex).
+   - The recognition key also gets a direct signal from overlapping real views: the same place in consecutive frames,
+     and on returns the motion confirms. Otherwise a weak memory teaches the denoiser to ignore it (Codex).
+   - No simulator labels.
+7. **Embodiment is learned, not declared.**
+   - There is no mask. The player's own cell, the status rows and the night static are learned as carrying no evidence
+     of place, the same way the key must learn that the light doesn't identify a place.
+   - The brain learns to predict and cancel its own sensory input (Blakemore, Frith & Wolpert 1999), and retunes that
+     prediction within about 500 trials (Kilteni, Houborg & Ehrsson 2019). Robots learn which visual items their motors
+     control (Gold & Scassellati 2009).
+   - The rest of the agent still uses the body and status cues.
+8. **Dreams** use the same read, through the copy-on-write overlay. The motion is predicted, with one coherent motion
+   for the whole imagined view, and real entries are never overwritten.
+9. **Left to the test plan, with the reason for each:**
+   - **The code's form.** TEM-t's vector with learned transitions comes first. Codex's point stands: a continuous
+     vector still leaves the hard part, teaching what motion means. GTM-SM's 3-D walker needed displacement targets
+     for that.
+   - **The exact sensor in Classic.** Classic's motion sensor is exact, so awake path integration never drifts there,
+     and recognition and repair get little to learn from. They still matter in dreams, for the one-step prediction in
+     the dark, and on a robot whose odometry drifts. The plan has to make them earn their place: reading 3's injected
+     errors at least. Whether training sometimes withholds the motion sense, as real odometry fails, is the plan's
+     call.
+   - **The cost of the one-step motion error,** measured with the reader frozen: true against predicted motion
+     (Codex).
+10. **The grid localizer** (`20261123_located_memory/`) stays as a measured Classic baseline, with its sprite mask. It
+    is not the design.
+
+**What SLAM contributes (ORB-SLAM, ORB-SLAM3, DROID-SLAM, MASt3R-SLAM and Cadena et al.'s 2016 survey, read 11-24):**
+- **Split the fast and the slow work.** ORB-SLAM runs three threads: tracking every frame, local mapping, and loop
+  closing. Ours: path integration every step; writes and repair; recognition.
+- **Keep a metric relation between observations, not only place recognition.** Cadena et al.: "the metric information
+  makes place recognition much simpler and more robust", and the map is "a natural defense against wrong data
+  association and perceptual aliasing". That is why the design keeps a learned position code and relations between
+  frames, rather than a purely topological memory (SPTM, CSCG).
+- **Generous writes, strict pruning.** "Generous in the spawning but very restrictive in the culling", so the map
+  "only grows if the scene content changes". That is the capacity rule for later.
+- **Verify before trusting a recognition:** geometric consistency and agreement across several frames. Wrong loop
+  closures "can severely corrupt" the map.
+- **Lost is a state, not an error:** start a new map and merge it later (ORB-SLAM3).
+- **Motion senses help:** a visual-inertial system recovers short losses from the IMU alone, and loses track less.
+- **Learned SLAM front ends** (DROID-SLAM's learned correspondence and differentiable bundle adjustment) are trained
+  on ground-truth poses. Our recognition key has to learn without them.
 
 **What the environment demands** (October's EDA, simulator replay, `20261023_system_design/OPTION3_NOTES.md`):
 - **Re-entries:**
@@ -1877,7 +1969,7 @@ precedents, the end-to-end flow, the readers, updating.**
   - **Memory Forcing's balance,** as a reading: new-place quality must not fall;
   - **EPM's "score before the new observation writes".**
 
-**The end-to-end flow.**
+**The end-to-end flow.** *Its "Locate" and "Read" steps are superseded 11-24 by the locked design above.*
 
 *Awake, one real step (frame t):*
 1. **Perceive:** the coarse tokens of the whole view and the lighting.
@@ -1954,7 +2046,8 @@ time, trust is learned from what each entry carries.
 - **Age:** explicit write times. Codex suggests starting with log age, which our 21-feature read in the running test
   does (presence, log age, three decays). A richer multi-timescale code has to earn its place.
 
-**Updating and pose errors (the user: "is it based on the record's position?").**
+**Updating and pose errors (the user: "is it based on the record's position?").** *Superseded 11-24 where it differs from
+the locked design above: no absolute addresses.*
 - **Not the record's.** The record is fixed to the screen. The place memory's address is the agent's inferred world
   position plus the cell's offset.
 - **If the pose is wrong,** writes land at wrong addresses. Four things limit that:
@@ -1977,7 +2070,8 @@ time, trust is learned from what each entry carries.
 fine-tune of P1.5. On hard revisits after 2-16 steps, at 4,000 updates, the world draws the cell right 0.927 of the
 time with the correct entry, against 0.310 with none and 0.307 with a shifted one (0.924 at 17-64 steps).
 
-**The location form agreed 11-23, as built for the world's side (`20261123_located_memory/`):**
+**The grid reference: a measured Classic baseline, not the design (`20261123_located_memory/`).** It was built 11-23
+as the agreed form's test, on a grid the plan introduced:
 - **Self-location:** Markov localization on the agent's own grid at the sensor's resolution (Fox, Burgard & Thrun
   1999), trained label-free.
   - A motion prior from the current view and the command (the same head dreams use) predicts the pose.
@@ -1986,7 +2080,7 @@ time with the correct entry, against 0.310 with none and 0.307 with a shifted on
   - **Not as agreed: the match.** The agreed match was a learned heavy-tailed score whose width grows with the entry's
     age. That was the first localizer. The fifth and sixth replace it with a closed-form match calibrated from the
     agent's own data: binary evidence and no age term, with nothing in it learned. Those changes were made overnight
-    11-24 and are pending the user's review (`20261123_located_memory/PLAN.md`).
+    11-24, without review (`20261123_located_memory/PLAN.md`).
   - **Not as agreed: the read's reach.** The agreed read reached within two cells. The PLAN narrowed it to 3 × 3 with
     no reason recorded. With the fifth localizer that loses 1.2 points of reach (0.546 against 0.558).
 - **Not yet measured:** the design's own judges, readings 1 (revisits drawn with the agent's own addresses), 3 (return
@@ -1998,9 +2092,9 @@ time with the correct entry, against 0.310 with none and 0.307 with a shifted on
   slot. The keys are an MLP of the whole entry: content, context, age codes, confidences, offset, the current pose's
   confidence. The address comes from the motion prior, before the frame is seen.
 - **Dreams** read the same way, through a copy-on-write overlay.
-- **The agent's cell is declared an embodiment fact** (11-24). The agent's own sprite is neither matched nor
-  written: it moves with the sensor, and it biased the first two localizers toward "no motion" (about 30 nats; +27.5
-  at night). The user may veto this.
+- **The agent's cell is masked** (11-24). The sprite is neither matched nor written. It moves with the sensor, and it
+  biased the first two localizers toward "no motion" (about 30 nats; +27.5 at night). The mask stays in this
+  baseline as measured; the design has none (the user, 11-24).
 
 **Its result (11-24): not working yet; the chain breaks at localization** (`20261123_located_memory/RESULTS.md`).
 - Five localizers, each diagnosed and amended before its successor's result. The best finds the right entry on 0.438
@@ -2020,7 +2114,12 @@ time with the correct entry, against 0.310 with none and 0.307 with a shifted on
   periods, Fisher's within-class scatter, as Fisherfaces use it against illumination (Belhumeur, Hespanha & Kriegman
   1997). As the match's metric, it raises same-cell matching across a large lighting change from 0.018 to 0.864.
   Chance matches rise from 0.010 to 0.345, which FAB-MAP's new-place term is there to discount.
-- Readings 1, 3 and 4, with the best localizer, are running.
+- **The sixth localizer** (that metric, 11-24) reaches 0.584 lookups on the full panel. Of the lookups it still
+  loses on the diagnosis episodes:
+  - 25 points have the address predicted wrong before the frame, about 80% of them in the dark, where the motion
+    prior can't see whether a move will be blocked;
+  - 18 points have the address right but the entry stored elsewhere, mostly after long gaps and big light changes.
+- Readings 1, 3 and 4 with the fifth localizer are this baseline's remaining measurements.
 
 **GTM-SM read in full (Fraccaro et al. 2018, ar5iv, 11-23).**
 - **The model** has two latents per step:
@@ -2101,7 +2200,7 @@ time with the correct entry, against 0.310 with none and 0.307 with a shifted on
      Our record already follows that principle.
    - How much an old entry is worth (terrain lasts, a zombie moves) is learned by the reader.
 5. **Exact or vague addresses: exact for drawing, vague where the agent decides. Codex measured it, and I withdraw
-   the soft key.**
+   the soft key.** *Superseded 11-24 by the locked design: a learned position code, read by attention.*
    - Corrected 11-23: what was measured is a fixed position-only weighting over a radius-1 neighbourhood. A learned
      read was never measured, and nor were its keys (relative location, content, age, confidence).
    - The choice rested on a Craftax fact (exact grid motion). The user reopened it 11-23.
@@ -2142,7 +2241,8 @@ time with the correct entry, against 0.310 with none and 0.307 with a shifted on
        copy is discarded.
    - **A robot doesn't reset any of them.** Its place memory lasts its life, with consolidation and pruning later.
 
-**Revised again (11-23, with Codex):**
+**Revised again (11-23, with Codex):** *Its "the denoiser reads exactly, at the cell's address" is superseded 11-24 by the
+locked design above.*
 - **Relevance is learned at retrieval first; write strength is deferred.**
   - Codex's entry-deletion audit (reproduced): in 216 of 1,275 routes to off-screen water, deleting one grass or path
     cell removes every route while deleting the water leaves another.

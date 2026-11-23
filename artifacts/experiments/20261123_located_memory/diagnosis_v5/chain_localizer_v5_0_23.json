@@ -1,0 +1,122 @@
+{
+ "episodes": [
+  0,
+  23
+ ],
+ "ckpt": "localizer_v5.pt",
+ "merged_from": [
+  "chain_localizer_v5_0_6.json",
+  "chain_localizer_v5_6_12.json",
+  "chain_localizer_v5_12_18.json",
+  "chain_localizer_v5_18_23.json"
+ ],
+ "moved_day": {
+  "n": 2285,
+  "prior_ok": 0.9142231947483589,
+  "post_ok": 0.9676148796498906,
+  "match_win": 0.9396061269146608,
+  "match_tie": 0.036323851203501095,
+  "match_lose": 0.024070021881838075,
+  "support_mean": 51.91466083150985,
+  "consistent_share_mean": 0.9236449221495584,
+  "post_wrong": {
+   "n": 74,
+   "match_win": 0,
+   "match_tie": 33,
+   "match_lose_map_consistent": 22,
+   "match_lose_map_inconsistent": 19,
+   "jumps": 3,
+   "support_zero": 0
+  }
+ },
+ "moved_dark": {
+  "n": 1516,
+  "prior_ok": 0.5996042216358839,
+  "post_ok": 0.6879947229551451,
+  "match_win": 0.6563324538258575,
+  "match_tie": 0.0712401055408971,
+  "match_lose": 0.27242744063324537,
+  "support_mean": 46.02704485488127,
+  "consistent_share_mean": 0.914820717452561,
+  "post_wrong": {
+   "n": 473,
+   "match_win": 26,
+   "match_tie": 47,
+   "match_lose_map_consistent": 227,
+   "match_lose_map_inconsistent": 173,
+   "jumps": 66,
+   "support_zero": 0
+  }
+ },
+ "blocked_day": {
+  "n": 567,
+  "prior_ok": 0.8659611992945326,
+  "post_ok": 0.9717813051146384,
+  "match_win": 0.544973544973545,
+  "match_tie": 0.4514991181657848,
+  "match_lose": 0.003527336860670194,
+  "support_mean": 34.84303350970018,
+  "consistent_share_mean": 1.0,
+  "post_wrong": {
+   "n": 16,
+   "match_win": 0,
+   "match_tie": 15,
+   "match_lose_map_consistent": 1,
+   "match_lose_map_inconsistent": 0,
+   "jumps": 15,
+   "support_zero": 0
+  }
+ },
+ "blocked_dark": {
+  "n": 278,
+  "prior_ok": 0.9100719424460432,
+  "post_ok": 0.9532374100719424,
+  "match_win": 0.44244604316546765,
+  "match_tie": 0.5215827338129496,
+  "match_lose": 0.03597122302158273,
+  "support_mean": 29.881294964028775,
+  "consistent_share_mean": 1.0,
+  "post_wrong": {
+   "n": 13,
+   "match_win": 0,
+   "match_tie": 8,
+   "match_lose_map_consistent": 5,
+   "match_lose_map_inconsistent": 0,
+   "jumps": 10,
+   "support_zero": 0
+  }
+ },
+ "lookups": {
+  "prior_ok_n": 11959,
+  "prior_ok_at": 6887,
+  "prior_ok_near": 7188,
+  "prior_ok_stored": 10732,
+  "prior_wrong_n": 4091,
+  "prior_wrong_at": 0,
+  "prior_wrong_near": 1581,
+  "prior_wrong_stored": 3590
+ },
+ "lookups_misplaced_distance": {
+  "prior_ok_1": 301,
+  "prior_ok_2": 104,
+  "prior_ok_3": 113,
+  "prior_ok_4": 76,
+  "prior_ok_5": 37,
+  "prior_ok_6": 3214,
+  "prior_wrong_1": 1581,
+  "prior_wrong_2": 79,
+  "prior_wrong_3": 37,
+  "prior_wrong_4": 17,
+  "prior_wrong_5": 25,
+  "prior_wrong_6": 1851
+ },
+ "lookup_summary": {
+  "n": 16050,
+  "exact": 0.42909657320872274,
+  "within_read_reach": 0.5463551401869159,
+  "prior_right_share": 0.7451090342679128,
+  "exact_given_prior_right": 0.5758842712601389,
+  "stored_anywhere": 0.8923364485981309,
+  "misplaced_6plus": 0.31557632398753893
+ }
+}

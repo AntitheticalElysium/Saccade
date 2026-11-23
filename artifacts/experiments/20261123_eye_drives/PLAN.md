@@ -34,3 +34,19 @@ category's share of windows on the same frames (a lift over uniform), split by d
 ## Run
 
 `JAX_PLATFORMS=cpu MAMBA_DETERMINISTIC=1 .venv/bin/python -m artifacts.experiments.20261123_eye_drives.eye_drives`
+
+## Second reading: the world's own precision-weighted foveal surprise (added 11-23, before any reading of it)
+
+The first reading shows the chooser's raw surprise losing selectivity at night: entity lift 4.32 by day, 2.04 at
+night; static-map lift 0.54 by day, 0.77 at night. The companion question is whether a signal the system already
+computes avoids the static.
+
+The signal is the trans-saccadic prediction's NLL under the faithful pixel decoder, whose scale reads lighting and
+position. It scores how much the full-resolution crop at a window departs from what the predicted belief, the
+periphery and the lighting predicted. That is the information a look would add, precision-weighted, as in Itti &
+Baldi's Bayesian surprise (belief change, not rarity). The raw-error companion is the same prediction's MSE.
+
+- **Setup:** the same frames and categories. For every window, `model.tsp.predict(bp, p, v, cells)` and
+  `model.pixels`, scored against the real crop pixels.
+- **Reading:** the lift of NLL and of MSE per category, by day and night; and the share of frames whose argmax window
+  covers a creature when one is in view, against uniform.

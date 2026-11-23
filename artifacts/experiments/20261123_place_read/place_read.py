@@ -280,7 +280,7 @@ def evaluate(update, smoke=False):
                         p0, p1 = L["s_pos"][so[e] + t].astype(int), L["s_pos"][so[e] + t + 1].astype(int)
                         for k in range(MAP):
                             wr, wc = p1[0] + KR[k].item(), p1[1] + KC[k].item()
-                            newc[b, k] = abs(wr - p0[0]) > 3 or abs(wc - p0[1]) > 4
+                            newc[b, k] = bool(abs(wr - p0[0]) > 3 or abs(wc - p0[1]) > 4)
                     alt = torch.zeros_like(q) if v == "empty" else torch.stack([wrong[e][t + 1] for e, t in batch])
                     q = torch.where(newc[..., None], alt, q)
                 den.place_input = rep(q)[:, None]
@@ -332,7 +332,7 @@ def cells(L, so, rows, drawn, rterr):
                         group = "first" if gap is None else next(f"{lo}-{hi}" for lo, hi in PM.BUCKETS if lo <= gap <= hi)
                         rec["episode"].append(int(e)); rec["group"].append(group)
                         rec["context"].append("predictable" if real[i, j] == real[ii, jj] else "surprising")
-                        rec["cls"].append(int(real[i, j])); rec["agree"].append(float((drawn[(e, t)][:, i, j] == real[i, j]).float().mean()))
+                        rec["cls"].append(int(real[i, j])); rec["agree"].append(float((np.asarray(drawn[(e, t)])[:, i, j] == real[i, j]).mean()))
     return {k: np.asarray(v) for k, v in rec.items()}
 
 
@@ -340,7 +340,8 @@ def smoke():
     """A 30-update fine-tune into run_smoke/ and the zero-read equivalence: at update 0 the read is inert."""
     global RUN
     RUN = HERE / "run_smoke"
-    train(updates=30, saves=(30,))
+    if not (RUN / "denoiser_30.pt").exists():
+        train(updates=30, saves=(30,))
     evaluate(0, smoke=True)
     evaluate(30, smoke=True)
 

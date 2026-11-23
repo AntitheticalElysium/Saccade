@@ -1824,6 +1824,141 @@ depends on it teaches the choice wrong things: that the table it built vanishes,
      its clocks from the record because the record is read at the cell (swap 0.99). P1.6's foveal record went unread
      because what it held was rarely at the cell being predicted.
 
+**GTM-SM read in full (Fraccaro et al. 2018, ar5iv, 11-23).**
+- **The model** has two latents per step:
+  - a content latent z (16 or 64 numbers, the VAE latent its decoder renders from);
+  - a low-dimensional position state s (2-D; 3-D with orientation).
+- **Position:** s is dead-reckoned from actions by a learned, nearly deterministic transition (noise 10^-3 to 10^-2),
+  never supervised by true positions. It learns its own coordinates, "rotated and stretched with respect to the
+  ground truth one". There is no correction from what is seen in the main model; the appendix proposes one, tested
+  only on an obstacle task.
+- **Storage:** the (s, z) pairs, as their means and variances, written every step of an observation phase, append
+  only. No overwriting, eviction or time stamp: the worlds are static.
+- **Reading:**
+  - the K nearest stored states (K = 5 or 4) with weights proportional to 1 / (d² + 10^-4), a fixed kernel, mixed
+    into the prior for z;
+  - in 3-D, a learned network over the retrieved set instead, because "it is not reasonable to assume that during
+    the memorization phase the agent will pass in all positions".
+- **What forces the memory to be used:** training splits each sequence into an observation phase (frames and actions,
+  writing the memory) and a prediction phase (actions only). The ELBO is summed over prediction steps only, so the
+  frames there can come only from memory. "This shows that it has learned to store all relevant information".
+- **Results** are qualitative, with no baselines or ablations: coherent generation up to 471 steps in 2D and 300 or
+  more in 3-D. It "fails to render the objects".
+- **What it teaches us:**
+  - store in the generator's own latent space;
+  - key by an inferred position;
+  - read the nearest entries;
+  - force use by predicting what only memory can supply.
+- **What it doesn't address:** moving or changing content, drift, revisit handling, capacity.
+
+**The user's questions (11-23), answered with the reading.**
+1. **What is stored: the world's own tokens, from the same encoders.**
+   - Per world cell, the latest coarse token (the periphery encoder's 16 numbers), and, where the eye looked, the
+     latest fine tokens for that cell (the fovea encoder's).
+   - These are what the denoiser already predicts, so a revisit's prediction can draw directly on what was stored.
+     That is GTM-SM's choice and WorldMem's "clean latents".
+   - Not pixels, and not a separate memory encoder at first. Codex's payload audit (reproduced): the last-seen coarse
+     token identifies 98.1% of revisited terrain.
+   - Within a training chunk the read's gradient reaches the encoders through the stored token, so they can learn to
+     make recallable tokens.
+2. **Replaced or added:**
+   - **Coarse:** the newest observation replaces the old. It is a complete low-resolution view of the cell, and the
+     newest is the best evidence. Terrain on revisits is stable (S3), and when it changed the newest is right.
+   - **Fine:** kept separately with its own time and replaced only by a newer glimpse of that cell.
+     - A newer coarse view doesn't erase it; the reader sees both ages.
+     - Where the newer coarse view contradicts it, it is marked stale (Codex).
+   - **The brain:**
+     - working memory holds a few integrated objects, about four (Luck & Vogel 1997, debated);
+     - object files keep an object's identity across views and are updated when it is seen again (Kahneman,
+       Treisman & Gibbs 1992);
+     - scene memory accumulates attended detail across fixations, bound to positions (Hollingworth & Henderson
+       2002);
+     - retrieval makes a memory labile and updatable (reconsolidation, Nader, Schafe & LeDoux 2000);
+     - similar inputs update one trace (pattern completion) and different inputs make a new one (separation), in CA3
+       and the dentate gyrus (Yassa & Stark 2011; Knierim & Neunuebel 2015).
+
+     So: update when the same thing is seen again, keep attended detail until contradicted.
+   - **Humans don't store glimpses as images.** Transsaccadic memory holds little detail and is visual working
+     memory itself (Irwin 1991). What lasts is object and feature representations bound to places, at the level of
+     gist and of attended detail. Our per-cell tokens with their positions are the same idea at our resolution.
+3. **Sequences or frames?**
+   - **Both, in different memories.**
+     - Episodes are segmented into events, with hippocampal encoding at event boundaries, reinstated at recall
+       (Baldassano et al. 2017).
+     - Items are linked by a drifting temporal context (Howard & Kahana 2002).
+     - Places are held as a map (place cells), and sequences are replayed.
+   - **Ours maps onto that:**
+     - the place memory is the map: entries per place, not sequences;
+     - the sequences live in the replay buffer (real episodes, replayed in order) and in Mamba's working memory;
+     - an event-keyed episodic memory, what happened and in what order, belongs to the fast channel (Decision 7).
+4. **Age: the time is explicit, its meaning learned.**
+   - Each entry stores its write time. The agent knows it exactly, so there's nothing to learn.
+   - The reader receives the age through a fixed multi-timescale code: decaying and rotating modes, like the record's
+     S4D basis.
+   - The brain codes elapsed time as a drifting temporal context. Lateral entorhinal population activity encodes
+     time from seconds to hours (Tsao et al. 2018), and recall follows contextual similarity (Howard & Kahana 2002).
+     Our record already follows that principle.
+   - How much an old entry is worth (terrain lasts, a zombie moves) is learned by the reader.
+5. **Exact or vague addresses: exact for drawing, vague where the agent decides. Codex measured it, and I withdraw
+   the soft key.**
+   - On 25,371 real revisits, the exact estimated cell holds the right entry 97.2% of the time.
+   - A radius-1 search adds only 0.6 points, while always bringing in wrong neighbours: 5.9 candidates, with 28.5% of
+     a position-only weight on the right one.
+   - Blending neighbours into a drawn cell is hedging, the very mechanism of the day coin.
+   - Fourier similarity also has small distance-order reversals at our frequencies.
+   - **So:** an explicit inferred address with a pose confidence, read exactly when the pose is reliable and widened
+     when not, with one displacement hypothesis for the whole view.
+   - **The vagueness the user wants lives elsewhere:**
+     - in how the agent uses memory: a rough direction to water is enough to choose a way and look again;
+     - in the pose's uncertainty;
+     - in what it forgets.
+
+     The brain's version: place fields are sharp in familiar places, and memory for location is categorical and
+     biased (Huttenlocher, Tversky).
+6. **"If the store says lava at X and the world draws it one tile off, is it penalised, and will it learn to distrust
+   the store?"**
+   - **If the store is right, yes, and it should be.** The real frame has the lava at X, so drawing it at X + 1 is a
+     world error, a miss and a false cell. The loss doesn't weigh decision relevance, and a general world learns
+     everything it is shown.
+   - **Trust is learned from how often the store is right.**
+     - With action-constrained odometry the address is right 97.2% of the time, so trusting it lowers the loss and
+       the world learns to trust it.
+     - Where it is less reliable (low pose confidence, old entries, stale fine entries, dream-written entries), the
+       reader should trust it less. That is calibration, not distrust, and it needs those signals in the entry: age,
+       pose confidence, provenance.
+     - Without them the world could only learn one average trust, too low where the store is reliable.
+   - **In dreams there is no penalty:** the world never trains on its dreams.
+7. **Resets.**
+   - **In Classic everything tied to the episode resets at its end:** the belief, the record and the place memory.
+     The next episode is a different world (all 1,009 DEV episodes start in distinct worlds).
+   - **Within an episode the place memory persists across every frame and every dream.**
+     - Dreams copy the belief, the record and the place memory at their start.
+     - The dream's belief and record evolve with the dreamed frames, as working memories do.
+     - The dream's copy of the place memory only gains overlay entries (new places, action-caused changes), and the
+       copy is discarded.
+   - **A robot doesn't reset any of them.** Its place memory lasts its life, with consolidation and pruning later.
+
+**Revised again (11-23, with Codex):**
+- **Relevance is learned at retrieval first; write strength is deferred.**
+  - Codex's entry-deletion audit (reproduced): in 216 of 1,275 routes to off-screen water, deleting one grass or path
+    cell removes every route while deleting the water leaves another.
+  - An entry's value depends on the route, the alternatives and the goal, so a fixed class ordering is the wrong
+    judge, and that judge is withdrawn.
+  - Encoding is still selective, through the eye: fine detail is written only where the eye looked, and the eye looks
+    where its drives say it matters. That is the user's lava point, delivered by attention, the brain's main gate on
+    encoding. A learned write strength comes on a capacity trigger.
+- **Training forces use, as GTM-SM's observation and prediction split does:**
+  - within chunks, the read's gradient reaches the write (78.0% of coarse revisit reads share a 256-frame chunk with
+    their write; 56.8% of all coarse revisits also have a prior fine write in the chunk, Codex);
+  - across chunks, replay supplies pairs: an earlier observation re-encoded with current weights as the entry, and the
+    loss on its revisit flowing into it (Codex).
+- **Two reads:**
+  - the denoiser reads exactly, at the cell's address;
+  - the act tokens read by content and location, off-screen included.
+- **What it stores: the coarse token (replaced), fine tokens with their own time (replaced by newer glimpses, marked
+  stale by contradicting coarse views), the write times, pose confidence and provenance.**
+
+**The earlier form (11-23, kept for the record; superseded where the block above revises it):**
 **Proposed (undecided, revised again 11-23): one learned place memory, taught by its reads.**
 1. **An entry, written each real frame for each cell in view:**
    - **key:** the agent's inferred location at that moment plus the cell's offset, encoded as a soft code. The
@@ -2161,9 +2296,10 @@ References:
    (surprise on arrival, learning progress, the world's own flow instability and inter-seed variance), validation
    before use, uses on triggers (dream trust, curiosity, change); ensembles only as an evaluation tool.
 6. **Memory beyond the frame and the episode** (Decision 6, opened 11-23; proposal above, undecided): Mamba keeps
-   nothing spatial beyond the view (measured); one learned place memory, keyed by a soft code of the inferred location,
-   content and salience taught by its reads (the world's revisits now, decisions later), read by the denoiser and the
-   act tokens; dreams write to an overlay; cleared at Classic's resets.
+   nothing spatial beyond the view, not even last sightings (measured); a place memory of the world's own tokens (coarse
+   replaced, fine with its own time), exact inferred addresses with pose confidence, explicit age in a multi-timescale
+   code, relevance learned at retrieval, use forced by revisit pairs (GTM-SM's split); read by the denoiser and the act
+   tokens; dreams write to an overlay; reset with the episode in Classic, never on a robot.
 7. **The fast channel:** how adapting in context is learnt (variation in training, scoped above).
 
 **Framing and judging:**

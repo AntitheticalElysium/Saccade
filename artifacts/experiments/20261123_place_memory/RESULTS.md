@@ -226,3 +226,65 @@ imagined places over them. Testing the consistency and use of those changes is
 separate from this audit.
 
 Reproduce with `.venv/bin/python -m artifacts.experiments.20261123_place_memory.dream_write_audit`.
+
+## Address precision and how often reads can teach their writes (11-23)
+
+`place_keys_audit.py` extends the geometry-only lookup audit on 8,000 real-rendered
+simulator forks. On 25,371 true revisits, a query looks up the exact estimated cell or
+its square neighbourhood of radius 1 or 3. It scores identity independently of
+terrain class, and checks only memory written before the new observation. The Gaussian
+column is a position-only reference with unit standard deviation normalized over the
+known entries. It illustrates mixing and does not approximate learned attention scores.
+
+| Action-constrained pose | Correct identity in candidates | Wrong identity also present | Mean candidates | Mean position-only mass on correct identity |
+|---|---:|---:|---:|---:|
+| Exact lookup | 97.20% | 1.82% | 0.99 | 97.20% |
+| Radius 1 | 97.81% | 100% | 5.92 | 28.51% |
+| Radius 3 | 97.81% | 100% | 23.51 | 23.66% |
+
+For the noisier unconstrained reader, candidate recall is 86.65% / 93.09% / 96.36%.
+A broader search is more useful where localization is worse. With exact pose the
+Gaussian mass on the correct entry is 29.15% at radius 1 and 24.20% at radius 3.
+Real memory retrieval can use content and contextual evidence to disambiguate.
+
+For the current `f_space` frequencies, equal-amplitude Fourier keys give axial
+cosine 0.4692 at displacement 5 and 0.4727 at displacement 6. Relative rotations
+compose, while similarity alone has small ordering reversals in the measured range.
+This concerns unlearned positional similarity and leaves trained queries open.
+
+**Training chunk coverage.** From 84,901 coarse revisits of the same 120 DEV
+episodes as the place test, 73.39% have age at most 64. With uniformly random chunk
+phase, a gap g fits inside a length L chunk with probability `max(1 - g/L, 0)`.
+The mean is **52.46%** at 64 steps and **77.97%** at 256. Independently, on the 118
+competent DEV episodes with archived chooser probabilities, four sampled fixation
+histories per episode give fine memory for **78.63%** of 62,854 coarse revisits.
+Of all coarse revisits, **31.09%** at 64 steps and **56.83%** at 256 have a prior fine
+write in the same chunk under the same phase calculation. These are opportunities,
+conditional on the proposed trainable read/write graph and its actual loss.
+
+**Moving targets.** Reproduced the belief-map test strata at 1,756 zombie and
+4,824 cow targets. The same entity has a different eight-sector direction at query
+time versus its last observed position in **12.98%** of zombie and **21.27%** of cow
+cases. Exact positions change in 54.67% and 88.43%. These label comparisons
+distinguish predicting hidden motion from retrieving the last observation.
+
+Reproduce with `.venv/bin/python -m artifacts.experiments.20261123_place_memory.place_keys_audit`.
+
+## Context-dependent value of a single place entry (11-23)
+
+`path_entry_value.py` takes the 1,275 verified off-screen water routes from the
+32-step known-layout diagnostic. At each start, take the first shortest path.
+Separately remove its target water cell or remove one remembered walkable cell
+along that path, keeping the current observation and all other memory fixed.
+Replan after each deletion. Among 1,204 qualifying paths with some off-screen
+walkable cells, **228** have at least one such cell whose removal eliminates
+all qualifying routes. In **216** of those cases, deleting the selected water
+cell still leaves another route. The first pivotal tile is grass in 37 and
+path in 179 of those cases.
+
+This compares the existence of an important walkway in the selected route with
+redundancy of the selected water target; it is not an average over all cells of
+either class. It is a counterexample to evaluating learned salience by a fixed
+class ordering. The diagnostic uses exact observations and ignores creatures.
+
+Reproduce with `.venv/bin/python -m artifacts.experiments.20261123_place_memory.path_entry_value`.

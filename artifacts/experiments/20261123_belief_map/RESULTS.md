@@ -55,3 +55,21 @@ Plan and code: `PLAN.md`, `belief_map.py` (commits 5249bab0, the mob fix, and th
 - One checkpoint.
 - Decoding probes show information present, not its use.
 - The control probes read 1,304 current-view numbers against the belief's 256.
+
+## Last-seen mob targets (added after the first reading, Codex)
+
+The first mob targets were where the creature is now, which mixes memory of the sighting with predicting its motion
+(the direction changed in 13.0% of zombie and 21.3% of cow cases). The direction to where the same creature was last
+seen, with the same probes:
+
+| Target | Test frames | Majority | Belief [95%] | Current view | Belief - view [95%] |
+|---|---:|---:|---:|---:|---:|
+| Zombie, last seen | 1,756 | 0.160 | 0.149 [0.120, 0.184] | 0.188 | -0.039 [-0.075, -0.007] |
+| Cow, last seen | 4,824 | 0.123 | 0.119 [0.108, 0.133] | 0.205 | -0.085 [-0.111, -0.063] |
+
+The belief doesn't keep where it saw a creature either. All the map readings above reproduce exactly in this rerun.
+
+**On water's log-distance R² of 0.13 from the belief (Codex):** the current view alone gives 0.30 on the same frames,
+so the belief's partial distance signal is most simply current-view context passed through Mamba's input, not
+memory. The probes can't rule out information present in a form they don't read; the positive controls show they
+read the HUD and adjacency.

@@ -982,27 +982,69 @@ by part, in one system:**
      - the feedback loop that made P1-F2 mixed (the eye shapes the world's data, the world's state shapes the eye) is
        bounded by the floor, and read in the run (coverage by category, day and night);
      - the alternative, a fixed uniform eye during watching, is not the agent.
-   - **What this means for P1 (the user asked, 11-23): the agent is in the world's training from its first frame.**
-     - There is no P1-then-agent and no uniform-gaze P1. The new run is watching: one run in which the world, the
-       agent tokens (look and act) and their heads all train on the corpus.
-     - **Per update**, the structure P1.5 already has:
-       1. a no-gradient pass over the chunk's coarse frames, in which the look tokens choose each frame's window
-          (P1.5's chooser does the same today in `Controller.prepare`, before its training pass);
-       2. the training pass on those crops: the P1 world losses; imitation of expert-flagged actions by the act
-          tokens, which read that frame's glimpse; and the look's information drive (one extra belief step with the
-          periphery-acuity crop at the chosen window), plus the chosen glimpse's gain on the demonstrated action.
+   - **What this means for P1: pretraining the world and the eye, then watching adds the motor choice (revised
+     11-23, the user's proposal).**
+     - **My first answer bundled everything into one run from the first frame. Its only real argument was the eye,
+       and the eye doesn't need it.**
+       - The act tokens read the world one way, with gradients stopped (Decision 1), so they never change it. Training
+         them from the first frame buys the world nothing and spends compute on features that are still moving.
+       - The look does change the world, because it picks which crops train the trans-saccadic and fovea losses. But
+         its information drive needs no actions, rewards or task: only the belief with and without the fine crop. So
+         the eye can learn in pretraining, which is the user's point.
+     - **The general schedule, the modern pipeline:**
+       1. **Pretraining, the foundation:** perception, record, belief, denoiser, the outcome heads where rewards
+          exist, and the look by its information drive.
+          - Data: anything that shows the world. On Classic that is the corpus. For a robot it is video, with actions
+            where they exist and a learned "no action" embedding otherwise. Dreamer 4 does this and needs actions for
+            little of its 2,541 hours: with 100 hours of actions it reports 85% PSNR and 100% SSIM "compared to a
+            model trained with all actions". Latent actions are the other route (Genie, LAPO, DreamDojo).
+          - Saccade's belief update takes an action, a reward and a termination, so unlabelled data needs that
+            missing-data contract (Codex). Classic needs none.
+       2. **Watching, the body and the task:** the act tokens and imitation join, the look gains the demonstrated-
+          action term, and the world's losses continue.
+          - This is Dreamer 4's phase 2 ("finetune world model with task inputs"), V-JEPA 2-AC's post-training on 62 h
+            of robot video, DreamDojo's target-robot post-training and Cosmos's post-training.
+          - Dreamer 4's imitation policy initialised from the pretrained world beats imitation without it.
+       3. **Life:** living and dreaming (Decision 4).
+       - On Classic, both stages read the same corpus, as Dreamer 4's phases read the same dataset.
+     - **Per pretraining update**, as P1.5 has today:
+       1. a no-gradient pass in which the look tokens choose each frame's window (P1.5's chooser does this in
+          `Controller.prepare`);
+       2. the training pass on those crops, with the look's information drive: one extra belief step with the
+          periphery-acuity crop.
+     - **That look pass is sequential across the chunk** (Codex). The eye reads the belief, and the belief holds the
+       last glimpse, so the look at frame t waits for the crop at t - 1. The chooser could batch the chunk because it
+       read only coarse history.
+       - Measured on frozen P1.5 (`20261123_step_costs/RESULTS.md`): the streaming calls are latency-bound, about 37
+         ms per frame at 1 or 16 streams.
+       - A 256-frame look pass costs +122% of P1.5's update at 16 streams, or +44% when it runs 64 streams at once
+         (four updates' looks, the look policy lagging by up to three updates, with its probabilities logged).
+       - CUDA graphs or compilation could cut the launch overhead; unmeasured.
+       - This is the price of an eye with memory, whenever it learns. Every active-vision learner generates its
+         glimpse sequence step by step (Mnih et al. 2014; Grimes et al. 2023).
+       - A batchable alternative exists: an eye reading only what doesn't depend on its earlier crops (the coarse
+         view, the record, the belief at the chunk's start). It is not the eye that lives, so it stays a fallback if
+         the cost is prohibitive.
      - **Early on** the look tokens are untrained, so the looks are near-uniform by themselves (with the 0.2 / 49
-       floor). The uniform start we discussed happens, but only while the eye knows nothing, and then the eye takes
-       over.
-     - **Why not Dreamer 4's staging** (world first, agent tokens added after): its world's data doesn't depend on its
-       agent. Ours does, because the look picks which crops train the trans-saccadic and fovea losses. Staging would
-       train the world under one eye and then live with another.
+       floor). The uniform start happens only while the eye knows nothing.
+     - **It mirrors infant development** (an analogy, with verified sources):
+       - early eye movements are mostly reflexive and subcortical, and voluntary saccades mature later (Johnson 1990;
+         the timing is debated);
+       - at 7-8 months, infants look away from sequences an ideal learner finds too predictable or too unpredictable
+         (Kidd, Piantadosi & Aslin 2012);
+       - saccadic latency, looking time and engagement follow surprise, predictability and learning progress (Poli et
+         al. 2020). That is an information drive before any task;
+       - goal-directed gaze comes with action: 12-month-olds look ahead to an observed action's goal and 6-month-olds
+         don't (Falck-Ytter et al. 2006). 3-month-olds given reaching experience start attending to others' goals
+         (Sommerville, Woodward & Needham 2005);
+       - machine precedent: a camera policy rewarded only by its own predictor's error developed a "behavioral fovea"
+         (Grimes et al. 2023).
+
+       So: information first (pretraining), others' goals while watching, its own relevance in life. Newborns also have
+       innate salience. Ours starts uniform: emergent rather than built in.
      - **What goes away:** the chooser, its surprise and contingency head, and its separate network.
-     - **Cost:** the look pre-pass reads the denoiser's coarse-frame computation rather than a small head, plus the
-       imitation and one belief step. Unmeasured; it is the first build measurement. For scale, P1.5 (chooser) took
-       15.3 h and P1.6 16.6 h for 25.6 M frames.
-     - It is a new world run: P1.5 can't be reused, because the eye, the outcome heads (pre-look) and the learning
-       rate schedule (Decision 4) all change.
+     - It is a new world run: P1.5 can't be reused, because the eye, the pre-look outcome heads and the learning rate
+       schedule (Decision 4) all change.
    - **Trigger:** if the eye still misses night creatures in the run, look at content-aware precision or predictive
      gain. The 10-31 pitfall applies: learned content-dependent variance made the pixel decoder digit-blind.
 5. **Order (the user, 11-23):** watch, then dream and live interleaved, on the fly, with dreaming possible before the
@@ -1023,7 +1065,39 @@ by part, in one system:**
 
    It is an analogy of roles, not an anatomical identity.
 
-### Decision 4: the life cycle (opened 11-23; proposal, undecided)
+### Decision 4: the life cycle (opened 11-23; agreed 11-23, numbers provisional)
+
+**Status (the user, 11-23: "agreed for all of these").**
+- The budget, the segment length and the dream length stay open until measured. They carry provisional values
+  from precedent beside the other hyperparameters.
+- Each part is confirmed once its evidence is in:
+  - **confirmed by precedent and measurement:**
+    - one learner with a frozen awake copy and a rebuild at adoption. Codex timed the rebuild on P1.5 at 42 / 167 /
+      337 ms for 256 / 1,024 / 2,048 frames, against about 9.2 s of awake GPU time per 256-step segment at one
+      stream;
+    - uniform replay with an online queue;
+    - a constant learning rate, one optimizer for the life, plasticity tools on a trigger;
+    - episodes inside one life;
+    - the checks;
+  - **provisional:**
+    - S = 256 real steps;
+    - the dream horizon of 15;
+    - dream starts per update: one per replayed context, as in Dreamer 4. Starting from every frame, as DreamerV3
+      does, measured at about 210 h per million real steps at replay ratio 16 (`20261123_step_costs`);
+    - the replay ratio;
+    - where watching starts;
+    - the life's length: 100 k real steps as the first substantial reading, then decide how far toward 1 M (Codex);
+    - how many Craftax environments step together. One stream costs about 10 h of awake GPU per million real steps
+      and 16 about 0.6 h, because the calls are latency-bound. Several environments are several episodes of the
+      same agent, like a fleet.
+- **Codex's additions, adopted:**
+  - log which weights generated each real segment, with the look and motor probabilities used, for any off-policy
+    correction later;
+  - on a continuous robot, a bounded rebuild (the last N frames, or in the background, checked before adoption). On
+    P1.5, a rebuild from the last 256 frames moved the positive-reward forecast by up to 1.83 points at frame 2,048;
+  - the live fraction (Codex: 6.6% at 10 k real steps and 9.8% at 100 k at ratio 16) is logged separately for world
+    training, real advantages and dream starts;
+  - P1's peak learning rate is a starting point to verify.
 
 **What it settles:** which weights act and which dream, when each faculty learns and from what data, at what pace,
 on one 6 GB GPU. The user framed it on 11-22 as "largely just figuring out training schedules". It has to honour
@@ -1131,13 +1205,23 @@ decisions 1-3:
    - **Robots:** the same contract runs with parallel threads (DreamerV3's `parallel.py`, DayDreamer, HIL-SERL's
      nodes): the learner never stops, and the actor adopts weights at its own boundaries. On Craftax with one GPU the
      segments run serially: act S steps, then the offline updates they buy.
-2. **Watching, then a life of alternating segments.**
-   - **Watching:** the full system on the corpus (Decision 3). It runs for P1's frame budget, 25.6 M frames (ten
-     passes); under P1.5's recipe the monitor loss fell at every checkpoint over that budget.
+2. **Pretraining, watching, then a life of alternating segments.**
+   - **Pretraining and watching** as in Decision 3: the world and the eye first, then the act tokens join with the
+     world's losses continuing.
+     - Together they run for P1's frame budget, 25.6 M frames (ten passes); under P1.5's recipe the monitor loss fell
+       at every checkpoint over that budget.
+     - Where watching starts within it is provisional. Dreamer 4 doesn't state its phase lengths, and P1.5's monitor
+       loss never flattened, so it can't be "when the world is done".
+       - Working value: the last pass (10% of the budget), a placeholder with no precedent or measurement behind it.
+       - It is confirmed or extended by the act tokens' held-out imitation loss flattening.
    - **At handover:**
      - the reference is snapshotted;
      - imitation of the corpus stops. The reference's KL becomes the behavioural anchor, as in Dreamer 4's phase 3,
        which has no imitation loss;
+     - **trigger (Codex):** if a promotion check's retained-skill panel shows a corpus skill fading, imitation of
+       expert-flagged corpus steps resumes at a small weight. Precedents: CLEAR clones its past self on replay, and
+       HIL-SERL keeps demonstrations in half of every batch. A corpus kept in the world's replay can still get little
+       motor rehearsal;
      - the corpus stays in replay as the world's data anchor;
      - demonstrations or corrections arriving later go to imitation (Decision 3).
    - **Life:** segments of S real steps, each followed by the offline updates it buys:
@@ -1498,11 +1582,11 @@ References:
    - the value: dreams and real replay;
    - the look: relevance with a pre-look baseline, plus belief change from the acquired crop on real glimpses
      (predictive gain once memory keeps glimpses). The chooser and contingency retire.
-4. **The life cycle** (Decision 4, opened 11-23; proposal above, undecided):
+4. **The life cycle** (Decision 4, agreed 11-23; numbers provisional until measured):
    - one learner; the awake agent adopts its weights every S real steps, with the episode's state rebuilt; dreams
      always on the current weights;
-   - watching for P1's budget, then segments of living, each followed by the offline updates it buys (one knob, the
-     replay ratio);
+   - pretraining (world and eye), watching (adds the act tokens), then segments of living, each followed by the
+     offline updates it buys (one knob, the replay ratio);
    - replay keeps everything, uniform plus an online queue; the corpus's share falls by itself;
    - a constant learning rate, one optimizer for life, plasticity tools on a measured trigger;
    - checks every 10% of the life; the budget arithmetic, with the step costs as the first build measurement.

@@ -1,0 +1,131 @@
+{
+  "16": {
+    "split_vs_full_bf16": {
+      "periphery": {
+        "max": 0.029296875,
+        "rms": 0.0037020149175077677
+      },
+      "glimpse": {
+        "max": 0.015625,
+        "rms": 0.0034117833711206913
+      },
+      "lighting": {
+        "max": 0.0078125,
+        "rms": 0.0013210974866524339
+      },
+      "kv_max": 0.13134765625
+    },
+    "split_vs_full_fp32_common_math": {
+      "periphery": {
+        "max": 3.2186508178710938e-06,
+        "rms": 3.378895030436979e-07
+      },
+      "glimpse": {
+        "max": 2.0563602447509766e-06,
+        "rms": 3.0361223934960435e-07
+      },
+      "lighting": {
+        "max": 2.384185791015625e-07,
+        "rms": 1.0912581416278044e-07
+      },
+      "kv_max": 1.1920928955078125e-05
+    },
+    "eager_vs_graph_dynamic_inputs_deltas": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "split_stateful_graph": {
+      "median_wall_ms": 9.360202399875561,
+      "median_stream_ms": 9.356646728515624
+    },
+    "peak_allocated_gib": 0.4051394462585449,
+    "peak_reserved_gib": 0.56640625
+  },
+  "32": {
+    "split_vs_full_bf16": {
+      "periphery": {
+        "max": 0.03125,
+        "rms": 0.0035531355533748865
+      },
+      "glimpse": {
+        "max": 0.01953125,
+        "rms": 0.003915797919034958
+      },
+      "lighting": {
+        "max": 0.0078125,
+        "rms": 0.002147969324141741
+      },
+      "kv_max": 0.140625
+    },
+    "split_vs_full_fp32_common_math": {
+      "periphery": {
+        "max": 2.3208558559417725e-06,
+        "rms": 2.4964839440144715e-07
+      },
+      "glimpse": {
+        "max": 2.1457672119140625e-06,
+        "rms": 3.1144679724093294e-07
+      },
+      "lighting": {
+        "max": 2.980232238769531e-07,
+        "rms": 9.521150445834792e-08
+      },
+      "kv_max": 8.106231689453125e-06
+    },
+    "eager_vs_graph_dynamic_inputs_deltas": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "split_stateful_graph": {
+      "median_wall_ms": 16.760609899938572,
+      "median_stream_ms": 16.756121826171874
+    },
+    "peak_allocated_gib": 0.5881752967834473,
+    "peak_reserved_gib": 0.939453125
+  },
+  "64": {
+    "split_vs_full_bf16": {
+      "periphery": {
+        "max": 0.0234375,
+        "rms": 0.002975885756313801
+      },
+      "glimpse": {
+        "max": 0.01953125,
+        "rms": 0.0035456011537462473
+      },
+      "lighting": {
+        "max": 0.0078125,
+        "rms": 0.0018751556053757668
+      },
+      "kv_max": 0.09375
+    },
+    "split_vs_full_fp32_common_math": {
+      "periphery": {
+        "max": 1.9371509552001953e-06,
+        "rms": 2.5218403720828064e-07
+      },
+      "glimpse": {
+        "max": 2.0265579223632812e-06,
+        "rms": 3.2721277420932893e-07
+      },
+      "lighting": {
+        "max": 3.5762786865234375e-07,
+        "rms": 9.090359753827215e-08
+      },
+      "kv_max": 9.5367431640625e-06
+    },
+    "eager_vs_graph_dynamic_inputs_deltas": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "split_stateful_graph": {
+      "median_wall_ms": 30.481517249972967,
+      "median_stream_ms": 30.476852416992188
+    },
+    "peak_allocated_gib": 1.099459171295166,
+    "peak_reserved_gib": 1.732421875
+  }
+}

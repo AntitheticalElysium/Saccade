@@ -40,3 +40,127 @@ Peak GPU memory 0.5 GiB at 64 streams.
 
 - The agent tokens don't exist yet, so the look pass is priced by the computation it rides on: a lower bound.
 - The timings use random inputs of the right shapes, on one card, with eager PyTorch.
+
+## P1.5 training and three eye paths on the 6 GB RTX 3060 Laptop GPU (11-23)
+
+The 625 regular intervals in the original P1.5 training log sum to **15.31 h** when weighted by
+their update counts, including the one-step initial reading. Median update time is **2.284 s**
+for 64-frame chunks and **8.581 s** for 256-frame chunks. The projection retains both halves
+of the 25.6M-frame recipe.
+
+### Real training updates
+
+Restarted checkpoint 4 at 64-step shape and checkpoint 10 at 256-step shape in scratch. Timed
+the same real streams and original losses with one warmup and two measured updates per arm.
+Both short panels have shortcut self-consistency active. Timing is a lower bound on additional
+full-run experiment overhead such as new heads and checkpoint evaluations.
+
+| Native median, ms per update | 64 frames | 256 frames |
+|---|---:|---:|
+| Total | 2,238 | 8,676 |
+| Gather | 10 | 187 |
+| Old chooser prepare and learn | 66 | 266 |
+| World update, including forward/backward and optimizer | 2,162 | 8,223 |
+| Loss forward | 765 | 3,022 |
+| Backward with recomputation | 1,386 | 5,181 |
+| Optimizer | 7.45 | 7.73 |
+
+- Removing the old chooser's measured prepare/learn projects to **0.46 h** over the historical
+  update counts. The world-update measurement includes the old gaze-forecast loss.
+- Fused AdamW and deferring scalar loss reads cut the optimizer to about 4.5–4.8 ms. The short
+  panels show no consistent end-to-end speedup.
+- Doubling the microbatch, turning off checkpointing, or checkpointing only temporal blocks
+  exhausted memory at both shapes. With expandable segments, retaining one spatial block's
+  activations ran in 2.206 s and 8.728 s, against 2.253 s and 8.810 s with the same allocator
+  and native checkpointing, a **0.23 h** gain if sustained. A matched follow-up saved 23 ms
+  at 64 steps and cost 184 ms at 256, with allocator-mapping warnings at the long shape.
+  The initial-batch scalar losses matched exactly; the relative norm difference across
+  16,355 sampled gradient elements was 0.11%/0.36%. Reserved memory rises to about 4.50/4.61 GiB.
+  Retaining two blocks exhausted memory. Budget this as an inconclusive speed candidate.
+
+### Sequential look and belief update
+
+All arms use frozen checkpoint 10, bf16, synthetic inputs at the real shapes, and warmed
+blocks of repeated device calls. The old proxy uses the full native denoiser step followed by
+the glimpse-only pass as charged in the first reading. The native Mamba wrapper discovers
+variable-length segment boundaries using `nonzero` and selects final rows by a Boolean mask,
+even when a one-frame call is known to contain one segment per stream.
+The benchmark constructs that same packed layout directly. Its outputs and returned state
+matched the native wrapper exactly on the checked shapes. Capturing that proxy also gives
+exact checked output equality. The stateful split and lightweight eye are checked across three
+different consecutive input frames with recurrent buffers carried in eager and captured modes.
+
+| Milliseconds per sequential step across a batch | 16 streams | 32 streams | 64 streams |
+|---|---:|---:|---:|
+| Native eager proxy | 37.32 | 36.30 | 47.41 |
+| Captured native-computation proxy | 10.94 | 19.61 | 35.44 |
+| Captured split denoiser with cache and belief carried | 9.36 | 16.76 | 30.48 |
+| Captured lightweight recurrent eye with actual crop sampling | 1.96 | 2.77 | 4.86 |
+
+The split computes the physical stack before the crop and reuses its layer keys and values
+when scoring the selected crop. It agrees with the original full step to at most 3.3e-6 on
+percept outputs with a common FP32 math-attention backend. Default bf16 execution differs by
+about 0.0030–0.0037 RMS on periphery and up to 0.0313 at an element; cache deltas are present.
+The split graph and its own eager path matched exactly on all three-step checks. The split's
+native-denoiser bf16 equivalence over long trajectories remains a required validation.
+
+The lightweight readout is an untrained 103,089-parameter MLP on current coarse evidence and
+the same Mamba belief, including prior glimpses through recurrent assimilation. Its graph
+includes current periphery, drawing the on-device window with an exploration floor, foveal
+encoding, the record update and Mamba state update. It does not run a denoiser for each look.
+This is a compute counterfactual, not a learned gaze-quality result. It compares what the look
+reads; the world still uses its full training objective.
+
+### Projection at the same 25.6M frames
+
+Add a look cost of `measured milliseconds × 25.6M / batch / 3.6M` hours after subtracting the
+measured old chooser from the historical 15.31 h. The table excludes unbuilt agent-token work,
+new gaze and imitation losses, caching and interleaving overhead, and additional fine-tuning.
+The split and native proxy are different pieces of computation, as described above.
+
+| Look path | Loop batch | Eye pass hours | Total proxy hours |
+|---|---:|---:|---:|
+| Full eager proxy | 16 | 16.59 | 31.44 |
+| Full eager proxy | 64 | 5.27 | 20.12 |
+| Captured full proxy | 64 | 3.94 | 18.79 |
+| Captured split and stateful proxy | 64 | 3.39 | 18.24 |
+| Captured recurrent eye | 32 | 0.61 | 15.46 |
+| Captured recurrent eye | 64 | 0.54 | 15.39 |
+
+These components were measured separately. Keeping capture buffers resident alongside the
+world backward pass must fit the same 6 GB before combining the results. A batch of 64
+needs independently runnable histories and a defined model-version
+policy if their gaze choices feed several learner updates. With the light eye, 32 costs about
+five minutes more at this frame budget. Denoiser/critic training in dreams and real simulation
+time are independent of these watching-phase estimates.
+
+Rerun with `JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 MAMBA_DETERMINISTIC=1 .venv/bin/python -m`,
+followed by any of:
+
+- `artifacts.experiments.20261123_step_costs.streaming_perf --count 24`
+- `artifacts.experiments.20261123_step_costs.split_perf --count 20`
+- `artifacts.experiments.20261123_step_costs.recurrent_eye_perf`
+- `artifacts.experiments.20261123_step_costs.training_perf`
+
+For the selective checkpoint comparison, add `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`
+and pass `--arms native retain_one retain_two --out artifacts/experiments/20261123_step_costs/training_selective.json`
+to the last command.
+
+## Second reading: dream throughput by batch (`dream_scaling.py`, `dream_scaling.json`)
+
+| Streams | Dreamed frame (ms) | Per stream (ms) | Peak GPU memory (GiB) |
+|---:|---:|---:|---:|
+| 16 (first reading) | 117 | 7.3 | 0.3 |
+| 64 | 202 | 3.15 | 0.56 |
+| 128 | 372 | 2.90 | 0.97 |
+| 256 | 715 | 2.79 | 1.85 |
+
+- **A dreamed step becomes compute-bound by about 64 streams.** Its floor on this card, in eager PyTorch, is about
+  2.8 ms per stream. That's roughly 1.5 times the 1.87 ms it costs to *train* on a real frame, backward included.
+  - A dreamed frame runs the sampler's four evaluations, the crop's cascade and the context pass: about six denoiser
+    passes.
+  - Training runs one forward and one backward, batched along time.
+- **For comparison:** a Craftax-Classic step and render costs 0.9 ms on one CPU core.
+  - DayDreamer's quadruped acts at 20 Hz (50 ms per real step) and its arm at 2 Hz (500 ms; PDF, section 3).
+  - A dreamed step is therefore about 3x the cost of a Craftax step, but 18x and 180x faster than those robots' real
+    steps. Dreams also run 256 at once.

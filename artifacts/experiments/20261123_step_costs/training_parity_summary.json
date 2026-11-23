@@ -1,0 +1,66 @@
+{
+  "64": {
+    "max_loss_delta": 0.0,
+    "sampled_gradient_l2_rel_delta": 0.0010729046680367073,
+    "sampled_gradient_max_abs_delta": 0.001953125,
+    "sampled_gradient_elements": 16355,
+    "native": {
+      "total_ms": 2342.630741000903,
+      "gather_ms": 9.96348099943134,
+      "chooser_prepare_ms": 52.433905002544634,
+      "world_ms": 2265.4230339976493,
+      "world_stream_ms": 2265.242431640625,
+      "loss_forward_ms": 798.9789123535156,
+      "loss_backward_ms": 1455.3641357421875,
+      "optimizer_ms": 7.580480098724365,
+      "chooser_learn_ms": 14.81032100127777,
+      "peak_allocated_gib": 3.0487728118896484,
+      "peak_reserved_gib": 3.828125
+    },
+    "retain_one": {
+      "total_ms": 2319.14966900149,
+      "gather_ms": 9.049455002241302,
+      "chooser_prepare_ms": 53.725494999525836,
+      "world_ms": 2241.424294999888,
+      "world_stream_ms": 2241.2392578125,
+      "loss_forward_ms": 798.7431640625,
+      "loss_backward_ms": 1430.3478393554688,
+      "optimizer_ms": 7.524415969848633,
+      "chooser_learn_ms": 14.950423999835039,
+      "peak_allocated_gib": 3.9610986709594727,
+      "peak_reserved_gib": 4.49609375
+    }
+  },
+  "256": {
+    "max_loss_delta": 0.0,
+    "sampled_gradient_l2_rel_delta": 0.0035864921108371695,
+    "sampled_gradient_max_abs_delta": 0.001720428466796875,
+    "sampled_gradient_elements": 16355,
+    "native": {
+      "total_ms": 8941.692593998596,
+      "gather_ms": 36.62189999886323,
+      "chooser_prepare_ms": 216.42018399870722,
+      "world_ms": 8630.424464001408,
+      "world_stream_ms": 8630.1875,
+      "loss_forward_ms": 3168.3562622070312,
+      "loss_backward_ms": 5439.4521484375,
+      "optimizer_ms": 8.061535835266113,
+      "chooser_learn_ms": 58.22604599961778,
+      "peak_allocated_gib": 2.9898815155029297,
+      "peak_reserved_gib": 3.93359375
+    },
+    "retain_one": {
+      "total_ms": 9125.675938001223,
+      "gather_ms": 33.49792299923138,
+      "chooser_prepare_ms": 213.80888700150535,
+      "world_ms": 8819.828871997743,
+      "world_stream_ms": 8819.59375,
+      "loss_forward_ms": 3306.1326293945312,
+      "loss_backward_ms": 5491.4324951171875,
+      "optimizer_ms": 7.346816062927246,
+      "chooser_learn_ms": 58.54025600274326,
+      "peak_allocated_gib": 3.826364517211914,
+      "peak_reserved_gib": 4.6015625
+    }
+  }
+}

@@ -66,6 +66,22 @@ out, because no policy or value exists yet to teach it.
     the centre, with the centre cell scored by the background. Memory counts only as a likelihood ratio over that
     spatial prior, and the same density is the match's outlier component.
 - Training, readings and bars are unchanged. The first localizer is kept as `run/localizer_v1.pt`.
+- **Amended again 11-24, before the third localizer's results.** The second localizer (`run/localizer_v2.pt`;
+  diagnosis, code and outputs in `diagnosis_v2/`) solved daylight but not the dark:
+  - Daylight moved steps: 0.976 on the match alone, 0.969 after the frame (3 episodes).
+  - Dark moved steps: 0.49 on the match alone. On the panel, lookups were 0.434.
+  - **The cause.** Trust caps what a mismatch costs, but it can't remove a bonus. Under "no motion", content fixed
+    to the sensor *matches*: the agent's sprite, and the night static's pattern. At night that matching decides
+    alone (the centre cell gives +27.5 nats, its neighbours +12.9 and +6.6), and the objective doesn't remove it.
+  - **The amendment.** The null that memory evidence is measured against gains one component: the same screen cell
+    in the previous frame. It is Godard et al. 2019's auto-masking (evidence only where the warped source beats the
+    unwarped one) in probabilistic form.
+    - Memory evidence is now the improvement of the world-fixed explanation over the spatial prior and the
+      sensor-fixed explanation together. Whatever moves with the sensor is explained equally under every hypothesis.
+    - Its scale and trust come from the same per-observation terms, plus a learned offset of its own. The mixture
+      weights are learned.
+  - **Reading 2 also reports panel episodes 23-119.** No diagnosis or code check touched these (the diagnoses read
+    episodes 0-11, and the code checks 0-2 and 20-22).
 - **The geometry, declared:**
   - which screen cells view the world (the 7 × 9 map cells), and their offsets, are the sensor's embodiment facts;
   - the status rows are not written to the place memory;

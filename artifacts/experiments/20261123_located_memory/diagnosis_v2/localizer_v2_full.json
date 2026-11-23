@@ -1,0 +1,22 @@
+{
+ "tag": "full",
+ "movement_commands": 23782,
+ "prior": {
+  "all": 0.7774367168446724,
+  "moved": 0.7714073760067826,
+  "blocked": 0.8006109979633401,
+  "dark": 0.6300429184549357
+ },
+ "posterior": {
+  "all": 0.8014464721217728,
+  "moved": 0.757471386180585,
+  "blocked": 0.9704684317718941,
+  "dark": 0.561587982832618
+ },
+ "relocalisations": 961,
+ "pending_aligned_after_relocalisation": 0.38961038961038963,
+ "pending_entries_at_relocalisations": 77,
+ "relative_pose_exact_16": 0.5315116327990239,
+ "revisit_lookups": 85863,
+ "lookup_correct": 0.4342964955801684
+}

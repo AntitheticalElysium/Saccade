@@ -85,6 +85,7 @@ class Localizer(nn.Module):
         nn.init.zeros_(self.obs[-1].weight); nn.init.zeros_(self.obs[-1].bias)      # starts position- and light-free
         self.age = nn.Linear(5, 2)
         self.nb = nn.Parameter(torch.zeros(2))                                     # the spatial prior's (log scale, trust)
+        self.nid = nn.Parameter(torch.zeros(2))                                    # the sensor-fixed component's
         self.log_b_bg = nn.Parameter(torch.zeros(()))
         self.logit_eps = nn.Parameter(torch.tensor(-9.0))
 
@@ -111,16 +112,27 @@ class Localizer(nn.Module):
         a = self.age(PR.age_features(age, present))
         return e[..., CT] - d, s + a[..., 0], tau + a[..., 1]
 
-    def null(self, c, now):
-        """log density of each new cell given its parent cell in the same view [B, 63]: a robust Laplace around the
-        parent's offset-corrected token (the centre cell, which has none: the background). c [B, 63, 16]."""
+    def null(self, c, now, prev=None):
+        """log density of each new cell without the world memory [B, 63]: a mixture of its parent cell in the same view
+        (the spatial prior; none for the centre cell), the same screen cell in the previous frame (sensor-fixed content:
+        the agent's own sprite, the night static's pattern; amended 11-24, Godard et al. 2019's auto-masking in
+        probabilistic form) and the background. c [B, 63, 16]; prev = (previous coarse view [B, 63, 16], its lighting
+        [B, 8], whether it exists [B])."""
         d, s, tau = now
-        nb = NB.to(c.device)
-        lap = laplace(c, c[:, nb] - d[:, nb] + d, self.nb[0] + s + s[:, nb])
-        logit = self.nb[1] + tau + tau[:, nb]
-        bg = self.bg(c)
-        mix = torch.logaddexp(F.logsigmoid(logit) + lap, F.logsigmoid(-logit) + bg)
-        return torch.where(nb == CELLS.to(c.device), bg, mix)
+        dev = c.device
+        nb = NB.to(dev)
+        comps = [self.bg(c)]
+        logits = [torch.zeros_like(comps[0])]
+        has_nb = nb != CELLS.to(dev)
+        comps.append(laplace(c, c[:, nb] - d[:, nb] + d, self.nb[0] + s + s[:, nb]))
+        logits.append(torch.where(has_nb, self.nb[1] + tau + tau[:, nb], torch.full_like(tau, -1e4)))
+        if prev is not None:
+            cp, vp, hp = prev
+            dp, sp, tp = self.now_terms(vp)
+            comps.append(laplace(c, cp.float() - dp + d, self.nid[0] + s + sp))
+            logits.append(torch.where(hp[:, None], self.nid[1] + tau + tp, torch.full_like(tau, -1e4)))
+        lw = torch.stack(logits, -1).log_softmax(-1)
+        return (lw + torch.stack(comps, -1)).logsumexp(-1)
 
     def score(self, c, now, ent, present, null):
         """log(trust Laplace(c; entry + offsets) + (1 - trust) p_null(c)) - log p_null(c), zero without an entry.
@@ -189,7 +201,7 @@ class Map:
         return out, cp, fp, dream
 
 
-def grid_loglik(loc, ent, c, v, t, memory_term=True):
+def grid_loglik(loc, ent, c, v, t, memory_term=True, prev=None):
     """Sum over the new view's 63 map cells of loc.score under every grid hypothesis x (the agent at x) -> [B, G, G].
     memory_term False: only the previous frame's entries count (odometry only)."""
     Bn = len(c)
@@ -197,7 +209,7 @@ def grid_loglik(loc, ent, c, v, t, memory_term=True):
     present = (ent[..., CTIME] >= 0) & ((age <= 1) if not memory_term else torch.ones_like(age, dtype=torch.bool))
     e0, s_e, t_e = loc.entry_terms(ent, age, present)                    # once per step over the grid
     now = loc.now_terms(v)
-    null = loc.null(c, now)
+    null = loc.null(c, now, prev)
     pad = torch.zeros(Bn, G + 6, G + 8, 19, device=c.device)
     pad[:, 3:3 + G, 4:4 + G] = torch.cat([e0, present[..., None].float(), s_e[..., None], t_e[..., None]], -1)
     out = torch.zeros(Bn, G, G, device=c.device)
@@ -208,7 +220,7 @@ def grid_loglik(loc, ent, c, v, t, memory_term=True):
     return out
 
 
-def loglik_at(loc, ent, c, v, t, hyp, memory_term=True, grid=False):
+def loglik_at(loc, ent, c, v, t, hyp, memory_term=True, grid=False, prev=None):
     """The same sum at given hypotheses hyp [B, H, 2] (gathered, vectorised over cells) -> [B, H]. grid: compute the
     entries' terms once over the grid and gather them (many hypotheses, no gradient)."""
     Bn, H = hyp.shape[:2]
@@ -227,7 +239,7 @@ def loglik_at(loc, ent, c, v, t, hyp, memory_term=True, grid=False):
         present = inside & (e[..., CTIME] >= 0) & ((age <= 1) if not memory_term else torch.ones_like(age, dtype=torch.bool))
         terms = loc.entry_terms(e, age, present)
     now = loc.now_terms(v)
-    null = loc.null(c, now)
+    null = loc.null(c, now, prev)
     nh = tuple(x[:, None] for x in now)
     return loc.score(c[:, None], nh, terms, present, null[:, None]).sum(-1)
 
@@ -358,11 +370,12 @@ def advance(loc, mp, p, v, g, fix, a_prev, t, src, first, valid, truth=None, mem
     xhat = torch.where(live[:, None], xhat, mp.pose); chat = torch.where(live, chat, torch.ones_like(chat))
     ent, cp, fp, dream = mp.view()
     feats = read_features(ent, cp, fp, dream, xhat, chat, t)
+    prev = (mp.last_p[:, :MAP], mp.last_v, live)                         # the previous frame (sensor-fixed component)
     if window is None:
-        L = grid_loglik(loc, ent, p[:, :MAP].float(), v.float(), t.float(), memory_term)
+        L = grid_loglik(loc, ent, p[:, :MAP].float(), v.float(), t.float(), memory_term, prev)
     else:
         hyp = window_hyp(mp.pose, window)
-        Lw = loglik_at(loc, ent, p[:, :MAP].float(), v.float(), t.float(), hyp, memory_term, grid=True)
+        Lw = loglik_at(loc, ent, p[:, :MAP].float(), v.float(), t.float(), hyp, memory_term, grid=True, prev=prev)
         L = torch.full((len(p), G, G), -1e30, device=p.device)
         L[torch.arange(len(p), device=p.device)[:, None], hyp[..., 0], hyp[..., 1]] = Lw
     post = pri * (L - L.flatten(1).max(1).values[:, None, None]).exp()
@@ -497,7 +510,8 @@ def train_localizer(passes=4, batch=16, chunk=32):
                         src_r = (hyp[..., 0] - int(NR[i])).clamp(0, G - 1); src_c = (hyp[..., 1] - int(NC[i])).clamp(0, G - 1)
                         pri = pri + K[:, i:i + 1] * prev[bi_, src_r, src_c]
                     eps_ = torch.sigmoid(loc.logit_eps)
-                    Lh = loglik_at(loc, ent, p[:, :MAP], v, tt.float(), hyp)
+                    prev = (mp.last_p[:, :MAP].clone(), mp.last_v.clone(), live)
+                    Lh = loglik_at(loc, ent, p[:, :MAP], v, tt.float(), hyp, prev=prev)
                 with torch.no_grad():
                     advance(loc, mp, p, v, g, fix, a, tt, tt, first, valid, window=12)
                 if t > 0:
@@ -505,7 +519,7 @@ def train_localizer(passes=4, batch=16, chunk=32):
                     Mx = torch.maximum(Lfull.flatten(1).max(1).values, Lh.max(1).values).detach()
                     local = ((1 - eps_) * pri * (Lh - Mx[:, None]).exp()).sum(1)
                     glob = eps_ * (Lfull - Mx[:, None, None]).exp().sum((1, 2)) / (G * G)
-                    ll = (local + glob).clamp(min=1e-30).log() + Mx + loc.null(p[:, :MAP], loc.now_terms(v)).sum(-1)
+                    ll = (local + glob).clamp(min=1e-30).log() + Mx + loc.null(p[:, :MAP], loc.now_terms(v), prev).sum(-1)
                     loss_acc = loss_acc - (ll * live).sum(); n_acc += int(live.sum())
                 if (t % chunk == chunk - 1 or t == Tm) and n_acc:
                     opt.zero_grad(); (loss_acc / n_acc).backward(); opt.step()
@@ -525,8 +539,8 @@ def score_localizer(memory_term=True, tag="full"):
     DEV = LOC_DEV
     loc = Localizer().to(DEV); loc.load_state_dict(torch.load(RUN / "localizer.pt", map_location=DEV)); loc.eval()
     data = torch.load(DATA / "tokens_panel.pt")
-    st = {k: [] for k in ("prior_ok", "post_ok", "moved", "move_cmd", "dark", "rel16_ok", "lookup_ok", "lookup_n")}
-    for r in data:
+    st = {k: [] for k in ("prior_ok", "post_ok", "moved", "move_cmd", "dark", "rel16_ok", "lookup_ok", "lookup_n", "ep")}
+    for ei, r in enumerate(data):
         mp = Map(1, DEV)
         T, pos = r["T"], r["pos"].to(DEV)
         tc = truth_cells(pos)
@@ -552,7 +566,7 @@ def score_localizer(memory_term=True, tag="full"):
                     st["move_cmd"].append(1); st["moved"].append(int(dtrue != [0, 0]))
                     st["prior_ok"].append(int((xhat[0] - pose_before[0]).tolist() == dtrue))
                     st["post_ok"].append(int((mp.pose[0] - pose_before[0]).tolist() == dtrue))
-                    st["dark"].append(int(float(r["light"][t]) < 0.5))
+                    st["dark"].append(int(float(r["light"][t]) < 0.5)); st["ep"].append(ei)
                 # lookups: map cells entering view at t whose world cell was seen before t, through the prior's address
                 prev = {(int(pos[t - 1][0]) + int(KR[k]), int(pos[t - 1][1]) + int(KC[k])) for k in range(MAP)}
                 for k in range(MAP):
@@ -583,6 +597,10 @@ def score_localizer(memory_term=True, tag="full"):
            "pending_entries_at_relocalisations": int(sum(n for _, n in st.get("jumps", []))),
            "relative_pose_exact_16": a["rel16_ok"].mean(), "revisit_lookups": int(a["lookup_n"].sum()),
            "lookup_correct": a["lookup_ok"].sum() / max(a["lookup_n"].sum(), 1)}
+    un, ue = a["ep"] >= 23, slice(23, None)                              # panel episodes no diagnosis or check read
+    res["unseen_episodes_23_on"] = {"lookup_correct": a["lookup_ok"][ue].sum() / max(a["lookup_n"][ue].sum(), 1),
+                                    "posterior_moved": a["post_ok"][un & mv].mean(), "posterior_dark": a["post_ok"][un & dk].mean(),
+                                    "prior_moved": a["prior_ok"][un & mv].mean()}
     res = json.loads(json.dumps(res, default=float))
     (HERE / f"localizer_{tag}.json").write_text(json.dumps(res, indent=1) + "\n")
     print(json.dumps(res), flush=True)

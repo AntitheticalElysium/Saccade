@@ -45,12 +45,15 @@ def error(left, right):
     return result
 
 
-def split_denoiser(den, p, v, crop, code, act, memory, fix, kv, clock):
+def split_denoiser(den, p, v, crop, code, act, memory, fix, kv, clock, physical=None):
     """Compute physical tokens first, retaining layer K/V for processing the selected crop."""
     mem, record = memory
-    pt = den.inp[0](p) + den.pos + den.kind[0]
-    pt = pt + den.record_read(record).to(pt.dtype)
-    lt = (den.inp[2](v) + den.kind[2]).unsqueeze(-2)
+    if physical is None:
+        pt = den.inp[0](p) + den.pos + den.kind[0]
+        pt = pt + den.record_read(record).to(pt.dtype)
+        lt = (den.inp[2](v) + den.kind[2]).unsqueeze(-2)
+    else:
+        pt, lt = physical
     token = torch.cat((pt, lt, mem + den.kind[3]), -2)
     grid = torch.arange(M.N, device=p.device)
     sa = torch.cat(((grid % M.GRID)[:, None] * den.f_space, (grid // M.GRID)[:, None] * den.f_space), -1)

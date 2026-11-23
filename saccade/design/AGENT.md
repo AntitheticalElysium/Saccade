@@ -253,12 +253,24 @@ agreed; 2 and 3 researched again (below).**
   - **What the denoiser adds before the crop is unmeasured.** The light look reads what the world's own crop predictor
     (TSP) reads to predict a crop: the predicted belief, the periphery and the lighting. The evidence for where a crop
     will be informative is within its reach.
-  - **Proposal:**
-    - the look reads the belief, the current periphery, the lighting and the record read; the act tokens stay inside
-      the world as agreed;
-    - the same look in every phase, so it trains on what it will use;
-    - the trigger to revisit: eye coverage of high-belief-change windows (night creatures) stays poor. Then the look
-      gets the denoiser's physical half.
+  - **Withdrawn, the full eye kept (the user, 11-23: "unless we can prove equivalence; I'd rather we find a way to
+    optimize the architecture as a whole"; Codex agrees).**
+    - The denoiser also uses the previous action, the spatial record and temporal attention over recent context.
+      Whether that improves gaze is open, and cutting it would take evidence away from the agent.
+  - **The route instead: make the whole system faster (Codex, measured on real P1.5 updates).**
+    - A fused record kernel cut the scan from 41.5 ms to 1.2 ms (state within 4.2e-7). With temporal FlexAttention,
+      updates fell from 2.237 s to 2.068 s at 64 frames and from 8.438 s to 8.242 s at 256. Peak reserved memory fell
+      from 3.93 to 3.19 GiB.
+    - That's about 45 minutes over the run, so the full-eye watching run projects to about 17.5 h.
+    - **Next:**
+      - the eye and the crop share one physical pass (the eye reads its features, and the crop reuses its keys and
+        values);
+      - a physical-only kernel for the sampler's four steps, which today compute glimpse tokens on a placeholder;
+      - a whole-update profile before any width or attention change. Dreamer 4's grouped-query attention would be a
+        world change.
+    - Both pass changes preserve the computation in real arithmetic and need a bf16 check on real sequences.
+    - A checkpoint at eight passes (about 14 h projected) is judged by the native world and decision checks before
+      any stop.
 - **Codex (11-22), not yet answered before this note:**
   - **Information versus computation.** Codex would start from belief + acquired spatial evidence + a record read, then
     test what denoiser activations add on that same interface: comparing the belief alone against agent tokens changes
@@ -1063,6 +1075,28 @@ by part, in one system:**
      - **What goes away:** the chooser, its surprise and contingency head, and its separate network.
      - It is a new world run: P1.5 can't be reused, because the eye, the pre-look outcome heads and the learning rate
        schedule (Decision 4) all change.
+   - **Does the glimpse have a privileged route? (the user asked, 11-23; raised on 11-15)** It has three routes, and
+     two are privileged:
+     - **What fine detail is learned: privileged by construction.**
+       - Only the looked-at crop carries full-resolution pixels, so the crop losses (trans-saccadic prediction,
+         fovea reconstruction) learn fine detail only where the eye looks.
+       - That is attention gating learning (Turk-Browne et al. 2005), the 11-15 idea, built in.
+     - **The current decision: direct.** The act tokens read that frame's glimpse tokens after the crop (Decision 1).
+     - **Memory and the world's dynamics: not privileged.**
+       - The denoiser's physical tokens never read glimpse tokens.
+       - The belief takes the glimpse through one 256-number projection that keeps little of it (F1.6; predictive
+         gain about zero).
+       - P1.6's foveal record was barely read.
+     - **Why that hasn't mattered:**
+       - In Classic at 3x3 the periphery shows nearly everything again next frame, so there is little for memory to
+         keep.
+       - Where acuity is lower (robots, full Craftax), what a look saw has to be remembered, because looking again
+         costs.
+     - **In the brain:** memory across saccades is a limited-capacity, long-lasting store holding little detail,
+       apparently visual working memory itself, and attention decides what enters it (Irwin 1991; Irwin & Gordon,
+       abstracts).
+     - **So no new route now.** The memory route belongs to Decision 6. The location-keyed episodic store agreed on
+       10-23 is that privileged route, and predictive gain is its judge. It is built when acuity makes it needed.
    - **Trigger:** if the eye still misses night creatures in the run, look at content-aware precision or predictive
      gain. The 10-31 pitfall applies: learned content-dependent variance made the pixel decoder digit-blind.
 5. **Order (the user, 11-23):** watch, then dream and live interleaved, on the fly, with dreaming possible before the
@@ -1342,14 +1376,21 @@ decisions 1-3:
        steps, runs 256 at once, risks nothing, and can branch from any remembered moment.
      - The benchmark's real-step budget is how Classic stands in for expensive reality. We report wall-clock time
        beside it.
-   - **"Enough" is not a fixed ratio.** Dreams get their own share of the offline GPU time and their own starts, drawn
-     from replay with the online queue, independent of the world's batch.
-     - **The reading:** within each offline phase, whether the policy's dream objective is still improving when the
-       phase ends.
-       - Still improving: dreams are the bottleneck, so give them more of the phase.
-       - Flat early: the world or reality is, so give them less.
-     - Precedent: Sutton's 1990 Dyna shows learning curves for 0, 10 and 100 planning steps per real step, and
-       DreamerV3's README: "Increasing the number of gradient steps further increases data efficiency."
+   - **Dreams get their own fixed share of offline time** (the user, 11-23: "do it like humans? A fixed time per awake
+     schedule"). They also get their own starts, drawn from replay with the online queue, independent of the world's
+     batch.
+     - **My earlier reading was withdrawn,** both by the user and by Codex. It would have kept dreaming while the
+       policy's dream objective improved, but that can mean the policy is getting better at exploiting the world.
+     - **The brain's version is fixed by time awake.**
+       - In the two-process model, sleep pressure rises during waking and falls exponentially in sleep (Borbély 1982).
+       - Learning modulates it locally: a learning task raises slow-wave activity in the regions it used, and the
+         rise correlates with the gain after sleep (Huber et al. 2004).
+       - So the default is a fixed offline time per awake time. Modulating it by learning load is a later option.
+     - **The judge** is real improvement at a matched interaction budget, with the action-difference checks at depths
+       1, 4 and 15 (Codex), and the complete dream update priced, policy and value learning included.
+     - **Precedent that more dreaming helps:**
+       - Sutton's 1990 Dyna shows learning curves for 0, 10 and 100 planning steps per real step;
+       - DreamerV3's README: "Increasing the number of gradient steps further increases data efficiency."
      - **Provisional:** dreams get half of the offline GPU time. At replay ratio 16 that is about 11 dreamed steps per
        real step.
 
@@ -1364,6 +1405,39 @@ decisions 1-3:
 On 10-23 this was agreed in principle. On 10-25 it was shelved until the complete model exists, with "keep it cheap
 to add later (modular prior heads, ...)".
 
+**Are these jobs canonical, or by-products of our Craftax work? (the user asked, 11-23)**
+- **Trusting a dream is model-based RL's central problem, everywhere except in how the Dreamers handle it.**
+  - In model-based RL with deep networks, "the learned policy tends to exploit regions where insufficient data is
+    available for the model to be learned" (ME-TRPO, Kurutach et al. 2018). Their fix is an ensemble of models.
+  - Ha & Schmidhuber's dream agent found an "adversarial policy" (read 11-22).
+  - MBPO keeps model rollouts short and branched from real data; MOPO and MOReL make offline models pessimistic
+    (read 11-22).
+- **The Dreamers rely on structure and world quality, with no runtime uncertainty.**
+  - Dreamer 1-3 learn online, so reality keeps correcting the world; imagination is 15 steps, with a critic beyond.
+  - Dreamer 4 is offline, and its guards are three:
+    - "the dynamics loss is applied only on the uniform sequences to avoid optimistic generations";
+    - a reverse KL to the frozen imitation prior "to better constrain the policy to the space of reasonable
+      behaviors";
+    - a world accurate enough to be "the first world model to accurately predict the object interactions and game
+      mechanics" of its block-placing tasks.
+- **Predicting false dreams in a generative world model is new.**
+  - Hansen & Wang (2606.27326, June 2026, a 350M Dreamer 4 world model, read at the source) write that where an
+    autoregressive world model "will fail along a rollout has received comparatively little attention".
+  - They find hallucination "is inherently a data coverage issue": it concentrates in low-coverage regions.
+- **Curiosity from the world model's uncertainty is canonical,** including in Hafner's own line (Plan2Explore, Sekar
+  et al. 2020).
+- **Noticing change is not standard in the Dreamers.** It comes from continual learning and neuroscience, and from
+  our own selling point (adapting to new situations), not from Craftax.
+- **Our design already has most of the Dreamers' guards:**
+  - online correction (life);
+  - short dreams with a value beyond;
+  - the reference's KL;
+  - the world learning only from real data;
+  - signed real advantages;
+  - the dreamed-against-real action-difference checks.
+
+  So uncertainty is not needed by default, and the readings-then-triggers form below fits.
+
 **Three kinds of unpredictability, which prediction error mixes:**
 - **Expected:** noise no learning removes, like night static. In the brain, acetylcholine signals "expected
   uncertainty, coming from known unreliability of predictive cues within a context" (Yu & Dayan 2005).
@@ -1374,56 +1448,90 @@ Raw prediction error can't tell them apart. That is the noisy-TV problem: a curi
 randomness in the environment and keeps observing it" (Burda et al. 2018; OpenAI's write-up). Our pixel surprise fell
 into it with night static (`20261123_eye_drives`).
 
-**Precedents, read at abstract level unless noted:**
-- **Epistemic uncertainty by disagreement:**
-  - Plan2Explore approximates expected information gain by "the disagreement in predictions of an ensemble of one-step
-    models" (Sekar et al. 2020);
-  - STEVE weights rollouts of many horizons by ensemble variance (Buckman et al. 2018);
-  - MOPO penalises dreamed reward by uncertainty, and MOReL learns a pessimistic model (both read 11-22);
-  - DECU trains ensembles on shared pretrained parameters to give a diffusion model epistemic uncertainty (Berry et
-    al. 2024).
-- **Learning progress avoids noise:** a robot driven to maximise learning progress "avoids situations in which nothing
-  can be learnt" (Oudeyer, Kaplan & Hafner 2007).
-- **Change detection:**
-  - Bayesian online changepoint detection infers "the posterior distribution over the current run length", the time
-    since the last change (Adams & MacKay 2007);
-  - latent-cause inference (Gershman et al.) and volatility-set learning rates (Behrens et al. 2007), both read 11-22.
-- **Our own measurements:**
-  - the spread of independent samples from one generative world predicted its open-loop error at AUC 0.74 in Memory
-    Maze, while Mamba's Δ did not (0.59; 07-06);
-  - belief change resists static better than pixel surprise (11 against 26 of 48 dark repeat pairs).
+**Ensembles: precedent, uses, limits (the user asked, 11-23).**
+- **The idea:** several predictors trained on the same data agree where data is plentiful and disagree where it is
+  thin, so their disagreement measures what hasn't been learned.
+  - Query by committee chooses the next example "according to the principle of maximal disagreement", and gains
+    information per query where random sampling gains almost none (Seung, Opper & Sompolinsky 1992).
+  - Deep ensembles made it standard for deep networks (Lakshminarayanan et al. 2017).
+- **Uses in RL:**
+  - **exploration:**
+    - Bootstrapped DQN has K heads on a shared network, each on its own bootstrap sample, and follows one head per
+      episode (Osband et al. 2016). The shared network "can provide significant computational advantages at the
+      cost of lower diversity between heads";
+    - Plan2Explore uses ensemble disagreement as the reward;
+  - **regularisation against exploitation:** ME-TRPO;
+  - **horizon weighting:** STEVE (Buckman et al. 2018);
+  - **pessimism offline:** MOPO.
+- **Limits:**
+  - heads on shared features can agree when the shared features missed the same thing (Codex; Osband's own caveat);
+  - in latent dynamics models, transitions can be pulled toward well-supported regions, an attractor. Ensemble
+    disagreement then "picks up local epistemic uncertainty but does not reliably track global error over long
+    latent rollouts", and returns can be overestimated (Biased Dreams, Berger et al. 2026, abstract and summaries).
+- **Without an ensemble:** Hansen & Wang's three signals come from the world model itself, "without auxiliary
+  networks or labels":
+  - flow instability: how much the clean-frame prediction moves across sampler substeps;
+  - inter-seed variance: disagreement among independent samples at fixed past and action;
+  - the tokenizer round-trip residual.
+
+  Each is divided by how much the scene is moving, which removes the noise-like confound. They reach per-task AUROC
+  0.87-0.94 for hallucination events, against 0.80-0.93 for scene motion alone, and they serve as curiosity rewards
+  for targeted data collection, adapting the model to unseen tasks with 50 trajectories.
+  - Our world is a shortcut-forcing sampler like theirs, so flow instability comes free in every dream, and
+    inter-seed variance in any multi-draw reading.
+  - Our 07-06 result agrees: the spread of independent samples predicted open-loop error at AUC 0.74 in Memory Maze,
+    while Mamba's Δ did not (0.59).
+- **In the brain:** no committee of world models, but three close relatives:
+  - **sampling:** neural variability may be samples from the posterior, with spontaneous activity part of the
+    representation (Fiser, Berkes, Orbán & Lengyel 2010). That is the relative of inter-seed variance;
+  - **a population of diverse predictors:** dopamine neurons carry "a diverse set of RPE channels, each of which
+    carries a different value prediction, with varying degrees of optimism" (Dabney et al. 2020). Their spread
+    codes the return's distribution, closer to expected than epistemic uncertainty;
+  - **reliability-based arbitration:** control is divided between model-based and model-free systems "dynamically
+    weighted by the degree of reliability in each system", with the reliability signals in prefrontal cortex (Lee,
+    Shimojo & O'Doherty 2014; Daw, Niv & Dayan 2005). That is the brain's version of deciding how far to trust
+    imagination.
 
 **What the system already computes, with no new module:**
 - the world's loss on each new segment on arrival (Decision 4's plasticity reading): surprise at real experience;
-- its drop after the online-queue update: learning progress;
+- its drop after the online-queue update: learning progress, which "avoids situations in which nothing can be
+  learnt" (Oudeyer, Kaplan & Hafner 2007);
 - each crop's belief change: the eye's information drive;
-- several draws per start at evaluation forks: sample spread.
+- flow instability in every dream, and inter-seed variance wherever several draws are taken.
 
-**Proposed: readings from the start, uses on a measured trigger.**
+**Proposed: the world's own signals as readings from the start, uses on a measured trigger, validation before
+use.**
 1. **Readings, from the start:**
    - surprise on arrival and learning progress for every segment, logged by context (day, night, own life, corpus);
-   - a small ensemble of outcome heads (reward and continuation) on the shared features, trained on real data like
-     the existing heads. Their disagreement is epistemic uncertainty about consequences, which decisions hinge on, and
-     where our measured errors are optimistic (danger under-drawn). This is DECISIONS' "modular prior heads". The
-     ensemble's size comes from precedent, read at the source when built.
-2. **Uses, each on its trigger:**
+   - flow instability and inter-seed variance, each divided by scene motion (Hansen & Wang).
+   - **No ensemble by default.** Outcome-head ensembles stay an evaluation tool, used if the world's own signals fail
+     their validation. That follows Hansen & Wang's single-model route and Codex's caution.
+2. **Validation before any use (Codex):** a signal earns a use only after it predicts what that use needs.
+   - **For dream trust: wrong action orderings on held-out real forks.** The archived 764 DO/NOOP forks keep 8 P1.5
+     dreams per action and 16 simulator futures (`20261119_s2/RESULTS.md`, return-order audit), so the spread of
+     those dreams can be scored against the 27.0% of depth-15 orderings that came out opposite. That is a CPU
+     analysis of saved data, proposed and not run.
+   - For change: learning progress on the next real observations.
+3. **Uses, each on its trigger:**
    - **Dream trust.**
      - Trigger: dreamed against real action differences show a bias (Decision 2's reading), or dreamed return rises
        while real return stalls.
-     - Use: penalise dreamed reward by the heads' disagreement (MOPO), or weight the return's horizons by it (STEVE).
+     - Use: penalise dreamed reward by the validated signal (MOPO), or weight the return's horizons by it (STEVE).
        This is where the project's original uncertainty-set horizons would attach, as a later add-on.
    - **Curiosity.**
      - Trigger: real coverage stalls (achievement discovery flattens, the online queue brings little new).
-     - Use: an intrinsic reward of learning progress or head disagreement (Plan2Explore). Never raw prediction error.
+     - Use: an intrinsic reward of learning progress or the validated signal (Plan2Explore; Hansen & Wang). Never raw
+       prediction error.
    - **Change.**
      - Trigger: surprise on arrival stays above its own expectation for a context while learning progress there is
        high. That is Yu & Dayan's unexpected uncertainty.
      - Use: replay that context's new segments more, and discount dreams started before the change. Later, the fast
        channel and the episodic store (decisions 6 and 7).
      - Judge: the hidden-rule benchmark (the thirst period first).
-3. **What it isn't:**
+4. **What it isn't:**
    - Mamba's Δ, rejected as an uncertainty signal on 07-06;
-   - the pixel decoder's scale, which is blind to content (and the 10-31 pitfall).
+   - the pixel decoder's scale, which is blind to content (and the 10-31 pitfall);
+   - raw prediction error as curiosity.
 
 ## Parked: thinking when it's worth it (user 11-23, explore after the first proof)
 
@@ -1685,8 +1793,8 @@ References:
 
 **To close the loop (the first agent that lives, dreams and improves):**
 1. **The choice faculty.** Agreed: agent tokens inside the world, look then act in a split pass, with build checks.
-   Proposed 11-23 (Codex's timing): the look reads the belief, periphery, lighting and record read instead of the
-   denoiser (2.8 h less per watching run); the act tokens stay inside the world.
+   The light-eye proposal (11-23) was withdrawn: the full eye stays, and the whole system is optimised instead (fused
+   record, FlexAttention, a shared physical pass).
 2. **Dreaming.**
    - Agreed: the step commits to the outcome before the look.
    - Decided: the glimpse reads nothing new, with no event code (11-23).
@@ -1714,8 +1822,8 @@ References:
 **Designed in from the start, built on a measured trigger:**
 
 5. **Knowing what it doesn't know** (Decision 5, opened 11-23; proposal above, undecided): readings from the start
-   (surprise on arrival, learning progress, an outcome-head ensemble), uses on triggers (dream trust, curiosity,
-   change).
+   (surprise on arrival, learning progress, the world's own flow instability and inter-seed variance), validation
+   before use, uses on triggers (dream trust, curiosity, change); ensembles only as an evaluation tool.
 6. **Memory beyond the episode:** the episodic store (one-shot, survives resets, keeps dreams out), and what survives
    Craftax's episode resets.
 7. **The fast channel:** how adapting in context is learnt (variation in training, scoped above).

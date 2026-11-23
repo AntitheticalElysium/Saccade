@@ -164,3 +164,82 @@ to the last command.
   - DayDreamer's quadruped acts at 20 Hz (50 ms per real step) and its arm at 2 Hz (500 ms; PDF, section 3).
   - A dreamed step is therefore about 3x the cost of a Craftax step, but 18x and 180x faster than those robots' real
     steps. Dreams also run 256 at once.
+
+## Full-eye reuse and whole-world kernels (11-23)
+
+The supplied fixation schedule and available denoiser inputs are matched in this study. The
+sequential split is a frozen-model proxy for the unbuilt agent look and act tokens.
+
+### Prepare gaze-independent work once
+
+On P1.5 the record reads only the periphery. The benchmark prepares the periphery, lighting,
+record scan and both record readouts for a chunk, then runs the same captured split denoiser and
+Mamba sequentially on the chosen crop history. It compares the unprepared and prepared versions
+on eight consecutive synthetic frames with identical fixations.
+
+| Streams | Streaming graph, ms/step | Prepared graph, ms/step | Preparation, ms per chunk | Prepared total, ms/step |
+|---:|---:|---:|---:|---:|
+| 16 | 9.24 | 8.37 | 6.64 | 9.20 |
+| 64 | 31.41 | 27.80 | 24.61 | 30.88 |
+
+After charging the preparation pass, this buys only about 0.06 h over 25.6M frames at 64
+streams. Rebatching bf16 projections also changes the checked trajectory outputs and belief,
+with an aggregate max absolute difference of 0.156 on the short 64-stream sequence. The
+mathematical dependency allows batch preparation. The proved gains and numerical equivalence
+of this particular implementation remain limited.
+
+Within each native dreamed frame, the record projection is identical across the four physical
+calls, the full call at the start of the crop cascade and the context pass. Reusing it once
+preserved the sampled output and committed cache exactly with the same random seed. The sampler
+and context pass together took 114.34 → 112.67 ms at 16 streams and 179.52 → 178.45 ms at 64.
+The benchmark excludes policy and value work and used eager dispatch in both arms.
+
+### Fuse the fixed record scan
+
+One Triton kernel computes the same per-cell complex recurrence and both its before- and
+after-frame outputs, with episode resets. It retains the original channel and frequency state.
+
+| Shape, streams × frames | Native ms | Fused ms | Max absolute state difference |
+|---|---:|---:|---:|
+| 8 × 72 | 15.49 | 1.31 | 3.88e-7 |
+| 2 × 264 | 41.47 | 1.21 | 4.18e-7 |
+| 64 × 8 | 13.09 | 1.20 | 1.79e-7 |
+| 64 × 1 | 1.77 | 0.22 | 5.97e-8 |
+
+These isolated timings include allocation and launch overhead. The world update below is
+the appropriate scale for projecting training savings.
+
+Reproduce with the environment settings above and modules
+`artifacts.experiments.20261123_step_costs.reuse_perf` and
+`artifacts.experiments.20261123_step_costs.record_scan_perf`.
+
+### Combined real-update test
+
+Used the original P1.5 model weights, real training streams, crop targets, loss, and
+optimiser in scratch. Temporal FlexAttention evaluates the same causal local window and
+physical/glimpse masks without materialising the same window's keys and values for each
+query position. The fused record replaces the native fixed recurrence only. Both arms
+use the expandable allocator and three timed updates after one warmup.
+
+| Update shape | Native median | Flex + fused record median | Change | Peak reserved GPU, native → combined |
+|---|---:|---:|---:|---:|
+| 64 frames | 2.237 s | 2.068 s | −7.6% | 3.83 → 3.30 GiB |
+| 256 frames | 8.438 s | 8.242 s | −2.3% | 3.93 → 3.19 GiB |
+
+The three combined long updates were 8.24, 8.05 and 11.82 s. The timing panel is short
+and remains sensitive to compiler warmup of different bootstrap sub-batch shapes and
+execution variability. Same first-batch loss terms differ by up to 0.00035 and 0.00083 at
+the two shapes. Relative L2 differences across sampled gradients are 0.39% and 2.72%.
+The masks and recurrence are preserved mathematically and bf16 execution changes some
+outputs. Native rollout and new gaze parity remain required before switching training.
+
+Projecting the measured medians to the historical update counts gives about **0.76 h**
+of world-loop savings. Applied to the previous captured 64-stream full-eye split
+projection, that is **17.48 h at 25.6M frames**, before unbuilt choice work and extra
+watching. The two timing runs still use separate graph and backward memory pools.
+At this rate 20.48M frames project to roughly 14.0 h under proportional scaling. That
+estimate says nothing about whether the new world or eye is sufficiently trained there.
+
+Reproduce with `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` in addition to the
+environment above, plus module
+`artifacts.experiments.20261123_step_costs.training_perf --arms native record_fused_flex --reps 3 --out artifacts/experiments/20261123_step_costs/training_full_eye_optimizations.json`.

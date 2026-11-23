@@ -2,6 +2,7 @@
 
 import argparse
 import gc
+import importlib
 import json
 import os
 import tempfile
@@ -21,7 +22,7 @@ from saccade import chooser as C, data as D, model as M, train as TR
 HERE = Path(__file__).resolve().parent
 RUN = HERE.parent / "20261116_p15/run"
 ARMS = ("native", "deferred_logging_fused_adam", "temporal_checkpoint_only", "no_checkpoint",
-        "larger_microbatch", "retain_one", "retain_two")
+        "larger_microbatch", "retain_one", "retain_two", "flex_temporal", "record_fused_flex")
 
 
 def temporal_checkpoint(self, x, code, prev_action, memory, fix, episode, valid):
@@ -193,10 +194,27 @@ def main():
         for arm in args.arms:
             gc.collect()
             torch.cuda.empty_cache()
+            dense = M.Block.dense_time
+            scan = M.Record.scan
+            if arm in ("flex_temporal", "record_fused_flex"):
+                flex = importlib.import_module("artifacts.experiments.20261107_f4_followups.flex_bench")
+
+                def use_flex(self, h, ang, win=None, cache=None, phys=None, cur=None, ctx=None):
+                    if ctx is not None:
+                        return dense(self, h, ang, win, cache, phys, cur, ctx)
+                    return flex.flex_dense_time(self, h, ang, win, cache, phys, cur)
+
+                M.Block.dense_time = use_flex
+            if arm == "record_fused_flex":
+                fused = importlib.import_module("artifacts.experiments.20261123_step_costs.record_scan_perf")
+                M.Record.scan = fused.fused_scan
             try:
                 outcome = run(saved, cfg, arm, steps, args.reps)
             except torch.cuda.OutOfMemoryError:
                 outcome = {"status": "out_of_memory"}
+            finally:
+                M.Block.dense_time = dense
+                M.Record.scan = scan
             result[str(steps)][arm] = outcome
             args.out.write_text(json.dumps(result, indent=2) + "\n")
             print(steps, arm, outcome.get("median", outcome), flush=True)

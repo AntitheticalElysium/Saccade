@@ -14,6 +14,12 @@
   the entries this localizer puts in reach. The fine-tune ends about 10:30, and the readings follow. They are added
   here when they land.
 
+- **The sixth localizer is training** (PLAN, amended 08:05 before its results). It replaces only the match's metric,
+  with the within-place scatter below. With the fifth's trained prior and only the metric swapped, a development
+  check on the diagnosis episodes raised lookups from 0.429 to 0.569. Cells stored six or more cells away fell from
+  0.316 to 0.088, and the dark's moved posterior rose from 0.688 to 0.911 (`diagnosis_v5/metric_chain.py`). Its
+  reading 2 on the full panel is added here when it lands. If it beats 0.438, the read retrains with it.
+
 Everything is one seed, as the PLAN declares.
 
 ## Reading 2: the localizer, five versions

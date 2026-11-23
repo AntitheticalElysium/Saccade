@@ -4,6 +4,7 @@
   23
  ],
  "ckpt": "localizer_v5.pt",
+ "metric": "fifth's own",
  "merged_from": [
   "chain_localizer_v5_0_6.json",
   "chain_localizer_v5_6_12.json",

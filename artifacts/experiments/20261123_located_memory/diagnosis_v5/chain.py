@@ -22,7 +22,7 @@ OFFS = torch.stack([LM.NR, LM.NC], -1)
 
 
 @torch.no_grad()
-def main(n_eps=23, first=0):
+def main(n_eps=23, first=0, tag=""):
     dev = torch.device("cpu")
     loc = LM.Localizer(); loc.load_state_dict(torch.load(LM.RUN / LM.LOC_CKPT, map_location=dev)); loc.eval()
     data = torch.load(LM.DATA / "tokens_panel.pt")[first:first + n_eps]
@@ -119,7 +119,7 @@ def main(n_eps=23, first=0):
                      "prior_true_mass_median": float(np.median(S["prior_true"][sel]))}
     out["lookups"] = {f"{a}_{b}": v for (a, b), v in looks.items()}
     out["lookups_misplaced_distance"] = {f"{a}_{d}": v for (a, d), v in sorted(far.items())}
-    (LM.HERE / "diagnosis_v5" / f"chain_{LM.LOC_CKPT.replace('.pt', '')}_{first}_{first + n_eps}.json").write_text(json.dumps(out, indent=1) + "\n")
+    (LM.HERE / "diagnosis_v5" / f"chain_{LM.LOC_CKPT.replace('.pt', '')}{tag}_{first}_{first + n_eps}.json").write_text(json.dumps(out, indent=1) + "\n")
     print(json.dumps(out, indent=1))
 
 

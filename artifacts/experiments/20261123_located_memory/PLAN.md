@@ -180,6 +180,44 @@ out, because no policy or value exists yet to teach it.
     - If the fifth localizer's lookups beat the second's (0.434), the second localizer's fine-tune is stopped. The
       read is then retrained, and readings 1, 3 and 4 rerun, with the fifth, by the same recipe and code.
     - Otherwise the second localizer's run continues.
+  - **Applied 11-24 at 07:31:** the fifth's lookups were 0.4378 against 0.4343. The second's fine-tune was stopped at
+    update 800, and the read retrains with the fifth.
+- **The sixth localizer, amended 11-24 at 08:05, before its reading 2.** The code is `memory_v6.py`: `memory.py`
+  patched in its own process, so the fifth's read fine-tune and readings, which import `memory.py`, are untouched.
+  - **The fifth's measured failure** (`RESULTS.md`, `diagnosis_v5/`, episodes 0-22 only):
+    - by day the trail held (moved posterior 0.968), but 32% of lookups found their cell stored six or more cells
+      away: no loop ever closed;
+    - P1.5's coarse tokens of a world cell change with daylight. Two daylight sightings match 0.94-1.00 at a steady
+      light, at every gap and screen shift, and 0.00-0.14 after a change of 0.1 or more. The match's tolerance came
+      from consecutive frames.
+  - **The change: the match's metric only.**
+    - A token and an entry match when their Mahalanobis distance under the within-place scatter is below its 90th
+      percentile on the pairs that define it. That's the same construction as the fifth's threshold, so P(match |
+      same content) = 0.9 as before.
+    - The within-place scatter is the change covariance of the same screen cells across the agent's own runs of
+      non-movement commands (TRAIN episodes, label-free; 3.3 million pairs). It is the scatter Fisher's discriminant
+      discounts, which Fisherfaces project away to recognise across lighting (Belhumeur, Hespanha & Kriegman 1997,
+      TPAMI 19(7), DOI 10.1109/34.598228).
+    - Hits and the bank's new-place rate both use it. Everything else is the fifth's: the evidence form, the common
+      support, the agent's own cell, relocation. The motion prior and relocation are retrained by the same recipe.
+  - **The development check** (`diagnosis_v5/metric_chain.py`): the fifth's trained prior with the metric swapped, the
+    real filter, episodes 0-22.
+
+    | | The fifth's metric | The within-place metric |
+    |---|---|---|
+    | Posterior, moved day / moved dark | 0.968 / 0.688 | 0.993 / 0.911 |
+    | Posterior, blocked day / blocked dark | 0.972 / 0.953 | 0.979 / 0.942 |
+    | Lookups | 0.429 | 0.569 |
+    | Cell stored six or more cells away | 0.316 | 0.088 |
+
+    Per cell (`within_scatter.py`), at a daylight change of 0.1 or more: same-cell matches 0.018 to 0.864, chance
+    matches 0.010 to 0.345.
+  - Reading 2 then runs on the full panel with the bar unchanged, plus episodes 23-119 (unseen by every check).
+  - **Decided before its reading 2:** the 06:20 rule applies again.
+    - If the sixth's lookups beat the fifth's (0.438), the fifth's read fine-tune is stopped. The read is retrained,
+      and readings 1, 3 and 4 run, with the sixth, by the same recipe and code (`memory_v6.py train`, then `readings
+      2000`).
+    - Otherwise the fifth's run continues.
 - **The geometry, declared:**
   - which screen cells view the world (the 7 × 9 map cells), and their offsets, are the sensor's embodiment facts;
   - the status rows are not written to the place memory;

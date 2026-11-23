@@ -241,6 +241,24 @@ agreed; 2 and 3 researched again (below).**
   - time per real step and memory at 6 GB;
   - one-way attention verified: the world's outputs are unchanged when the agent tokens change;
   - prediction quality unchanged.
+- **Measured 11-23, with a proposed revision of what the look reads (Codex; the user decides).**
+  - An eye that reads the belief chooses a chunk's looks one frame at a time (Decision 3).
+  - Projected over P1's 25.6 M frames with CUDA graphs (`20261123_step_costs/RESULTS.md`):
+    - a look riding the denoiser's physical half costs 30.5 ms per step for 64 streams: about 3.4 h, or 18.2 h for
+      the watching run;
+    - a light look reading the belief, the current periphery and lighting, and the record read costs 2.8 ms at 32
+      streams: 0.6 h, or 15.5 h.
+  - **In life the gap mostly closes.** The act tokens run the denoiser's pass every awake step anyway, so a look
+    riding its physical half costs little there. The 2.8 h is a watching cost.
+  - **What the denoiser adds before the crop is unmeasured.** The light look reads what the world's own crop predictor
+    (TSP) reads to predict a crop: the predicted belief, the periphery and the lighting. The evidence for where a crop
+    will be informative is within its reach.
+  - **Proposal:**
+    - the look reads the belief, the current periphery, the lighting and the record read; the act tokens stay inside
+      the world as agreed;
+    - the same look in every phase, so it trains on what it will use;
+    - the trigger to revisit: eye coverage of high-belief-change windows (night creatures) stays poor. Then the look
+      gets the denoiser's physical half.
 - **Codex (11-22), not yet answered before this note:**
   - **Information versus computation.** Codex would start from belief + acquired spatial evidence + a record read, then
     test what denoiser activations add on that same interface: comparing the belief alone against agent tokens changes
@@ -1306,6 +1324,106 @@ decisions 1-3:
      These are the first build measurement. r then follows from the time we give a life and the measured costs, not
      from tuning.
    - One GPU job at a time; replay on disk.
+8. **How much to dream (the user asked, 11-23).**
+   - **Dreamer 4's one rollout per context is cheaper because it dreams less.** That is 240 dreamed steps per 4,096-frame
+     update, against DreamerV3's 15 from every replayed frame. Dreamer 4 gives its reason: "prioritizing data
+     diversity and reducing memory consumption".
+     - DreamerV3 can afford about 7,680 imagined transitions per real step on Crafter because its imagined step is a
+       small latent recurrent step that renders nothing.
+     - Dreamer 4's, like ours, runs a large generative transformer for every imagined frame.
+   - **Measured:** a dreamed step costs at least 2.8 ms per stream here, about 1.5x training on a real frame
+     (`20261123_step_costs`, second reading).
+   - **Dreaming is cheap relative to reality only where reality is expensive.**
+     - A dreamed step is about 3x a Craftax step (0.9 ms on one CPU core), so on Classic reality is cheaper than
+       imagination.
+     - That is the environment, a fast simulator, not our hardware: a faster GPU speeds dreams, but a hand-written
+       simulator stays cheaper than a learned one.
+     - DayDreamer's robots act at 20 Hz and 2 Hz, so the same dreamed step is 18x and 180x faster than their real
+       steps, runs 256 at once, risks nothing, and can branch from any remembered moment.
+     - The benchmark's real-step budget is how Classic stands in for expensive reality. We report wall-clock time
+       beside it.
+   - **"Enough" is not a fixed ratio.** Dreams get their own share of the offline GPU time and their own starts, drawn
+     from replay with the online queue, independent of the world's batch.
+     - **The reading:** within each offline phase, whether the policy's dream objective is still improving when the
+       phase ends.
+       - Still improving: dreams are the bottleneck, so give them more of the phase.
+       - Flat early: the world or reality is, so give them less.
+     - Precedent: Sutton's 1990 Dyna shows learning curves for 0, 10 and 100 planning steps per real step, and
+       DreamerV3's README: "Increasing the number of gradient steps further increases data efficiency."
+     - **Provisional:** dreams get half of the offline GPU time. At replay ratio 16 that is about 11 dreamed steps per
+       real step.
+
+### Decision 5: knowing what it doesn't know (opened 11-23; research and proposal, undecided)
+
+**What it is for: three jobs the life cycle exposes.**
+1. **Trusting a dream.** A world that is wrong where the policy goes teaches the policy to exploit it. On 07-06, a
+   policy trained in a frozen world scored below random in real Crafter. Reality corrects only where the agent goes.
+2. **Curiosity:** where to go and look to learn, beyond what the reference's KL and the eye's information drive give.
+3. **Noticing change:** a rule or a place is new, so learning speeds up there and stale dreams stop counting.
+
+On 10-23 this was agreed in principle. On 10-25 it was shelved until the complete model exists, with "keep it cheap
+to add later (modular prior heads, ...)".
+
+**Three kinds of unpredictability, which prediction error mixes:**
+- **Expected:** noise no learning removes, like night static. In the brain, acetylcholine signals "expected
+  uncertainty, coming from known unreliability of predictive cues within a context" (Yu & Dayan 2005).
+- **Epistemic:** what the world hasn't learned yet. It should drive curiosity and limit trust in dreams.
+- **Unexpected:** the rules changed. Norepinephrine signals unexpected uncertainty in the same account.
+
+Raw prediction error can't tell them apart. That is the noisy-TV problem: a curious agent "finds a source of
+randomness in the environment and keeps observing it" (Burda et al. 2018; OpenAI's write-up). Our pixel surprise fell
+into it with night static (`20261123_eye_drives`).
+
+**Precedents, read at abstract level unless noted:**
+- **Epistemic uncertainty by disagreement:**
+  - Plan2Explore approximates expected information gain by "the disagreement in predictions of an ensemble of one-step
+    models" (Sekar et al. 2020);
+  - STEVE weights rollouts of many horizons by ensemble variance (Buckman et al. 2018);
+  - MOPO penalises dreamed reward by uncertainty, and MOReL learns a pessimistic model (both read 11-22);
+  - DECU trains ensembles on shared pretrained parameters to give a diffusion model epistemic uncertainty (Berry et
+    al. 2024).
+- **Learning progress avoids noise:** a robot driven to maximise learning progress "avoids situations in which nothing
+  can be learnt" (Oudeyer, Kaplan & Hafner 2007).
+- **Change detection:**
+  - Bayesian online changepoint detection infers "the posterior distribution over the current run length", the time
+    since the last change (Adams & MacKay 2007);
+  - latent-cause inference (Gershman et al.) and volatility-set learning rates (Behrens et al. 2007), both read 11-22.
+- **Our own measurements:**
+  - the spread of independent samples from one generative world predicted its open-loop error at AUC 0.74 in Memory
+    Maze, while Mamba's Δ did not (0.59; 07-06);
+  - belief change resists static better than pixel surprise (11 against 26 of 48 dark repeat pairs).
+
+**What the system already computes, with no new module:**
+- the world's loss on each new segment on arrival (Decision 4's plasticity reading): surprise at real experience;
+- its drop after the online-queue update: learning progress;
+- each crop's belief change: the eye's information drive;
+- several draws per start at evaluation forks: sample spread.
+
+**Proposed: readings from the start, uses on a measured trigger.**
+1. **Readings, from the start:**
+   - surprise on arrival and learning progress for every segment, logged by context (day, night, own life, corpus);
+   - a small ensemble of outcome heads (reward and continuation) on the shared features, trained on real data like
+     the existing heads. Their disagreement is epistemic uncertainty about consequences, which decisions hinge on, and
+     where our measured errors are optimistic (danger under-drawn). This is DECISIONS' "modular prior heads". The
+     ensemble's size comes from precedent, read at the source when built.
+2. **Uses, each on its trigger:**
+   - **Dream trust.**
+     - Trigger: dreamed against real action differences show a bias (Decision 2's reading), or dreamed return rises
+       while real return stalls.
+     - Use: penalise dreamed reward by the heads' disagreement (MOPO), or weight the return's horizons by it (STEVE).
+       This is where the project's original uncertainty-set horizons would attach, as a later add-on.
+   - **Curiosity.**
+     - Trigger: real coverage stalls (achievement discovery flattens, the online queue brings little new).
+     - Use: an intrinsic reward of learning progress or head disagreement (Plan2Explore). Never raw prediction error.
+   - **Change.**
+     - Trigger: surprise on arrival stays above its own expectation for a context while learning progress there is
+       high. That is Yu & Dayan's unexpected uncertainty.
+     - Use: replay that context's new segments more, and discount dreams started before the change. Later, the fast
+       channel and the episodic store (decisions 6 and 7).
+     - Judge: the hidden-rule benchmark (the thirst period first).
+3. **What it isn't:**
+   - Mamba's Δ, rejected as an uncertainty signal on 07-06;
+   - the pixel decoder's scale, which is blind to content (and the 10-31 pitfall).
 
 ## Parked: thinking when it's worth it (user 11-23, explore after the first proof)
 
@@ -1567,6 +1685,8 @@ References:
 
 **To close the loop (the first agent that lives, dreams and improves):**
 1. **The choice faculty.** Agreed: agent tokens inside the world, look then act in a split pass, with build checks.
+   Proposed 11-23 (Codex's timing): the look reads the belief, periphery, lighting and record read instead of the
+   denoiser (2.8 h less per watching run); the act tokens stay inside the world.
 2. **Dreaming.**
    - Agreed: the step commits to the outcome before the look.
    - Decided: the glimpse reads nothing new, with no event code (11-23).
@@ -1593,8 +1713,9 @@ References:
 
 **Designed in from the start, built on a measured trigger:**
 
-5. **Knowing what it doesn't know:** uncertainty that sets how far to trust a dream and where to look or go to learn
-   (curiosity), and change detection.
+5. **Knowing what it doesn't know** (Decision 5, opened 11-23; proposal above, undecided): readings from the start
+   (surprise on arrival, learning progress, an outcome-head ensemble), uses on triggers (dream trust, curiosity,
+   change).
 6. **Memory beyond the episode:** the episodic store (one-shot, survives resets, keeps dreams out), and what survives
    Craftax's episode resets.
 7. **The fast channel:** how adapting in context is learnt (variation in training, scoped above).

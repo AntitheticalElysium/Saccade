@@ -61,3 +61,30 @@ each scene. This does not measure a trained eye or the benefit of the crop to a 
 
 Reproduce with
 `JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 MAMBA_DETERMINISTIC=1 .venv/bin/python -m artifacts.experiments.20261123_look_information.belief_static_audit`.
+
+## Third reading: belief change on C8's failure classes (`belief_categories.py`, `belief_categories.json`)
+
+On 11-20 a different "belief change" failed: the switching dissection's C8 measured the shift in the world's
+zero-signal prediction of frame t + 1 from seeing the real frame t. Today's definition (fine minus periphery-acuity
+crop, the current corrected belief) is read here on C8's failure classes. Starts are frames where the player moved or a
+HUD value changed.
+
+| Belief change, absolute (relative) | Creature | Entering terrain | Static map | Changed HUD | Unchanged HUD |
+|---|---:|---:|---:|---:|---:|
+| Day | 0.936 (5.6%) | 0.365 (2.2%) | 0.408 (2.4%) | 0.726 (4.3%) | 0.638 (3.8%) |
+| Night | 0.680 (4.1%) | 0.227 (1.4%) | 0.340 (2.0%) | 1.003 (6.0%) | 0.708 (4.2%) |
+
+Counts: day 621 / 570 / 952 / 451 / 952; night 266 / 212 / 326 / 141 / 326. Intervals are in the JSON.
+
+- **C8's failure doesn't recur.** Entering terrain scores below static (C8 gave it 43% of its score). Newly entering
+  terrain's fine detail adds little beyond what the coarse view identifies.
+- **Changed HUD scores above unchanged,** clearly at night (1.00 against 0.71) and modestly by day (0.73 against 0.64).
+- **A caveat:** unchanged HUD still moves the belief 1.6-2x as much as static, although the coarse view holds the HUD
+  digits exactly. Belief change partly rewards structured detail, not only new information. Night static's
+  high-frequency noise moves it less (0.34), so it isn't simply pixel difference.
+  - Codex's static control on renderer repeats (`belief_static_audit.py`): the best window switches on 11/48 dark
+    repeat pairs, against 26/48 for pixel surprise. That is less sensitive, but static still changes the reward.
+- **Softened (Codex):** the predictive-gain test gave the predictor the actual next periphery. A zero gain could mean
+  redundancy (the next frame already carries it), weak retention, or a readout that barely uses the carried belief.
+  - A forecast scored before revealing the next frame would separate these.
+  - P1.5 has no trans-saccadic forecast mode (`heads.forecast.tsp` is false), so that needs a generation pass.

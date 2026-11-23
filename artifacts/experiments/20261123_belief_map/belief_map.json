@@ -594,5 +594,24 @@
    "cols": -0.46676273349827513
   },
   "note": "displacement from the episode start"
+ },
+ "positive_controls": {
+  "drink": {
+   "majority": 0.13114902886186242,
+   "positives_test": null,
+   "belief": 0.43928117625703395,
+   "view": 1.0,
+   "view_record": 0.9999092394263932
+  },
+  "zombie_adjacent": {
+   "majority": 0.860864040660737,
+   "positives_test": 1533,
+   "belief": 0.9476311490288618,
+   "view": 0.9793065892176439,
+   "view_record": 0.9673261935015429,
+   "belief_balanced": 0.8353230166352543,
+   "view_balanced": 0.942316033727852,
+   "view_record_balanced": 0.9134822346266516
+  }
  }
 }

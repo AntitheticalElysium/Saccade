@@ -161,3 +161,68 @@ The expected wrong draws on revisits in the surprising context (3,310 of 4,996 c
 - **Grass, sand and path account for the rest (42%).** Decisions rarely depend on them.
 - First sightings show the same low agreement on rare classes (trees 0.056, coal 0.010), as they must without memory.
   Revisits are where memory could recover them.
+
+## Coarse-map coverage and routes to off-screen water (11-23)
+
+`offscreen_routes.py` replays recorded terrain views and poses in the same DEV episodes
+used by the archived P1.5 chooser analysis. It examines every fourth nonterminal
+frame after frame 8 when the player is awake, drink is at most 3, and water is
+absent from the current labelled view. This yields 1,540 snapshots from 85 non-random
+episodes. Every comparison gets the same current view. The dense memory writes all
+observed terrain, while two alternatives write only the saved chooser's sampled
+windows or uniform windows, each with four sampled histories per episode. Gaze is
+uniform in the first eight frames where the archive lacks predictions.
+
+Use BFS on observed walkable terrain only, with the game’s static passability and
+the simulator poses and terrain labels. Stop adjacent to previously seen water.
+The route length omits the final turn and interaction. Dynamic entities and actual
+action success are outside this test. A matched-path control gives each gaze arm
+the dense coarse layout while leaving its candidate water addresses gaze-gated.
+
+| Route budget | All-coarse solvable states | Old-eye-only retains | Old eye targets with full route layout retains |
+|---:|---:|---:|---:|
+| 16 moves | 906 of 1,540 | 91.36% [87.57, 94.51] | 95.31% [92.08, 97.69] |
+| 32 moves | 1,275 of 1,540 | 89.59% [84.48, 94.14] | 96.75% [92.87, 99.35] |
+
+Retention is conditional on a qualifying route with all-coarse memory. Intervals
+resample the original episodes. Uniform gaze retains 92.10% at 32 moves, and 97.29%
+with the full-layout control. Thus some misses are due to forgetting the target,
+and much of the loss can be recovered by keeping the traversable layout. Sparse
+updates sometimes leave an older terrain entry. At the 16-move threshold the
+archived-eye maps report four sampled routes that the latest all-coarse layout
+does not confirm; there are no such cases at 32 moves. The diagnostic prices
+storage and geometric coverage under exact observations and assumed poses.
+Learned policy returns and an eye that adapts its looks to navigation remain open.
+
+Reproduce with `.venv/bin/python -m artifacts.experiments.20261123_place_memory.offscreen_routes`.
+
+## Unconditional writes from dream renders (11-23)
+
+`dream_write_audit.py` copies the last 64 observed real frames plus the start into
+a geometry-only anchor map for the 1,000 competent-history random-plan roots. It
+then looks at the saved eight P1.5 dreams and oracle-half-B real continuations per
+root, using the same terrain reader and applying the same action constraints to
+the camera shifts. The readout reports positions in the same origin and the map
+indexes the previous real evidence at those positions. Only stable anchor classes,
+frames with valid terrain readouts, and steps through termination and before the
+first action that could edit terrain are counted. The set of potential edit actions
+includes DO, placing stone, table, furnace or plant. The study measures what would
+happen if each new frame unconditionally replaced the observed entry in its
+branch-local store. It does not run a store-trained world.
+
+| Reading | Real-rendered continuations | P1.5 dreams |
+|---|---:|---:|
+| Returning observed places whose reader class disagrees with the anchor | 285 / 18,035 (1.58%) | 5,843 / 18,137 (32.22%) |
+| Any valid exposure to a previously observed anchor whose class disagrees | 20,589 / 1,165,317 (1.77%) | 69,857 / 1,172,386 (5.96%) |
+| Touched anchor slots whose last eligible write would disagree | 6,377 / 354,307 (1.80%) | 22,176 / 354,673 (6.25%) |
+
+These are conditional on a recognizable rendered class at an inferred address.
+Pose error and reader error contribute to disagreements. The real-rendered arm
+gives a scale for those errors under genuine observations. Generated observations
+have different pose and reader errors. The comparison illustrates the risk of
+letting a rendering resample what an earlier observation established. A branch
+can retain its observed anchors and layer action-conditioned changes and newly
+imagined places over them. Testing the consistency and use of those changes is
+separate from this audit.
+
+Reproduce with `.venv/bin/python -m artifacts.experiments.20261123_place_memory.dream_write_audit`.

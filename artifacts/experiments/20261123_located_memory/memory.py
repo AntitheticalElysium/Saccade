@@ -65,91 +65,120 @@ def laplace(c, mean, log_b):
     return -(c - mean).abs().sum(-1) / log_b.exp() - 16 * (math.log(2) + log_b)
 
 
+SELF = 31                                       # the agent's own cell (row 3, col 4): it shows its body, not the world
+
+
 class Localizer(nn.Module):
     """The motion prior p(d | view, lighting, command) over 9 offsets, the robust per-cell match of a new view against
     an entry, and the relocation probability.
 
-    The match (amended 11-24 after the diagnosis in localizer_diagnosis.json): each observation, new or stored, has a
-    learned token offset, log-scale part and trust part from where on the sensor it was seen and the lighting it was
-    seen under (the sensor's own response: vignetting, as photometric calibration estimates it online, Bergmann et al.
-    2018; content that moves with the sensor, Godard et al. 2019); the entry adds its age's parts. The terms are per
-    observation, never per pair, so 'seen at the same screen cell' cannot itself become evidence of no motion. A cell
-    with no entry is scored by its predictive density given its parent cell in the same view (the spatial prior), so
-    covering more of the store is no evidence in itself; the match's outlier component is that same density.
-    Amended 11-24 (v4, diagnosis_v3/): the sensor-fixed explanation is scored by memory's own function, and memory's
-    trust also has a part from each observation's own content, so an entry whose content the null already explains
-    (uniform terrain: identical but indistinctive, Cummins & Newman 2008) costs a mapped pose nothing."""
+    The match (the fifth form, 11-24; the four before it and their measured failures are in PLAN.md and
+    diagnosis_v1-5/) is closed-form, calibrated before training from the agent's own tokens (`calibrate`): each screen
+    cell's noise scale as a function of the lighting latent, and the sensor's repeatability. A cell's evidence is
+    binary, as FAB-MAP's observations are (Cummins & Newman 2008): does the new token match the entry within that
+    repeatability, against how often it would match at a new place (sampled observations: the content's frequency).
+    Local hypotheses are compared on the cells all of them can predict (`support`); the agent's own cell is not
+    matched or written. Only the motion prior and relocation are learned."""
 
-    def __init__(self):
+    def __init__(self, n_bank=512):
         super().__init__()
         self.prior = nn.Sequential(nn.Linear(MAP * 16 + 8 + 17, 256), nn.GELU(), nn.Linear(256, 9))
-        self.pos = nn.Embedding(MAP, 16)
-        self.obs = nn.Sequential(nn.Linear(16 + 8, 64), nn.GELU(), nn.Linear(64, 18))
-        nn.init.zeros_(self.obs[-1].weight); nn.init.zeros_(self.obs[-1].bias)      # starts position- and light-free
-        self.age = nn.Linear(5, 2)
-        self.tc = nn.Sequential(nn.Linear(16, 32), nn.GELU(), nn.Linear(32, 1))    # trust from an observation's content
-        nn.init.zeros_(self.tc[-1].weight); nn.init.zeros_(self.tc[-1].bias)
-        self.nb = nn.Parameter(torch.zeros(2))                                     # the spatial prior's (log scale, trust)
-        self.nid = nn.Parameter(torch.zeros(1))         # the sensor-fixed component's mixture weight (its scale is memory's)
-        self.log_b_bg = nn.Parameter(torch.zeros(()))
         self.logit_eps = nn.Parameter(torch.tensor(-9.0))
+        self.register_buffer("w_sc", torch.zeros(MAP, 9))          # log scale of a same-cell pair = [lighting, 1] . w_sc[cell]
+        self.register_buffer("bank", torch.zeros(n_bank, 25))      # new-place observations: token, cell, lighting
+        self.register_buffer("thr", torch.zeros(()))               # a match: the change within this many units of scale
+
+    def calib(self, k, v):
+        """An observation's (token offset [..., 16], log noise scale [...]) from its screen cell k [...] and lighting
+        v [..., 8]. No offset: by day the same world cell gives the same token one screen cell over (median change
+        0.165 against 0.15 at the same cell, `diagnosis_v5/equivariance.py`), and a per-cell offset broke that (1.06)."""
+        x = torch.cat([v.float(), torch.ones_like(v[..., :1]).float()], -1)
+        k = k.long().clamp(0, MAP - 1)
+        return torch.zeros(*k.shape, 16, device=v.device), (x * self.w_sc[k]).sum(-1) - math.log(2)
 
     def kernel(self, p, v, a):
-        """p [B, 81, 16], v [B, 8], a [B] the command -> log p(d) [B, 9]."""
-        return self.prior(torch.cat([p[:, :MAP].flatten(1), v, F.one_hot(a.clamp(min=0), 17).float()], -1)).log_softmax(-1)
-
-    def bg(self, c):
-        return -c.abs().sum(-1) / self.log_b_bg.exp() - 16 * (math.log(2) + self.log_b_bg)
+        """p [B, 81, 16], v [B, 8], a [B] the command -> log p(d) [B, 9] (on the calibrated view)."""
+        d, _ = self.calib(CELLS.to(v.device).expand(len(v), MAP), v[:, None].expand(len(v), MAP, 8))
+        x = (p[:, :MAP].float() - d).flatten(1)
+        return self.prior(torch.cat([x, v, F.one_hot(a.clamp(min=0), 17).float()], -1)).log_softmax(-1)
 
     def obs_terms(self, k, v):
-        """An observation's (token offset [..., 16], log-scale part [...], trust part [...]) from its screen cell k [...]
-        and lighting v [..., 8]."""
-        o = self.obs(torch.cat([self.pos(k.long().clamp(0, MAP - 1)), v.float()], -1))
-        return o[..., :16], o[..., 16], o[..., 17]
+        """An observation's (token offset [..., 16], log noise scale [...], unused trust slot [...])."""
+        d, ls = self.calib(k, v)
+        return d, ls, torch.zeros_like(ls)
 
     def now_terms(self, v):
         """The new view's per-cell terms [B, 63, ...]."""
         return self.obs_terms(CELLS.to(v.device).expand(len(v), MAP), v[:, None].expand(len(v), MAP, 8))
 
     def entry_terms(self, e, age, present):
-        """An entry's (offset-corrected token, log-scale part, trust part), its age's parts included. e [..., NE]."""
-        d, s, tau = self.obs_terms(e[..., CPOS], e[..., CLIGHT])
-        a = self.age(PR.age_features(age, present))
-        return e[..., CT] - d, s + a[..., 0], tau + a[..., 1] + self.tc(e[..., CT])[..., 0]
+        """An entry's (token, log noise scale, unused trust slot). e [..., NE]."""
+        d, ls, tau = self.obs_terms(e[..., CPOS], e[..., CLIGHT])
+        return e[..., CT] - d, ls, tau
 
     def null(self, c, now, prev=None):
-        """log density of each new cell without the world memory [B, 63]: a mixture of its parent cell in the same view
-        (the spatial prior; none for the centre cell), the same screen cell in the previous frame (sensor-fixed content:
-        the agent's own sprite, the night tint and the static's strength by screen position; amended 11-24, Godard et
-        al. 2019's auto-masking in probabilistic form) and the background. The sensor-fixed explanation is scored by the
-        same function as memory's: the previous frame's token as an age-1 entry seen at this cell (amended again 11-24;
-        with a scale of its own it collapsed onto exact repeats, diagnosis_v3/). c [B, 63, 16]; prev = (previous coarse view [B, 63, 16], its lighting
-        [B, 8], whether it exists [B])."""
-        d, s, tau = now
-        dev = c.device
-        nb = NB.to(dev)
-        comps = [self.bg(c)]
-        logits = [torch.zeros_like(comps[0])]
-        has_nb = nb != CELLS.to(dev)
-        comps.append(laplace(c, c[:, nb] - d[:, nb] + d, self.nb[0] + s + s[:, nb]))
-        logits.append(torch.where(has_nb, self.nb[1] + tau + tau[:, nb], torch.full_like(tau, -1e4)))
-        if prev is not None:
-            cp, vp, hp = prev
-            dp, sp, tp = self.now_terms(vp)
-            one = torch.ones(1, device=dev)                                      # scored as memory scores an age-1 entry
-            a1 = self.age(PR.age_features(one, one.bool()))[0, 0]               # seen at this screen cell (11-24, v4)
-            comps.append(laplace(c, cp.float() - dp + d, sp + a1 + s))
-            logits.append(torch.where(hp[:, None], self.nid[0] + tau + tp, torch.full_like(tau, -1e4)))
-        lw = torch.stack(logits, -1).log_softmax(-1)
-        return (lw + torch.stack(comps, -1)).logsumexp(-1)
+        """How often a cell's token would match at a new place [B, 63]: the share of the bank's observations it
+        matches (Cummins & Newman 2008's new-place model by sampling; for a binary observation, the content's
+        frequency). `prev` is unused (kept for the callers)."""
+        d, ls, _ = now
+        bd, bls = self.calib(self.bank[:, 16], self.bank[:, 17:])
+        m = (self.bank[:, :16] - bd)[None, None] + d[:, :, None]                   # [B, 63, n_bank, 16]
+        lb = torch.logaddexp(bls[None, None], ls[:, :, None])
+        hit = ((c[:, :, None].float() - m).abs().sum(-1) / lb.exp() < self.thr).float().mean(-1)
+        return hit.clamp(1 / len(self.bank), 1 - 1 / len(self.bank))
 
     def score(self, c, now, ent, present, null):
-        """log(trust Laplace(c; entry + offsets) + (1 - trust) p_null(c)) - log p_null(c), zero without an entry.
-        c [..., 16]; now = the new cell's (offset, log-scale, trust) parts; ent = entry_terms; null [...]."""
-        (d, s, tau), (e0, s_e, t_e) = now, ent
-        logit = t_e + tau + self.tc(c)[..., 0]
-        mix = torch.logaddexp(F.logsigmoid(logit) + laplace(c, e0 + d, s_e + s), F.logsigmoid(-logit) + null)
-        return torch.where(present, mix - null, torch.zeros_like(mix))
+        """A cell's evidence for the hypothesis, binary as FAB-MAP's observations are: the new token matches the entry
+        when their change is within the sensor's repeatability (`thr`, the 90th percentile of the change after a
+        command that doesn't move the agent, in units of the pair's scale), with P(match | same content) = 0.9 by that
+        construction. log(0.9 / p_new) if it matches, log(0.1 / (1 - p_new)) if not, zero without an entry: bounded,
+        and weak where the content is common. c [..., 16]; now, ent: the terms; null [...]: p_new."""
+        (d, ls, tau), (e0, ls_e, t_e) = now, ent
+        hit = (c - (e0 + d)).abs().sum(-1) / torch.logaddexp(ls_e, ls).exp() < self.thr
+        q = torch.full_like(null, 0.9)
+        ev = torch.where(hit, (q / null).log(), ((1 - q) / (1 - null)).log())
+        return torch.where(present, ev, torch.zeros_like(ev))
+
+
+@torch.no_grad()
+def calibrate(loc, data, seed=20261124):
+    """The sensor's calibration in closed form, label-free, from the agent's own TRAIN tokens, lighting and commands:
+    - each cell's noise scale, from frames after a command that doesn't move the agent (it knows it didn't move): one
+      Laplace on the calibrated frame-to-frame change, log-scale linear in the lighting latent, by Newton's method (a
+      single component, so it cannot collapse onto exact repeats);
+    - the match threshold: the 90th percentile of that change in units of the scale;
+    - the new-place bank: observations sampled from TRAIN map cells other than the agent's own."""
+    P = torch.cat([r["p"][:, :MAP].float() for r in data])                    # [N, 63, 16]
+    V = torch.cat([r["v"].float() for r in data]); X = torch.cat([V, torch.ones(len(V), 1)], -1)
+    Q = P
+    idx, off = [], 0
+    for r in data:
+        a = r["prev_action"]
+        idx += [off + t for t in range(1, r["T"] + 1) if int(a[t]) not in GT.MOVE]
+        off += r["T"] + 1
+    idx = torch.tensor(idx)
+    R, Xs = (Q[idx] - Q[idx - 1]).abs().sum(-1), X[idx]                         # [Ns, 63], [Ns, 9]
+    w = torch.zeros(MAP, 9); w[:, -1] = (R.mean(0) / 16).clamp(min=1e-6).log()
+    w.requires_grad_(True)
+    opt = torch.optim.LBFGS([w], max_iter=200, line_search_fn="strong_wolfe", tolerance_grad=1e-9, tolerance_change=1e-12)
+    def nll():                                                                  # the Laplace NLL, convex in w
+        opt.zero_grad()
+        xw = Xs @ w.T
+        f = (R * torch.exp(-xw) + 16 * xw).mean()
+        f.backward()
+        return f
+    with torch.enable_grad():
+        opt.step(nll)
+    g = w.grad.detach(); w = w.detach()
+    # a match: within the 90th percentile of the static change in units of the fitted scale (the sensor's own
+    # repeatability, mobs and lighting drift included), so P(match | same content) = 0.9 by construction
+    loc.thr.fill_(float((R / torch.exp(Xs @ w.T)).flatten().quantile(0.9)))
+    gen = torch.Generator().manual_seed(seed)
+    fi = torch.randint(len(P), (len(loc.bank),), generator=gen)
+    ki = torch.randint(MAP - 1, (len(loc.bank),), generator=gen); ki = ki + (ki >= SELF).long()
+    loc.w_sc.copy_(w)
+    loc.bank.copy_(torch.cat([P[fi, ki], ki[:, None].float(), V[fi]], -1))
+    return {"static_frames": len(idx), "lbfgs_grad_max": float(g.abs().max()), "thr": float(loc.thr)}
 
 
 def empty(n, dev):
@@ -210,9 +239,10 @@ class Map:
         return out, cp, fp, dream
 
 
-def grid_loglik(loc, ent, c, v, t, memory_term=True, prev=None):
-    """Sum over the new view's 63 map cells of loc.score under every grid hypothesis x (the agent at x) -> [B, G, G].
-    memory_term False: only the previous frame's entries count (odometry only)."""
+def grid_loglik(loc, ent, c, v, t, memory_term=True, prev=None, mask=None):
+    """Sum over the new view's map cells (`mask` [B, 63]: the cells compared, see `support`) of loc.score under every
+    grid hypothesis x (the agent at x) -> [B, G, G]. memory_term False: only the previous frame's entries count
+    (odometry only)."""
     Bn = len(c)
     age = t[:, None, None] - ent[..., CTIME]
     present = (ent[..., CTIME] >= 0) & ((age <= 1) if not memory_term else torch.ones_like(age, dtype=torch.bool))
@@ -223,13 +253,16 @@ def grid_loglik(loc, ent, c, v, t, memory_term=True, prev=None):
     pad[:, 3:3 + G, 4:4 + G] = torch.cat([e0, present[..., None].float(), s_e[..., None], t_e[..., None]], -1)
     out = torch.zeros(Bn, G, G, device=c.device)
     for k in range(MAP):
+        if k == SELF:
+            continue
         e = pad[:, 3 + int(KR[k]):3 + int(KR[k]) + G, 4 + int(KC[k]):4 + int(KC[k]) + G]
         nk = tuple(x[:, None, None, k] for x in now)
-        out += loc.score(c[:, None, None, k], nk, (e[..., :16], e[..., 17], e[..., 18]), e[..., 16] > 0.5, null[:, None, None, k])
+        pres = (e[..., 16] > 0.5) & (mask[:, k, None, None] if mask is not None else True)
+        out += loc.score(c[:, None, None, k], nk, (e[..., :16], e[..., 17], e[..., 18]), pres, null[:, None, None, k])
     return out
 
 
-def loglik_at(loc, ent, c, v, t, hyp, memory_term=True, grid=False, prev=None):
+def loglik_at(loc, ent, c, v, t, hyp, memory_term=True, grid=False, prev=None, mask=None):
     """The same sum at given hypotheses hyp [B, H, 2] (gathered, vectorised over cells) -> [B, H]. grid: compute the
     entries' terms once over the grid and gather them (many hypotheses, no gradient)."""
     Bn, H = hyp.shape[:2]
@@ -250,7 +283,23 @@ def loglik_at(loc, ent, c, v, t, hyp, memory_term=True, grid=False, prev=None):
     now = loc.now_terms(v)
     null = loc.null(c, now, prev)
     nh = tuple(x[:, None] for x in now)
+    present = present & (CELLS.to(hyp.device) != SELF) & (mask[:, None] if mask is not None else True)
     return loc.score(c[:, None], nh, terms, present, null[:, None]).sum(-1)
+
+
+def support(ent, pose, t, memory_term=True):
+    """The cells every local hypothesis (the 9 offsets around `pose`) can predict [B, 63], the agent's own cell
+    excluded. The hypotheses are compared on the same cells, so none gains or loses by how much of the store it
+    covers (amended 11-24)."""
+    dev = pose.device
+    hyp = (pose[:, None] + torch.stack([NR, NC], -1).to(dev)[None]).clamp(0, G - 1)
+    r = hyp[..., 0, None] + KR.to(dev); cc = hyp[..., 1, None] + KC.to(dev)                       # [B, 9, 63]
+    inside = (r >= 0) & (r < G) & (cc >= 0) & (cc < G)
+    e = ent[torch.arange(len(pose), device=dev)[:, None, None], r.clamp(0, G - 1), cc.clamp(0, G - 1)]
+    pres = inside & (e[..., CTIME] >= 0)
+    if not memory_term:
+        pres = pres & (t[:, None, None] - e[..., CTIME] <= 1)
+    return pres.all(1) & (CELLS.to(dev) != SELF)
 
 
 def window_hyp(center, W):
@@ -302,7 +351,7 @@ def write(mp, pose, conf, p, v, g, fix, t, src, valid, truth=None, layer=None):
     where the pose is doubtful, else to the committed entries (or to `layer`, a dream overlay)."""
     Bn = len(pose)
     rr = pose[:, 0:1] + KR.to(pose.device); cc = pose[:, 1:2] + KC.to(pose.device)
-    ok = (rr >= 0) & (rr < G) & (cc >= 0) & (cc < G) & valid[:, None]
+    ok = (rr >= 0) & (rr < G) & (cc >= 0) & (cc < G) & valid[:, None] & (torch.arange(MAP, device=pose.device) != SELF)
     doubtful = conf < COMMIT
     for dst, sel in ((mp.main, ~doubtful), (mp.pend, doubtful)) if layer is None else ((layer, torch.ones_like(doubtful)),):
         m = ok & sel[:, None]
@@ -379,12 +428,13 @@ def advance(loc, mp, p, v, g, fix, a_prev, t, src, first, valid, truth=None, mem
     xhat = torch.where(live[:, None], xhat, mp.pose); chat = torch.where(live, chat, torch.ones_like(chat))
     ent, cp, fp, dream = mp.view()
     feats = read_features(ent, cp, fp, dream, xhat, chat, t)
-    prev = (mp.last_p[:, :MAP], mp.last_v, live)                         # the previous frame (sensor-fixed component)
+    prev = (mp.last_p[:, :MAP], mp.last_v, live)
+    mask = support(ent, mp.pose, t, memory_term)
     if window is None:
-        L = grid_loglik(loc, ent, p[:, :MAP].float(), v.float(), t.float(), memory_term, prev)
+        L = grid_loglik(loc, ent, p[:, :MAP].float(), v.float(), t.float(), memory_term, prev, mask)
     else:
         hyp = window_hyp(mp.pose, window)
-        Lw = loglik_at(loc, ent, p[:, :MAP].float(), v.float(), t.float(), hyp, memory_term, grid=True, prev=prev)
+        Lw = loglik_at(loc, ent, p[:, :MAP].float(), v.float(), t.float(), hyp, memory_term, grid=True, prev=prev, mask=mask)
         L = torch.full((len(p), G, G), -1e30, device=p.device)
         L[torch.arange(len(p), device=p.device)[:, None], hyp[..., 0], hyp[..., 1]] = Lw
     post = pri * (L - L.flatten(1).max(1).values[:, None, None]).exp()
@@ -485,7 +535,9 @@ def train_localizer(passes=4, batch=16, chunk=32):
     through those hypotheses' cell scores; relocation through the whole-grid term."""
     data = torch.load(DATA / "tokens_train.pt")
     dev = DEV = LOC_DEV
-    loc = Localizer().to(dev)
+    loc = Localizer()
+    print("calibration", json.dumps(calibrate(loc, data)), flush=True)
+    loc = loc.to(dev)
     opt = torch.optim.Adam(loc.parameters(), lr=1e-3)
     rng = np.random.default_rng(0)
     log = []
@@ -520,7 +572,7 @@ def train_localizer(passes=4, batch=16, chunk=32):
                         pri = pri + K[:, i:i + 1] * prev[bi_, src_r, src_c]
                     eps_ = torch.sigmoid(loc.logit_eps)
                     prev = (mp.last_p[:, :MAP].clone(), mp.last_v.clone(), live)
-                    Lh = loglik_at(loc, ent, p[:, :MAP], v, tt.float(), hyp, prev=prev)
+                    Lh = loglik_at(loc, ent, p[:, :MAP], v, tt.float(), hyp, prev=prev, mask=support(ent, mp.pose, tt))
                 with torch.no_grad():
                     advance(loc, mp, p, v, g, fix, a, tt, tt, first, valid, window=12)
                 if t > 0:
@@ -534,8 +586,7 @@ def train_localizer(passes=4, batch=16, chunk=32):
                     opt.zero_grad(); (loss_acc / n_acc).backward(); opt.step()
                     tot += float(loss_acc.detach()); cnt += n_acc; loss_acc, n_acc = 0.0, 0
             print(f"pass {ps} batch {bi} nll/frame {tot / max(cnt, 1):.2f} {time.time() - t0:.0f}s", flush=True)
-        log.append({"pass": ps, "nll_per_frame": tot / cnt, "eps": float(torch.sigmoid(loc.logit_eps)),
-                    "b_bg": float(loc.log_b_bg.exp())})
+        log.append({"pass": ps, "nll_per_frame": tot / cnt, "eps": float(torch.sigmoid(loc.logit_eps))})
         torch.save(loc.state_dict(), RUN / "localizer.pt")
     (RUN / "localizer_log.json").write_text(json.dumps(log, indent=1) + "\n")
 

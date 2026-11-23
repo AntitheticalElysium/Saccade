@@ -139,6 +139,44 @@ out, because no policy or value exists yet to teach it.
   - Readings 1, 3 and 4 show where the chain breaks beyond localization: whether the read tolerates these pose errors,
     the return, and dreams.
   - The next localizer is designed in parallel, from the four measured failures, and scored on reading 2 alone.
+- **The fifth localizer, amended 11-24 before its reading 2.** The code is `memory.py`; the development checks and
+  their outputs are in `diagnosis_v5/`.
+  - **What the four failures share.** In each, a scale, a null or a sensor term was learned inside the mixture that
+    judges with it, and collapsed or miscalibrated there.
+  - **The design:** the match becomes closed-form, from the agent's own TRAIN tokens, lighting and commands (no
+    simulator labels):
+    - Each screen cell's noise scale is linear in the lighting latent. It is fitted as one Laplace on the change after
+      a command that doesn't move the agent (the agent knows it didn't move). A single component can't collapse.
+    - **No token offset.** By day the same world cell gives the same token one screen cell over (median change 0.165,
+      against 0.15 at the same cell, 20 episodes, `equivariance.py`). A per-cell offset fitted by least squares broke
+      that (1.06). Dark: 1.18 against 0.90.
+    - **Binary evidence, as FAB-MAP's observations are** (Cummins & Newman 2008):
+      - A cell matches its entry when their change is within the sensor's repeatability, the 90th percentile of the
+        static change in units of the pair's scale. So P(match | same content) = 0.9 by construction.
+      - P(match | new place) is the share of 512 sampled TRAIN observations it would match: the content's frequency
+        (their section 4.3.2).
+      - Evidence is log(0.9 / p_new) for a match and log(0.1 / (1 - p_new)) for a miss. It is bounded, and weak where
+        the content is common.
+    - Local hypotheses are compared on the cells all nine can predict, so coverage can't favour any of them.
+    - **The agent's own cell is declared to show its body, not the world.** It is neither matched nor written, like
+      the status rows.
+    - Only the motion prior and relocation are trained, as before.
+  - **The development checks** used the untrained match, a map built at the true poses, and panel episodes 0-2 (the
+    diagnoses' episodes). On moved daylight steps:
+
+    | Form | Moved, day |
+    |---|---|
+    | Laplace density, per-cell offsets | 0.756 |
+    | Without offsets | 0.887 |
+    | Plus a dead zone | 0.889 |
+    | **Binary evidence** | **0.995** |
+
+    - The Laplace forms lost to single rare-content cells: +101 to +186 nats against about +3 for ordinary cells. A
+      sharp 16-dimension density made the per-cell evidence a lottery.
+    - The binary form also has blocked day 0.982, moved dark 0.798 and blocked dark 0.951.
+  - Reading 2 then runs on the full panel with the bar unchanged, plus episodes 23-119 (unseen by every check).
+    Whether the read is retrained with this localizer is the user's call in the morning. The current fine-tune uses the
+    second localizer.
 - **The geometry, declared:**
   - which screen cells view the world (the 7 × 9 map cells), and their offsets, are the sensor's embodiment facts;
   - the status rows are not written to the place memory;

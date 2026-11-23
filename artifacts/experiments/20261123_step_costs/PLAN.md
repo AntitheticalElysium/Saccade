@@ -26,3 +26,16 @@ on its cost. Random inputs of the right shapes, since the timing doesn't depend 
 
 **Run:** `JAX_PLATFORMS=cpu MAMBA_DETERMINISTIC=1 .venv/bin/python -m artifacts.experiments.20261123_step_costs.step_costs`
 (Craftax is timed in a separate process with JAX on the CPU: `--craftax`).
+
+## Second reading: dream throughput by batch (added 11-23, before running)
+
+**Why.** The user asked whether dreaming is fundamentally cheap. The first reading found the streaming calls
+latency-bound up to 16 streams. A dreamed frame per stream fell from 7.3 ms at 16 streams to 3.2 ms at 64. This
+reading finds where it becomes compute-bound: the floor of a dreamed step's cost on this card with eager PyTorch.
+
+**What is timed:** the same dreamed frame as item 5 (sampler with 4 evaluations, crop at a chosen window, outcome heads,
+record and belief step, context pass) at 64, 128 and 256 streams, plus peak memory.
+
+**Reading:** milliseconds per dreamed step per stream at each batch.
+
+**Run:** `JAX_PLATFORMS=cpu MAMBA_DETERMINISTIC=1 .venv/bin/python -m artifacts.experiments.20261123_step_costs.dream_scaling`

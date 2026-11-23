@@ -36,6 +36,36 @@ out, because no policy or value exists yet to teach it.
     (Codex 1).
 - **Training:** label-free, on TRAIN episodes' coarse tokens and commands. It maximises the filter's marginal
   likelihood of each new view (truncated: the past belief is detached).
+- **The match, amended 11-24 before the retrained localizer's results.** The first localizer failed reading 2:
+  - lookups were 0.394;
+  - on moved commands the estimate was 0.70 right after seeing the frame against 0.72 before it.
+
+  The diagnosis is in `diagnosis_v1/`, with its code and outputs. Two measured causes, both biasing the match toward
+  "no motion":
+  - **The sensor's own response.** Classic's night static grows with distance from the screen centre (renderer
+    lines 408-439). A cell's token therefore depends on where on the screen it was seen.
+    - On dark moved steps the match alone was right 0.40; by day, 0.89.
+    - The motion prior, trained against that posterior, learned "no motion at night": right on 0.38 of dark moves,
+      against 0.93 by day.
+  - **Coverage.** Cells with no entry scored the broad background. In uniform terrain, the hypothesis that covers
+    more of the store won by about 19 nats per extra cell. The agent's own sprite, fixed at the screen centre, and
+    its trail added about 30 more.
+    - Offline, scoring absent cells by a spatial prior and dropping the sprite cells raised day moved steps from 0.89
+      to 0.94. Darkness was unchanged by that (0.40 to 0.42).
+- **The match now** (general, learned, label-free):
+  - Each observation, new or stored, gets a learned token offset, scale part and trust part from its screen cell and
+    its lighting. This is the sensor's own response, which online photometric calibration estimates as vignetting
+    alongside odometry ([Bergmann, Wang & Cremers 2018](https://arxiv.org/abs/1710.02081)). It also covers content
+    that moves with the sensor ([Godard et al. 2019](https://arxiv.org/abs/1806.01260), auto-masking).
+    - The terms are per observation, never per pair. Otherwise "seen at the same screen cell" could itself become
+      evidence of no motion.
+    - The entry's age adds its own scale and trust parts.
+  - Entries store the screen cell they were seen at (source context, like the fine entry's crop position). The read
+    gets it too.
+  - A cell with no entry is scored by its predictive density given its parent cell in the same view, one step toward
+    the centre, with the centre cell scored by the background. Memory counts only as a likelihood ratio over that
+    spatial prior, and the same density is the match's outlier component.
+- Training, readings and bars are unchanged. The first localizer is kept as `run/localizer_v1.pt`.
 - **The geometry, declared:**
   - which screen cells view the world (the 7 × 9 map cells), and their offsets, are the sensor's embodiment facts;
   - the status rows are not written to the place memory;

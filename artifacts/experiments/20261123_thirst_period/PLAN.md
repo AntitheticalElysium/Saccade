@@ -26,7 +26,7 @@ when the observed interval says it is due, including at periods it never trained
 the earlier interval differing between periods, is the drop drawn at the episode's own period?
 
 **Training data.**
-- All 8,069 TRAIN episodes, replayed exactly from their recorded actions with a period drawn per episode (seed
+- All 7,672 TRAIN episodes, replayed exactly from their recorded actions with a period drawn per episode (seed
   20261123).
 - p = 21 with probability 0.3. Otherwise p is uniform over 12-30, excluding 16, 21 and 25.
 - **Held out: 16 and 25.**

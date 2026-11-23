@@ -34,11 +34,24 @@ SHIFT = PR.SHIFT                                                        # the sw
 CT, CTIME, CCONF, CLIGHT, CSRC = slice(0, 16), 16, 17, slice(18, 26), 26
 FT, FTIME, FCROP, FCOARSE, FCONF, FLIGHT = slice(27, 91), 91, 92, slice(93, 109), 109, slice(110, 118)
 CTRUE = slice(118, 120)                                                 # scoring only: the entry's true world cell
-NE, FEAT, COMMIT = 120, 141, 0.5
-COARSE = torch.zeros(NE, dtype=torch.bool); COARSE[:27] = True; COARSE[CTRUE] = True
+CPOS = 120                                                              # the screen cell the coarse token was seen at
+NE, FEAT, COMMIT = 121, 143, 0.5
+COARSE = torch.zeros(NE, dtype=torch.bool); COARSE[:27] = True; COARSE[CTRUE] = True; COARSE[CPOS] = True
 LOC_DEV = torch.device(os.environ.get("LOC_DEVICE", "cuda"))           # the localizer may train on the CPU
 FINE_FEATS = slice(31, 135)                                             # the read feature's fine part (the fine swap)
 GEOM = slice(138, 141)                                                  # relative offset and current pose confidence
+CELLS = torch.arange(MAP)
+
+
+def _inner(k):
+    """The map cell one step from k toward the view's centre (row 3, col 4), along the farther axis; the centre itself."""
+    r, c = divmod(k, 9)
+    if (r, c) == (3, 4):
+        return k
+    return (r + (3 > r) - (3 < r)) * 9 + c if abs(3 - r) >= abs(4 - c) else r * 9 + c + (4 > c) - (4 < c)
+
+
+NB = torch.tensor([_inner(k) for k in range(MAP)])                      # the spatial prior's parent of each cell
 
 
 def blank(f):
@@ -48,15 +61,30 @@ def blank(f):
     return out
 
 
+def laplace(c, mean, log_b):
+    return -(c - mean).abs().sum(-1) / log_b.exp() - 16 * (math.log(2) + log_b)
+
+
 class Localizer(nn.Module):
-    """The motion prior p(d | view, lighting, command) over 9 offsets, and the robust per-cell match of a new view
-    against an entry (Laplace around the entry, scale and trust from the entry's age and the current lighting, mixed
-    with a background Laplace), plus the relocation probability."""
+    """The motion prior p(d | view, lighting, command) over 9 offsets, the robust per-cell match of a new view against
+    an entry, and the relocation probability.
+
+    The match (amended 11-24 after the diagnosis in localizer_diagnosis.json): each observation, new or stored, has a
+    learned token offset, log-scale part and trust part from where on the sensor it was seen and the lighting it was
+    seen under (the sensor's own response: vignetting, as photometric calibration estimates it online, Bergmann et al.
+    2018; content that moves with the sensor, Godard et al. 2019); the entry adds its age's parts. The terms are per
+    observation, never per pair, so 'seen at the same screen cell' cannot itself become evidence of no motion. A cell
+    with no entry is scored by its predictive density given its parent cell in the same view (the spatial prior), so
+    covering more of the store is no evidence in itself; the match's outlier component is that same density."""
 
     def __init__(self):
         super().__init__()
         self.prior = nn.Sequential(nn.Linear(MAP * 16 + 8 + 17, 256), nn.GELU(), nn.Linear(256, 9))
-        self.lik = nn.Linear(5 + 8, 2)
+        self.pos = nn.Embedding(MAP, 16)
+        self.obs = nn.Sequential(nn.Linear(16 + 8, 64), nn.GELU(), nn.Linear(64, 18))
+        nn.init.zeros_(self.obs[-1].weight); nn.init.zeros_(self.obs[-1].bias)      # starts position- and light-free
+        self.age = nn.Linear(5, 2)
+        self.nb = nn.Parameter(torch.zeros(2))                                     # the spatial prior's (log scale, trust)
         self.log_b_bg = nn.Parameter(torch.zeros(()))
         self.logit_eps = nn.Parameter(torch.tensor(-9.0))
 
@@ -67,19 +95,40 @@ class Localizer(nn.Module):
     def bg(self, c):
         return -c.abs().sum(-1) / self.log_b_bg.exp() - 16 * (math.log(2) + self.log_b_bg)
 
-    def trust(self, age, present, v):
-        """Each entry's (log scale, trust logit) from its age and the current lighting [..., 2]."""
-        return self.lik(torch.cat([PR.age_features(age, present), v], -1))
+    def obs_terms(self, k, v):
+        """An observation's (token offset [..., 16], log-scale part [...], trust part [...]) from its screen cell k [...]
+        and lighting v [..., 8]."""
+        o = self.obs(torch.cat([self.pos(k.long().clamp(0, MAP - 1)), v.float()], -1))
+        return o[..., :16], o[..., 16], o[..., 17]
 
-    def score(self, c, e, age, present, v, h=None):
-        """log p(c | entry) - log p_bg(c), zero where there is no entry. c, e [..., 16]; age, present [...]; v [..., 8];
-        h: precomputed trust(age, present, v)."""
-        h = self.trust(age, present, v) if h is None else h
-        log_b, logit = h[..., 0], h[..., 1]
-        match = -(c - e).abs().sum(-1) / log_b.exp() - 16 * (math.log(2) + log_b)
+    def now_terms(self, v):
+        """The new view's per-cell terms [B, 63, ...]."""
+        return self.obs_terms(CELLS.to(v.device).expand(len(v), MAP), v[:, None].expand(len(v), MAP, 8))
+
+    def entry_terms(self, e, age, present):
+        """An entry's (offset-corrected token, log-scale part, trust part), its age's parts included. e [..., NE]."""
+        d, s, tau = self.obs_terms(e[..., CPOS], e[..., CLIGHT])
+        a = self.age(PR.age_features(age, present))
+        return e[..., CT] - d, s + a[..., 0], tau + a[..., 1]
+
+    def null(self, c, now):
+        """log density of each new cell given its parent cell in the same view [B, 63]: a robust Laplace around the
+        parent's offset-corrected token (the centre cell, which has none: the background). c [B, 63, 16]."""
+        d, s, tau = now
+        nb = NB.to(c.device)
+        lap = laplace(c, c[:, nb] - d[:, nb] + d, self.nb[0] + s + s[:, nb])
+        logit = self.nb[1] + tau + tau[:, nb]
         bg = self.bg(c)
-        mix = torch.logaddexp(F.logsigmoid(logit) + match, F.logsigmoid(-logit) + bg)
-        return torch.where(present, mix - bg, torch.zeros_like(mix))
+        mix = torch.logaddexp(F.logsigmoid(logit) + lap, F.logsigmoid(-logit) + bg)
+        return torch.where(nb == CELLS.to(c.device), bg, mix)
+
+    def score(self, c, now, ent, present, null):
+        """log(trust Laplace(c; entry + offsets) + (1 - trust) p_null(c)) - log p_null(c), zero without an entry.
+        c [..., 16]; now = the new cell's (offset, log-scale, trust) parts; ent = entry_terms; null [...]."""
+        (d, s, tau), (e0, s_e, t_e) = now, ent
+        logit = t_e + tau
+        mix = torch.logaddexp(F.logsigmoid(logit) + laplace(c, e0 + d, s_e + s), F.logsigmoid(-logit) + null)
+        return torch.where(present, mix - null, torch.zeros_like(mix))
 
 
 def empty(n, dev):
@@ -146,25 +195,41 @@ def grid_loglik(loc, ent, c, v, t, memory_term=True):
     Bn = len(c)
     age = t[:, None, None] - ent[..., CTIME]
     present = (ent[..., CTIME] >= 0) & ((age <= 1) if not memory_term else torch.ones_like(age, dtype=torch.bool))
-    h = loc.trust(age, present, v[:, None, None].expand(Bn, G, G, 8))     # once per step: age and lighting only
+    e0, s_e, t_e = loc.entry_terms(ent, age, present)                    # once per step over the grid
+    now = loc.now_terms(v)
+    null = loc.null(c, now)
     pad = torch.zeros(Bn, G + 6, G + 8, 19, device=c.device)
-    pad[:, 3:3 + G, 4:4 + G] = torch.cat([ent[..., CT], present[..., None].float(), h], -1)
+    pad[:, 3:3 + G, 4:4 + G] = torch.cat([e0, present[..., None].float(), s_e[..., None], t_e[..., None]], -1)
     out = torch.zeros(Bn, G, G, device=c.device)
     for k in range(MAP):
         e = pad[:, 3 + int(KR[k]):3 + int(KR[k]) + G, 4 + int(KC[k]):4 + int(KC[k]) + G]
-        out += loc.score(c[:, None, None, k], e[..., :16], None, e[..., 16] > 0.5, None, h=e[..., 17:19])
+        nk = tuple(x[:, None, None, k] for x in now)
+        out += loc.score(c[:, None, None, k], nk, (e[..., :16], e[..., 17], e[..., 18]), e[..., 16] > 0.5, null[:, None, None, k])
     return out
 
 
-def loglik_at(loc, ent, c, v, t, hyp, memory_term=True):
-    """The same sum at given hypotheses hyp [B, H, 2] (gathered, vectorised over cells) -> [B, H]."""
+def loglik_at(loc, ent, c, v, t, hyp, memory_term=True, grid=False):
+    """The same sum at given hypotheses hyp [B, H, 2] (gathered, vectorised over cells) -> [B, H]. grid: compute the
+    entries' terms once over the grid and gather them (many hypotheses, no gradient)."""
     Bn, H = hyp.shape[:2]
     r = hyp[..., 0, None] + KR.to(hyp.device); cc = hyp[..., 1, None] + KC.to(hyp.device)          # [B, H, 63]
     inside = (r >= 0) & (r < G) & (cc >= 0) & (cc < G)
-    e = ent[torch.arange(Bn, device=hyp.device)[:, None, None], r.clamp(0, G - 1), cc.clamp(0, G - 1)]
-    age = t[:, None, None] - e[..., CTIME]
-    present = inside & (e[..., CTIME] >= 0) & ((age <= 1) if not memory_term else torch.ones_like(age, dtype=torch.bool))
-    return loc.score(c[:, None], e[..., CT], age, present, v[:, None, None].expand(Bn, H, MAP, 8)).sum(-1)
+    bi = torch.arange(Bn, device=hyp.device)[:, None, None]
+    r, cc = r.clamp(0, G - 1), cc.clamp(0, G - 1)
+    if grid:
+        age_g = t[:, None, None] - ent[..., CTIME]
+        pres_g = (ent[..., CTIME] >= 0) & ((age_g <= 1) if not memory_term else torch.ones_like(age_g, dtype=torch.bool))
+        terms = tuple(x[bi, r, cc] for x in loc.entry_terms(ent, age_g, pres_g))
+        present = inside & pres_g[bi, r, cc]
+    else:
+        e = ent[bi, r, cc]
+        age = t[:, None, None] - e[..., CTIME]
+        present = inside & (e[..., CTIME] >= 0) & ((age <= 1) if not memory_term else torch.ones_like(age, dtype=torch.bool))
+        terms = loc.entry_terms(e, age, present)
+    now = loc.now_terms(v)
+    null = loc.null(c, now)
+    nh = tuple(x[:, None] for x in now)
+    return loc.score(c[:, None], nh, terms, present, null[:, None]).sum(-1)
 
 
 def window_hyp(center, W):
@@ -204,7 +269,9 @@ def read_features(ent, cp, fp, dream, at, conf_now, t):
                    e[..., FT] * pf[..., None], pf[..., None].float(), PR.age_features(tt - e[..., FTIME], pf), crop,
                    e[..., FCOARSE] * pf[..., None], (e[..., FCONF] * pf)[..., None], e[..., FLIGHT] * pf[..., None],
                    (cp[bi, r, c] & pc)[..., None].float(), (fp[bi, r, c] & pf)[..., None].float(),
-                   (dream[bi, r, c] & pc)[..., None].float(), off, conf_now[:, None, None, None].expand(Bn, MAP, 9, 1)], -1)
+                   (dream[bi, r, c] & pc)[..., None].float(), off, conf_now[:, None, None, None].expand(Bn, MAP, 9, 1),
+                   torch.stack([KR.to(at.device)[e[..., CPOS].long().clamp(0, MAP - 1)] / 3,
+                                KC.to(at.device)[e[..., CPOS].long().clamp(0, MAP - 1)] / 4], -1) * pc[..., None]], -1)
     assert f.shape[-1] == FEAT
     return f
 
@@ -225,7 +292,7 @@ def write(mp, pose, conf, p, v, g, fix, t, src, valid, truth=None, layer=None):
         k = torch.arange(MAP, device=pose.device)[None].expand_as(rr)[m]
         dst[bi, r_, c_, CT] = p[bi, k].float()
         dst[bi, r_, c_, CTIME] = t[bi].float(); dst[bi, r_, c_, CCONF] = conf[bi]
-        dst[bi, r_, c_, CLIGHT] = v[bi].float(); dst[bi, r_, c_, CSRC] = src[bi].float()
+        dst[bi, r_, c_, CLIGHT] = v[bi].float(); dst[bi, r_, c_, CSRC] = src[bi].float(); dst[bi, r_, c_, CPOS] = k.float()
         if truth is not None:
             dst[bi, r_, c_, CTRUE] = truth[bi, k].float()
     win = M.window(fix)                                                  # [B, 9] screen cells of the glimpse
@@ -295,7 +362,7 @@ def advance(loc, mp, p, v, g, fix, a_prev, t, src, first, valid, truth=None, mem
         L = grid_loglik(loc, ent, p[:, :MAP].float(), v.float(), t.float(), memory_term)
     else:
         hyp = window_hyp(mp.pose, window)
-        Lw = loglik_at(loc, ent, p[:, :MAP].float(), v.float(), t.float(), hyp, memory_term)
+        Lw = loglik_at(loc, ent, p[:, :MAP].float(), v.float(), t.float(), hyp, memory_term, grid=True)
         L = torch.full((len(p), G, G), -1e30, device=p.device)
         L[torch.arange(len(p), device=p.device)[:, None], hyp[..., 0], hyp[..., 1]] = Lw
     post = pri * (L - L.flatten(1).max(1).values[:, None, None]).exp()
@@ -438,7 +505,7 @@ def train_localizer(passes=4, batch=16, chunk=32):
                     Mx = torch.maximum(Lfull.flatten(1).max(1).values, Lh.max(1).values).detach()
                     local = ((1 - eps_) * pri * (Lh - Mx[:, None]).exp()).sum(1)
                     glob = eps_ * (Lfull - Mx[:, None, None]).exp().sum((1, 2)) / (G * G)
-                    ll = (local + glob).clamp(min=1e-30).log() + Mx + loc.bg(p[:, :MAP]).sum(-1)
+                    ll = (local + glob).clamp(min=1e-30).log() + Mx + loc.null(p[:, :MAP], loc.now_terms(v)).sum(-1)
                     loss_acc = loss_acc - (ll * live).sum(); n_acc += int(live.sum())
                 if (t % chunk == chunk - 1 or t == Tm) and n_acc:
                     opt.zero_grad(); (loss_acc / n_acc).backward(); opt.step()

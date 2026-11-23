@@ -94,3 +94,70 @@ recorded histories. It leaves semantic retention, conditional forecast improveme
 and the effect of training a delayed prediction loss open.
 
 Reproduce with `JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 MAMBA_DETERMINISTIC=1 .venv/bin/python -m artifacts.experiments.20261123_place_memory.glimpse_retention`.
+
+## Which features to keep at a world address (11-23)
+
+`anchored_trace_audit.py` tests the payload independently of localization. Both the
+compact entries and the P1.5 traces use the same true place addresses from replay.
+The target is the simulator's terrain class when the cell re-enters view. No observation
+from that frame goes to the reader. At a view's entry, the four payloads are:
+
+- The last 16-value P1.5 periphery token.
+- A 16-value per-place EMA, initialized from the first observation and weighted 0.875
+  old and 0.125 new on each later observation.
+- P1.5's 1,024-value S4D trace, with its local state paused while absent.
+- The same trace, advanced by its native no-input dynamics over unobserved frames.
+
+All readers also receive last-observation lighting and log age. The fixed P1.5
+encoder processes the real frames. Shallow readers fit 20,185 revisit cells from
+48 TRAIN episodes and score 22,497 cells from 64 disjoint DEV episodes. Episode
+prefixes are capped at 384 frames. Only two held-out terrain classes change from
+the previous observation. Confidence intervals resample episodes.
+
+| Held-out revisits | Cells | Last seen | Compact EMA | Paused trace | Elapsed trace |
+|---|---:|---:|---:|---:|---:|
+| All | 22,497 | 98.09% | 97.93% | 98.12% | 93.65% |
+| Inward neighbour has another terrain class | 6,026 | 96.83% | 96.71% | 96.61% | 87.82% |
+| Last seen more than 64 frames earlier | 3,400 | 98.38% | 98.15% | 98.76% | 89.71% |
+| Just one previous observation of this place | 632 | 97.31% | 94.78% | 95.73% | 91.14% |
+
+The paired paused-trace improvement over last seen on all revisits is **+0.03 pp**
+with a 95% interval of **[−0.27, +0.34] pp**. Over 256 silent applications of the
+native record dynamics, individual mode amplitudes retain 1.83–29.93% of their
+initial magnitude. The exact values are in the JSON. A fixed 64×64 dense map payload
+costs 16 MiB for the coarse fp32 trace, and 0.25 MiB for the fp32 last-seen coarse
+tokens, excluding metadata, lighting, fine features and fork management.
+
+The small pilot used six calibration and eight evaluation episodes. It favoured the
+paused trace over last seen by 2.9 points. The larger comparison finds similar
+terrain decodability for the compact and paused formats. This is readout performance
+for nearly static terrain with oracle geometry. Generated frames, changing or mobile
+content, learned use of the retrieved tokens, and navigation are outside the test.
+
+Reproduce with `JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 MAMBA_DETERMINISTIC=1 .venv/bin/python -m artifacts.experiments.20261123_place_memory.anchored_trace_audit`.
+
+## Which reinvented cells matter for decisions (11-23, from `cells.npz`, no new run)
+
+The expected wrong draws on revisits in the surprising context (3,310 of 4,996 cells), by the true terrain class:
+
+| Class | Share of the errors | Cells | Agreement |
+|---|---:|---:|---:|
+| Stone | 20.3% | 1,018 | 0.341 |
+| Tree | 17.8% | 623 | 0.052 |
+| Path (mined-out stone) | 16.3% | 642 | 0.160 |
+| Grass | 14.1% | 1,332 | 0.650 |
+| Sand | 12.1% | 574 | 0.301 |
+| Water | 6.8% | 381 | 0.409 |
+| Lava | 2.7% | 96 | 0.068 |
+| Coal / iron / diamond | 2.4% / 2.2% / 0.3% | 81 / 74 / 9 | 0.015 / 0.010 / 0.000 |
+| Crafting table / furnace | 2.1% / 1.4% | 69 / 47 | 0.007 / 0.000 |
+| Plant | 1.0% | 34 | 0.007 |
+
+- **About 57% of the errors fall on classes a decision depends on:** resources (stone, trees, water, coal, iron,
+  diamond, plants), the hazard (lava), and the agent's own constructions (table, furnace).
+  - The world almost never redraws the table or furnace the agent built when it comes back (0.7%, 0%).
+  - It redraws lava it saw 7% of the time, so the dream removes a danger.
+  - Its own mined paths come back 16% of the time.
+- **Grass, sand and path account for the rest (42%).** Decisions rarely depend on them.
+- First sightings show the same low agreement on rare classes (trees 0.056, coal 0.010), as they must without memory.
+  Revisits are where memory could recover them.

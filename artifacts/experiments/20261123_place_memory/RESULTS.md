@@ -43,3 +43,54 @@ Plan and code: `PLAN.md`, `place_memory.py` (commits da11ccc5 and the dtype fix)
 - Revisit status comes from simulator positions, which the model has to infer.
 - One checkpoint.
 - The small negative differences in the predictable context (1-3 points) aren't explained here.
+
+## Sensitivity of revisit lookup to inferred motion (11-23)
+
+`pose_memory_audit.py` uses 8,000 stored simulator continuations from the 1,000 competent
+history / random-plan starts, taking oracle half B. It uses rendered **real peripheries**
+and S2's saved camera-shift reader. All positions are rebased to the first view. A geometry-only
+place store writes the identity of the actual cell into the inferred key, and checks each newly
+entering cell before its current write. Readings stop after the first terminal observation.
+True cell identities and poses are used for scoring, except in the explicit oracle control.
+
+| Pose source | Relative position exact at step 16 | Correct lookup on 25,371 revisits | Wrong-place lookup | Missing lookup | First visit gets a false memory |
+|---|---:|---:|---:|---:|---:|
+| True displacement (oracle) | 100% | 100% | 0% | 0% | 0% |
+| Integrate each attempted movement | 26.68% | 82.64% | 15.44% | 1.92% | 8.14% |
+| Existing visual shift reader | 80.37% | 86.65% | 11.97% | 1.38% | 5.16% |
+| Visual reader with action constraints | 95.96% | 97.20% | 1.82% | 0.98% | 2.72% |
+
+The action constraint discards an incompatible argmax shift and substitutes no movement.
+No logits, retraining or simulator pose are used by that rule. It tests whether the
+recorded action can constrain localization alongside the existing reader. A geometry
+failure can still yield a plausible same-type block, so the metric asks whether the
+lookup retrieves the correct identity rather than just the correct class. The result
+leaves drift on generated frames, content quality, recovery after a positioning error
+and longer-term lookup open.
+
+Reproduce with `.venv/bin/python -m artifacts.experiments.20261123_place_memory.pose_memory_audit`.
+
+## How long a single crop perturbs Mamba (11-23)
+
+`glimpse_retention.py` uses the saved fixed-state renderer repeats (seven dark scenes
+with a complete suffix and eight near night onset, four repeats per scene, twelve fixed
+windows). A paired intervention changes only the crop at frame t, with recorded
+periphery, lighting, record, outcomes, actions and all t+1 onward observations and
+fixations shared. The two perturbations are the full-resolution crop versus its blurred
+counterpart and differences among full-resolution crops when only sensor static changes.
+The output is the predicted belief after the corresponding recorded action, before the
+next observation. Mean L2 distances average repeats and windows within each scene.
+
+| Dark scenes | Immediately after the action at t | +1 | +4 | +8 | +16 |
+|---|---:|---:|---:|---:|---:|
+| Fine versus blurred crop | 0.219 | 0.127 | 0.077 | 0.077 | 0.082 |
+| Static alone | 0.135 | 0.091 | 0.068 | 0.074 | 0.080 |
+
+Near night onset the initial differences are 0.249 and 0.057, falling to 0.076 and
+0.066 at +16. Native reward and termination forecast changes are saved in the JSON.
+The dark-panel mean absolute positive-reward forecast changes at +16 are 0.0035 and
+0.0027 percentage points, respectively. This is a causal influence test on selected
+recorded histories. It leaves semantic retention, conditional forecast improvement,
+and the effect of training a delayed prediction loss open.
+
+Reproduce with `JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 MAMBA_DETERMINISTIC=1 .venv/bin/python -m artifacts.experiments.20261123_place_memory.glimpse_retention`.

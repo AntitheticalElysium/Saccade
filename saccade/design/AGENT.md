@@ -1638,48 +1638,115 @@ use.**
     (Johnson & Raye 1981);
   - **imagination recombines** remembered details (Schacter & Addis 2007).
 
-**Proposed (undecided), building on the 10-23 choice (attention over (location, content) entries):**
-1. **The store:**
-   - per world cell, what was last seen there: the coarse token, plus the glimpse tokens where the eye looked;
-   - stamped with the time;
-   - read by location for the cells in view.
+**Why P1.5 can't recall places (the user, 11-23: "Saccade has no incentive to correctly remember a random cell")**
+- **The incentive is small, not zero.**
+  - The next-frame loss does score re-entering cells, but they are a few cells per move. Only the surprising quarter
+    of those needs memory at all.
+  - Po et al. name the same problem: standard diffusion forcing gives a model "limited incentive to reference distant
+    context frames".
+- **No route addresses a place.**
+  - The denoiser's dense temporal attention reaches 8 frames, positioned in screen coordinates. Recall would need
+    the camera-shift arithmetic learnt implicitly, and nothing asks for it.
+  - The record is a trace per screen cell, so after a move it records whatever slides through that cell. This is
+    also why P1.6's foveal record caught few night mobs: only 16 of 74 were written where the denoiser would read
+    them (Codex, 11-21).
+  - Mamba reaches the denoiser through 4 memory tokens from a 256-number state, shaped about 98% by the reward heads
+    (F6). It keeps what those heads ask for (zombie adjacency, cooldown), as the user expected.
+  - It isn't selective about glimpse content either. Codex's retention test (`20261123_place_memory/RESULTS.md`): a
+    crop's fine-versus-blur difference and a static-only difference leave about the same trace after 16 frames
+    (belief distance 0.082 against 0.080).
 
-   It is WorldMem's form at our scale. A Classic map is 64 × 64 cells, so an episode's store is small enough to keep
-   whole.
-2. **Location by path integration from the world's own estimate of its displacement.**
-   - Craftax makes this exact (S1, S2), and S2's camera-shift reader shows the shift is readable from the periphery.
-   - Learned and inferred, never given, so it carries over to robots, where self-motion is noisy (the 10-23 decision:
-     "coherent with noisy motion later").
-3. **Read path:** the denoiser's cell tokens attend to their retrieved entries, keyed by location relative to the
-   current position. This is the world's long-term memory; the record stays the screen-fixed short-term trace (clocks,
-   recent change). The two jobs differ, as allocentric and egocentric memory do in the brain.
-4. **Write policy:** every real frame writes what it shows (NEC's rule, no learned gate). Novelty-gated writing (Lisman
-   & Grace) is a later refinement for capacity on long lives.
-5. **Dreams write to a branch-local copy, never merged into real memory** (October's D5; reality monitoring).
-6. **Scope:**
-   - in Classic the store is cleared at a reset, because the next episode is a new world;
-   - what persists across episodes is the weights and the replay;
-   - a robot's store persists;
-   - cross-episode fast memory for hidden rules is Decision 7's.
-7. **Entities:** object records with a last-seen place and time and a widening belief (S4). These are designed in and
-   built after the place store.
-8. **Built on its trigger, which is met.**
-   - The world has no recall beyond the frame (above), while the environment offers it: memory plus neighbours 91%
-     against neighbours 77% (S5), terrain stable (S3), more than half of re-entries being revisits (E2).
-   - The world is retrained for the agent anyway, so the store joins that run, as the record joined P1.5 on its
-     trigger (10-27: "add I1 store / I2 records on measured triggers").
-   - **Its judges:**
-     - this measurement: the revisit-minus-first-sighting difference in the surprising context, which must rise
-       above zero;
-     - dreamed revisit agreement against the simulator's (S2);
-     - dreamed against real action differences on routes back to remembered resources.
-9. **Open for the user: how location is known.**
-   - **Alignment of consecutive coarse frames over the candidate shifts.** It is visual odometry, exact in Craftax
-     (S1, S2) and the standard robot estimate beside wheel or IMU odometry.
-   - **Learned path integration (TEM-like).** It is the brain's way, and general, but it needs a training signal
-     for the location code.
+**What the field does (read 11-23):**
+- **Dreamer 4 doesn't solve it.**
+  - "Its temporal consistency is limited to a context of 9.6 seconds", which is 192 frames.
+  - "The world model is far from a full clone of the game, especially due to short memory".
+  - "Integrating long-term memory into the world model and agent" is listed as future work.
+  - Its memory is its context: activations, not weights. Weights can't hold a procedural world's layout, so storing
+    places in weights isn't the route anyone takes.
+- **Genie 3 (DeepMind, 2025)** reports revisit consistency up to about a minute, "an emergent capability", mechanism
+  undisclosed.
+- **Implicit recurrent memory can work when it is structured and asked for.**
+  - Po et al. (ICCV 2025): plain Mamba-2 recalls poorly on Memory Maze retrieval (SSIM 0.747), and adding local
+    frame attention doesn't help (0.735). Mamba "struggle[s]" with associative recall.
+  - Their block-wise scan, with a separate state per spatial block, plus local attention, plus long-context
+    training reaches 0.898. Full-context attention reaches 0.914, and a 192-frame window 0.829. The training keeps a
+    random-length prefix clean so that distant context pays.
+  - Echo-Memory (2026), a controlled comparison: block-wise recurrence scores best on semantic return (69.0 against
+    58.6 for 20 retrieved raw frames), while "spatial summaries are efficient but not yet reliable as semantic
+    memory". It is one dataset at one budget.
+- **Explicit retrieval:** WorldMem, Context-as-Memory and VMem retrieve past views by pose or field of view.
+- **Robots and embodied AI:**
+  - explicit maps are standard: SLAM, Neural Map's learned 2D grid memory, Active Neural SLAM;
+  - Active Neural SLAM argues explicit map and pose supervision generalises better than end-to-end memory;
+  - yet blind navigation agents' recurrent memories form maps when the task requires them (Wijmans et al. 2023:
+    memoryless agents near 0% success, emergent and "task dependent" maps, about 1,000 steps remembered).
+- **The brain:**
+  - scene memory accumulates across fixations, "previously fixated and attended regions ... accumulate within a
+    representation of the scene", as if detail were painted onto an internal canvas (Hollingworth & Henderson 2002);
+  - long-term spatial memory is allocentric, translated from an egocentric window (Byrne, Becker & Burgess 2007);
+  - object-trace cells fire where an object used to be (Tsao, Moser & Moser 2013; OPTION3_NOTES).
 
-   Either way the position is inferred by the agent, never read from the simulator.
+**Why we need it at all.**
+- **Behaviour in Classic barely needs it.** The expert loses nothing when memory beyond 64 steps is cut (M1), except
+  slower returns to remembered water.
+- **Imagination does need it.**
+  - A dream that turns back re-invents what the agent knows; P1.5 measured no recall even at 2-16 steps.
+  - Dreams train the choice, so routes back to remembered water, a table or shelter are mis-taught exactly where
+    memory decides them.
+  - Hippocampal amnesics imagine scenes without spatial coherence (Hassabis et al. 2007).
+- **The eye needs it.** With a fovea, memory is what makes looking once enough. The brain accumulates fixated detail
+  into a scene memory, and the glimpse's memory route (Decision 3) is this.
+- **Robots need it most.** A home robot has to know where things are (ReMEmbR; SLAM), and with a narrow field of view
+  far more lies outside the view than in Classic's 9 × 7 window.
+
+**Proposed (undecided, revised 11-23): the record, anchored to the world and kept beyond the view.** No new module.
+1. **The idea:** the record already holds a fixed multi-timescale trace per screen cell, and the denoiser already
+   reads it per cell. Register it to the world instead:
+   - each move shifts the map cells' trace states by the estimated displacement;
+   - cells leaving the view keep their state off screen, keyed by world position;
+   - cells entering the view resume the state they left with, or start empty if never seen;
+   - HUD cells stay fixed to the screen, so the clocks are unchanged.
+2. **What it gives:**
+   - **places:** a re-entering cell's trace holds what was seen there, available at the very cell the denoiser
+     predicts. That is the condition under which P1.5 learnt its clocks from the record (swap 0.99);
+   - **the eye's memory:** with the glimpse's tokens in the record's input (P1.6's fovea group), what the eye saw is
+     kept at its world place. P1.6's foveal record failed partly by screen anchoring;
+   - **traces of things that moved:** a mob's trace stays where it was seen, like object-trace cells.
+3. **The incentive:** the information becomes local, as it was for the clocks. Po et al.'s clean-prefix training is
+   the precedent if long gaps still go unlearnt.
+4. **Location (Codex, verified 11-23 by rerunning `pose_memory_audit.py`):**
+   - action-constrained visual odometry: the existing shift reader, with shifts incompatible with the action
+     rejected;
+   - it looks up 97.2% of 25,371 revisits at the right place, with 1.8% wrong-place reads, against 86.7% and 12.0%
+     for the reader alone;
+   - it is inferred by the agent, never given, and it is the standard robot estimate, beside wheel or inertial
+     odometry;
+   - learned path integration waits until noisy motion needs it.
+5. **In dreams the displacement must come before the frame** (Codex):
+   - predict the legal displacement from the state and the motor action. In Craftax it is a function of the action
+     and the target cell (S1);
+   - shift the branch's record, then render;
+   - the branch's record is a copy, never merged into the real one (reality monitoring).
+6. **Two judges (Codex):**
+   - **remembering a place:** swap an old entry at one address with the view and action fixed, and the prediction
+     there should change. The 11-23 revisit difference should rise above zero;
+   - **finding it from elsewhere:** a route back to off-screen water. That needs the stored place read before it
+     re-enters view: through the belief, or the act tokens reading the off-screen record. Decision 7 and the build
+     decide which.
+7. **Scope:**
+   - cleared at Classic's resets, because each episode is a new world;
+   - a robot's persists;
+   - HUD clocks as today.
+8. **Generality:**
+   - the robot form is an egomotion-registered spatial memory: a map of features per surface or voxel, as VMem's
+     surfel-indexed memory and SLAM's maps are, with pose from visual-inertial odometry;
+   - Craftax's grid is its easy case;
+   - the hard robot problems, loop closure and relocalisation, belong to self-location, which the 10-23 decision
+     keeps coherent for later.
+9. **The alternatives, kept as fallbacks:**
+   - **a learned block-wise Mamba memory (Po et al.):** implicit, still screen-anchored, and trained for recall;
+   - **explicit retrieval of past glimpses by pose (WorldMem):** heavier, but natural where the field of view
+     changes in 3D.
 
 ## Parked: thinking when it's worth it (user 11-23, explore after the first proof)
 
@@ -1972,9 +2039,9 @@ References:
 5. **Knowing what it doesn't know** (Decision 5, opened 11-23; proposal above, undecided): readings from the start
    (surprise on arrival, learning progress, the world's own flow instability and inter-seed variance), validation
    before use, uses on triggers (dream trust, curiosity, change); ensembles only as an evaluation tool.
-6. **Memory beyond the frame and the episode** (Decision 6, opened 11-23; proposal above, undecided): a
-   location-keyed place store (trigger met: P1.5 recalls nothing beyond the frame), dreams on a branch copy, cleared at
-   Classic's resets (new world each episode); location by frame alignment or learned path integration (open).
+6. **Memory beyond the frame and the episode** (Decision 6, opened 11-23; proposal above, undecided): the record
+   anchored to the world and kept beyond the view (no new module; trigger met: P1.5 recalls nothing beyond the frame),
+   located by action-constrained visual odometry, dreams on a branch copy, cleared at Classic's resets.
 7. **The fast channel:** how adapting in context is learnt (variation in training, scoped above).
 
 **Framing and judging:**

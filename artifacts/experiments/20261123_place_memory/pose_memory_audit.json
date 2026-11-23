@@ -1,0 +1,756 @@
+{
+  "starts": 1000,
+  "trajectories": 8000,
+  "true_pose": {
+    "overall": {
+      "revisits": 25371,
+      "correct": 25371,
+      "wrong_place": 0,
+      "missing": 0,
+      "first_visits": 81481,
+      "false_memory_on_first_visit": 0
+    },
+    "per_step": [
+      {
+        "step": 1,
+        "live_states": 8000,
+        "same_position": 8000,
+        "revisits": 0,
+        "correct": 0,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 9144,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 2,
+        "live_states": 7936,
+        "same_position": 7936,
+        "revisits": 256,
+        "correct": 256,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 8379,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 3,
+        "live_states": 7890,
+        "same_position": 7890,
+        "revisits": 868,
+        "correct": 868,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 6037,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 4,
+        "live_states": 7841,
+        "same_position": 7841,
+        "revisits": 798,
+        "correct": 798,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 6245,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 5,
+        "live_states": 7792,
+        "same_position": 7792,
+        "revisits": 1933,
+        "correct": 1933,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 5755,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 6,
+        "live_states": 7714,
+        "same_position": 7714,
+        "revisits": 1505,
+        "correct": 1505,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 6294,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 7,
+        "live_states": 7646,
+        "same_position": 7646,
+        "revisits": 1843,
+        "correct": 1843,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 5141,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 8,
+        "live_states": 7582,
+        "same_position": 7582,
+        "revisits": 1630,
+        "correct": 1630,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 4367,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 9,
+        "live_states": 7496,
+        "same_position": 7496,
+        "revisits": 2217,
+        "correct": 2217,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 4549,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 10,
+        "live_states": 7387,
+        "same_position": 7387,
+        "revisits": 2239,
+        "correct": 2239,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 3794,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 11,
+        "live_states": 7301,
+        "same_position": 7301,
+        "revisits": 2090,
+        "correct": 2090,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 4236,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 12,
+        "live_states": 7210,
+        "same_position": 7210,
+        "revisits": 1907,
+        "correct": 1907,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 4182,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 13,
+        "live_states": 7141,
+        "same_position": 7141,
+        "revisits": 2515,
+        "correct": 2515,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 3330,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 14,
+        "live_states": 7065,
+        "same_position": 7065,
+        "revisits": 1417,
+        "correct": 1417,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 3337,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 15,
+        "live_states": 6971,
+        "same_position": 6971,
+        "revisits": 2017,
+        "correct": 2017,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 3104,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 16,
+        "live_states": 6886,
+        "same_position": 6886,
+        "revisits": 2136,
+        "correct": 2136,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 3587,
+        "false_memory_on_first_visit": 0
+      }
+    ]
+  },
+  "visual_reader": {
+    "overall": {
+      "revisits": 25371,
+      "correct": 21984,
+      "wrong_place": 3038,
+      "missing": 349,
+      "first_visits": 81481,
+      "false_memory_on_first_visit": 4204
+    },
+    "per_step": [
+      {
+        "step": 1,
+        "live_states": 8000,
+        "same_position": 7559,
+        "revisits": 0,
+        "correct": 0,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 9144,
+        "false_memory_on_first_visit": 128
+      },
+      {
+        "step": 2,
+        "live_states": 7936,
+        "same_position": 7286,
+        "revisits": 256,
+        "correct": 256,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 8379,
+        "false_memory_on_first_visit": 510
+      },
+      {
+        "step": 3,
+        "live_states": 7890,
+        "same_position": 7085,
+        "revisits": 868,
+        "correct": 826,
+        "wrong_place": 0,
+        "missing": 42,
+        "first_visits": 6037,
+        "false_memory_on_first_visit": 418
+      },
+      {
+        "step": 4,
+        "live_states": 7841,
+        "same_position": 6937,
+        "revisits": 798,
+        "correct": 691,
+        "wrong_place": 107,
+        "missing": 0,
+        "first_visits": 6245,
+        "false_memory_on_first_visit": 430
+      },
+      {
+        "step": 5,
+        "live_states": 7792,
+        "same_position": 6800,
+        "revisits": 1933,
+        "correct": 1853,
+        "wrong_place": 79,
+        "missing": 1,
+        "first_visits": 5755,
+        "false_memory_on_first_visit": 192
+      },
+      {
+        "step": 6,
+        "live_states": 7714,
+        "same_position": 6669,
+        "revisits": 1505,
+        "correct": 1325,
+        "wrong_place": 153,
+        "missing": 27,
+        "first_visits": 6294,
+        "false_memory_on_first_visit": 363
+      },
+      {
+        "step": 7,
+        "live_states": 7646,
+        "same_position": 6511,
+        "revisits": 1843,
+        "correct": 1520,
+        "wrong_place": 311,
+        "missing": 12,
+        "first_visits": 5141,
+        "false_memory_on_first_visit": 478
+      },
+      {
+        "step": 8,
+        "live_states": 7582,
+        "same_position": 6377,
+        "revisits": 1630,
+        "correct": 1428,
+        "wrong_place": 202,
+        "missing": 0,
+        "first_visits": 4367,
+        "false_memory_on_first_visit": 187
+      },
+      {
+        "step": 9,
+        "live_states": 7496,
+        "same_position": 6277,
+        "revisits": 2217,
+        "correct": 1901,
+        "wrong_place": 262,
+        "missing": 54,
+        "first_visits": 4549,
+        "false_memory_on_first_visit": 213
+      },
+      {
+        "step": 10,
+        "live_states": 7387,
+        "same_position": 6148,
+        "revisits": 2239,
+        "correct": 1704,
+        "wrong_place": 464,
+        "missing": 71,
+        "first_visits": 3794,
+        "false_memory_on_first_visit": 216
+      },
+      {
+        "step": 11,
+        "live_states": 7301,
+        "same_position": 6028,
+        "revisits": 2090,
+        "correct": 1778,
+        "wrong_place": 310,
+        "missing": 2,
+        "first_visits": 4236,
+        "false_memory_on_first_visit": 279
+      },
+      {
+        "step": 12,
+        "live_states": 7210,
+        "same_position": 5912,
+        "revisits": 1907,
+        "correct": 1755,
+        "wrong_place": 147,
+        "missing": 5,
+        "first_visits": 4182,
+        "false_memory_on_first_visit": 136
+      },
+      {
+        "step": 13,
+        "live_states": 7141,
+        "same_position": 5841,
+        "revisits": 2515,
+        "correct": 2178,
+        "wrong_place": 286,
+        "missing": 51,
+        "first_visits": 3330,
+        "false_memory_on_first_visit": 188
+      },
+      {
+        "step": 14,
+        "live_states": 7065,
+        "same_position": 5749,
+        "revisits": 1417,
+        "correct": 1168,
+        "wrong_place": 222,
+        "missing": 27,
+        "first_visits": 3337,
+        "false_memory_on_first_visit": 190
+      },
+      {
+        "step": 15,
+        "live_states": 6971,
+        "same_position": 5634,
+        "revisits": 2017,
+        "correct": 1810,
+        "wrong_place": 166,
+        "missing": 41,
+        "first_visits": 3104,
+        "false_memory_on_first_visit": 64
+      },
+      {
+        "step": 16,
+        "live_states": 6886,
+        "same_position": 5534,
+        "revisits": 2136,
+        "correct": 1791,
+        "wrong_place": 329,
+        "missing": 16,
+        "first_visits": 3587,
+        "false_memory_on_first_visit": 212
+      }
+    ]
+  },
+  "attempted_action_only": {
+    "overall": {
+      "revisits": 25371,
+      "correct": 20966,
+      "wrong_place": 3917,
+      "missing": 488,
+      "first_visits": 81481,
+      "false_memory_on_first_visit": 6632
+    },
+    "per_step": [
+      {
+        "step": 1,
+        "live_states": 8000,
+        "same_position": 7312,
+        "revisits": 0,
+        "correct": 0,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 9144,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 2,
+        "live_states": 7936,
+        "same_position": 6675,
+        "revisits": 256,
+        "correct": 256,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 8379,
+        "false_memory_on_first_visit": 0
+      },
+      {
+        "step": 3,
+        "live_states": 7890,
+        "same_position": 6085,
+        "revisits": 868,
+        "correct": 868,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 6037,
+        "false_memory_on_first_visit": 296
+      },
+      {
+        "step": 4,
+        "live_states": 7841,
+        "same_position": 5513,
+        "revisits": 798,
+        "correct": 742,
+        "wrong_place": 48,
+        "missing": 8,
+        "first_visits": 6245,
+        "false_memory_on_first_visit": 281
+      },
+      {
+        "step": 5,
+        "live_states": 7792,
+        "same_position": 5110,
+        "revisits": 1933,
+        "correct": 1814,
+        "wrong_place": 90,
+        "missing": 29,
+        "first_visits": 5755,
+        "false_memory_on_first_visit": 325
+      },
+      {
+        "step": 6,
+        "live_states": 7714,
+        "same_position": 4592,
+        "revisits": 1505,
+        "correct": 1354,
+        "wrong_place": 136,
+        "missing": 15,
+        "first_visits": 6294,
+        "false_memory_on_first_visit": 440
+      },
+      {
+        "step": 7,
+        "live_states": 7646,
+        "same_position": 4207,
+        "revisits": 1843,
+        "correct": 1737,
+        "wrong_place": 105,
+        "missing": 1,
+        "first_visits": 5141,
+        "false_memory_on_first_visit": 377
+      },
+      {
+        "step": 8,
+        "live_states": 7582,
+        "same_position": 3824,
+        "revisits": 1630,
+        "correct": 1437,
+        "wrong_place": 169,
+        "missing": 24,
+        "first_visits": 4367,
+        "false_memory_on_first_visit": 643
+      },
+      {
+        "step": 9,
+        "live_states": 7496,
+        "same_position": 3536,
+        "revisits": 2217,
+        "correct": 1692,
+        "wrong_place": 493,
+        "missing": 32,
+        "first_visits": 4549,
+        "false_memory_on_first_visit": 446
+      },
+      {
+        "step": 10,
+        "live_states": 7387,
+        "same_position": 3207,
+        "revisits": 2239,
+        "correct": 1919,
+        "wrong_place": 275,
+        "missing": 45,
+        "first_visits": 3794,
+        "false_memory_on_first_visit": 606
+      },
+      {
+        "step": 11,
+        "live_states": 7301,
+        "same_position": 2895,
+        "revisits": 2090,
+        "correct": 1855,
+        "wrong_place": 213,
+        "missing": 22,
+        "first_visits": 4236,
+        "false_memory_on_first_visit": 544
+      },
+      {
+        "step": 12,
+        "live_states": 7210,
+        "same_position": 2650,
+        "revisits": 1907,
+        "correct": 1602,
+        "wrong_place": 274,
+        "missing": 31,
+        "first_visits": 4182,
+        "false_memory_on_first_visit": 395
+      },
+      {
+        "step": 13,
+        "live_states": 7141,
+        "same_position": 2379,
+        "revisits": 2515,
+        "correct": 1821,
+        "wrong_place": 636,
+        "missing": 58,
+        "first_visits": 3330,
+        "false_memory_on_first_visit": 611
+      },
+      {
+        "step": 14,
+        "live_states": 7065,
+        "same_position": 2228,
+        "revisits": 1417,
+        "correct": 988,
+        "wrong_place": 381,
+        "missing": 48,
+        "first_visits": 3337,
+        "false_memory_on_first_visit": 712
+      },
+      {
+        "step": 15,
+        "live_states": 6971,
+        "same_position": 1991,
+        "revisits": 2017,
+        "correct": 1421,
+        "wrong_place": 548,
+        "missing": 48,
+        "first_visits": 3104,
+        "false_memory_on_first_visit": 415
+      },
+      {
+        "step": 16,
+        "live_states": 6886,
+        "same_position": 1837,
+        "revisits": 2136,
+        "correct": 1460,
+        "wrong_place": 549,
+        "missing": 127,
+        "first_visits": 3587,
+        "false_memory_on_first_visit": 541
+      }
+    ]
+  },
+  "action_constrained_visual_reader": {
+    "overall": {
+      "revisits": 25371,
+      "correct": 24661,
+      "wrong_place": 461,
+      "missing": 249,
+      "first_visits": 81481,
+      "false_memory_on_first_visit": 2220
+    },
+    "per_step": [
+      {
+        "step": 1,
+        "live_states": 8000,
+        "same_position": 7974,
+        "revisits": 0,
+        "correct": 0,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 9144,
+        "false_memory_on_first_visit": 128
+      },
+      {
+        "step": 2,
+        "live_states": 7936,
+        "same_position": 7855,
+        "revisits": 256,
+        "correct": 256,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 8379,
+        "false_memory_on_first_visit": 337
+      },
+      {
+        "step": 3,
+        "live_states": 7890,
+        "same_position": 7772,
+        "revisits": 868,
+        "correct": 819,
+        "wrong_place": 0,
+        "missing": 49,
+        "first_visits": 6037,
+        "false_memory_on_first_visit": 242
+      },
+      {
+        "step": 4,
+        "live_states": 7841,
+        "same_position": 7691,
+        "revisits": 798,
+        "correct": 798,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 6245,
+        "false_memory_on_first_visit": 212
+      },
+      {
+        "step": 5,
+        "live_states": 7792,
+        "same_position": 7626,
+        "revisits": 1933,
+        "correct": 1933,
+        "wrong_place": 0,
+        "missing": 0,
+        "first_visits": 5755,
+        "false_memory_on_first_visit": 142
+      },
+      {
+        "step": 6,
+        "live_states": 7714,
+        "same_position": 7527,
+        "revisits": 1505,
+        "correct": 1496,
+        "wrong_place": 9,
+        "missing": 0,
+        "first_visits": 6294,
+        "false_memory_on_first_visit": 209
+      },
+      {
+        "step": 7,
+        "live_states": 7646,
+        "same_position": 7435,
+        "revisits": 1843,
+        "correct": 1829,
+        "wrong_place": 14,
+        "missing": 0,
+        "first_visits": 5141,
+        "false_memory_on_first_visit": 324
+      },
+      {
+        "step": 8,
+        "live_states": 7582,
+        "same_position": 7358,
+        "revisits": 1630,
+        "correct": 1567,
+        "wrong_place": 63,
+        "missing": 0,
+        "first_visits": 4367,
+        "false_memory_on_first_visit": 49
+      },
+      {
+        "step": 9,
+        "live_states": 7496,
+        "same_position": 7268,
+        "revisits": 2217,
+        "correct": 2078,
+        "wrong_place": 90,
+        "missing": 49,
+        "first_visits": 4549,
+        "false_memory_on_first_visit": 49
+      },
+      {
+        "step": 10,
+        "live_states": 7387,
+        "same_position": 7155,
+        "revisits": 2239,
+        "correct": 2140,
+        "wrong_place": 9,
+        "missing": 90,
+        "first_visits": 3794,
+        "false_memory_on_first_visit": 16
+      },
+      {
+        "step": 11,
+        "live_states": 7301,
+        "same_position": 7059,
+        "revisits": 2090,
+        "correct": 2046,
+        "wrong_place": 43,
+        "missing": 1,
+        "first_visits": 4236,
+        "false_memory_on_first_visit": 186
+      },
+      {
+        "step": 12,
+        "live_states": 7210,
+        "same_position": 6952,
+        "revisits": 1907,
+        "correct": 1857,
+        "wrong_place": 50,
+        "missing": 0,
+        "first_visits": 4182,
+        "false_memory_on_first_visit": 118
+      },
+      {
+        "step": 13,
+        "live_states": 7141,
+        "same_position": 6872,
+        "revisits": 2515,
+        "correct": 2406,
+        "wrong_place": 74,
+        "missing": 35,
+        "first_visits": 3330,
+        "false_memory_on_first_visit": 64
+      },
+      {
+        "step": 14,
+        "live_states": 7065,
+        "same_position": 6797,
+        "revisits": 1417,
+        "correct": 1383,
+        "wrong_place": 9,
+        "missing": 25,
+        "first_visits": 3337,
+        "false_memory_on_first_visit": 41
+      },
+      {
+        "step": 15,
+        "live_states": 6971,
+        "same_position": 6700,
+        "revisits": 2017,
+        "correct": 1996,
+        "wrong_place": 21,
+        "missing": 0,
+        "first_visits": 3104,
+        "false_memory_on_first_visit": 7
+      },
+      {
+        "step": 16,
+        "live_states": 6886,
+        "same_position": 6608,
+        "revisits": 2136,
+        "correct": 2057,
+        "wrong_place": 79,
+        "missing": 0,
+        "first_visits": 3587,
+        "false_memory_on_first_visit": 96
+      }
+    ]
+  }
+}

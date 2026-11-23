@@ -2301,6 +2301,32 @@ world's prediction after the evidence, with the current inputs held fixed and on
    - Bars to be fixed in its plan before running.
    - Then the long-span test (water yield or zombie damage) on the belief route.
 
+**Measured 11-24: the slow channel doesn't absorb a permanent change** (`20261123_water_revision/RESULTS.md`).
+- The setup: P1.5 continued under decision 4's life schedule (replay ratio 16, uniform replay of the corpus plus the
+  life so far, life learning rate 1e-4) through 859 new worlds where water gives +2.
+- After 1,554 real +2 drinks lived and 834 updates, 2,621 +2 drink frames trained in all, the world draws +2 on 1.3%
+  of fresh-history drinks. P1.5 drew it on 0.08%. After recent +2 evidence in the same episode, the share is 5.5%.
+- The old rule's +2 share stays near 1%, and forgetting is small (P1 monitor at most +9%).
+- **What it means for decision 7.** The case of a change for good is not covered by the weights at this schedule.
+  - A rough estimate put +2 at about 10% of the drinks trained on. The world draws it below even that mixture, and
+    with no input that tells the new worlds from the old, the mixture is the best the weights can do.
+  - Whether the shortfall below the mixture is dilution or lost plasticity is open. The changed-data-only comparison
+    separates them; it is proposed, not run.
+
+**Measured 11-24: history doesn't change the prediction either** (`20261123_thirst_period/RESULTS.md`).
+- **The setup.** The denoiser was fine-tuned for 2,000 updates on episodes whose awake thirst period varies by
+  episode, through the record route with the Mamba frozen. Periods 16 and 25 were held out.
+- **The result.** On matched histories, the world draws the drop at the due lag on:
+  - 0.035 of events at p = 16 and 0.076 at p = 25 (bar 0.50);
+  - 0.018 and 0.097 at the *trained* periods 13 and 29.
+
+  No period's due lag stands out from its neighbours. The native drop at 21 halved (0.535 to 0.248), and the training
+  loss didn't move: the drop is about 1% of it. The fine-tune learned the mix of periods, not to read the interval.
+- **For decision 7.** Under the current losses neither route works. A lasting change barely moves the weights, and
+  evidence in the history isn't read even after training on variation. Before choosing a mechanism, the open
+  question is whether the interval is in the record at all. If it is, the next question is whether a loss that
+  prices the event would teach reading it.
+
 ## Parked: thinking when it's worth it (user 11-23, explore after the first proof)
 
 **The idea.** At decision time the agent may imagine before acting, using the denoiser on candidate futures, but only

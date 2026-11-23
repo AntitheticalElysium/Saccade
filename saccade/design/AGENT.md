@@ -675,6 +675,25 @@ differences read in the run (Codex).
 | Policy objective | Decision 3 (Dreamer 4's PMPO with a reverse KL to the imitation policy, or DreamerV3's actor-critic) | |
 | The eye | Targeted in watching, life and dreams; trained by the world's surprise and contingency, the decision value of a crop, and dream returns once consistent | Part 1 |
 
+**Is decision 2 general? (The user asked 11-23: could it go to robots?)**
+- **The design carries over.** All of these depend only on a foveated sensor, a reward and a termination:
+  - the outcome committed before the look;
+  - real starts as coherent snapshots;
+  - the defaults (DreamerV3's, which DayDreamer ran on four real robots with H = 16);
+  - the targeted eye in dreams;
+  - the world learning from real experience;
+  - isolation, trust and fresh starts;
+  - a bounded awake step with dreaming in idle time.
+- **"The glimpse reads nothing new" is a rule with a trigger, not a law.** It holds because Craftax's coarse view
+  carries the outcome (the health digit, exactly). A robot whose outcomes show only below peripheral acuity, such as a
+  crack or a liquid level, could fire the trigger.
+- **What is Craftax-specific lives in perception and action, not in dreaming:**
+  - the fixed 9 x 9 cell grid with 49 discrete windows, which a robot replaces with continuous or finer gaze;
+  - the screen-fixed per-cell record, which a moving camera would need to register or replace with a world- or
+    object-centred memory;
+  - 17 discrete actions. PMPO and MTP work for continuous actions too (MPO's family is continuous control);
+  - episodes with resets, against one continuous life.
+
 **Parked (user 11-23): thinking when it's worth it.** Recorded in its own section below, to explore after the first
 proof.
 

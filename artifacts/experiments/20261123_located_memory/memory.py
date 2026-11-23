@@ -883,61 +883,66 @@ def evaluate(update, smoke=False):
     R = S2.load_readers(model, cfg)
     loc = load_localizer()
     L, so, eps, rows, sub, enc = panel(model, cfg, smoke)
-    mem = {}
-    for e in eps:
-        T = int(L["ep_T"][e]); pos = L["s_pos"][so[e]:so[e] + T + 1].astype(np.int64)
-        mem[e] = episode_memory(loc, enc[sub[e]], pos)
+    mem = {}                                                            # one episode at a time (all 120 don't fit)
     rterr = {e: PM.real_terrain(R, enc[sub[e]]) for e in eps}
     new = {(e, t): entering(L, so, e, t) for e, t in rows}
 
     def feat_of(v, e, t, drawn):
-        f = mem[e]["feat"][t]
+        f = mem[e]["feat"][t].to(DEV)
         if v == "correct" or not drawn:
             return f
         m = new[(e, t - 1)][:, None, None]
         if v == "empty":
             return torch.where(m, blank(f), f)
+        w = mem[e]["wrong"][t].to(DEV)
         if v == "wrong":
-            return torch.where(m, mem[e]["wrong"][t], f)
-        alt = f.clone(); alt[..., FINE_FEATS] = mem[e]["wrong"][t][..., FINE_FEATS]
+            return torch.where(m, w, f)
+        alt = f.clone(); alt[..., FINE_FEATS] = w[..., FINE_FEATS]
         return torch.where(m, alt, f)
     variants = ("correct", "empty", "wrong", "fine_swap") if update else ("correct",)
-    drawn = one_step(model, cfg, R, enc, sub, rows, feat_of, variants)
+    drawn, confs = {v: {} for v in variants}, []
+    for k, e in enumerate(eps):
+        T = int(L["ep_T"][e]); pos = L["s_pos"][so[e]:so[e] + T + 1].astype(np.int64)
+        mem.clear(); mem[e] = episode_memory(loc, enc[sub[e]], pos)
+        confs.append(float(mem[e]["conf"][1:].mean()))
+        rows_e = [r for r in rows if r[0] == e]
+        if rows_e:
+            d = one_step(model, cfg, R, enc, sub, rows_e, feat_of, variants, seed=20261123 + 1009 * k)
+            for v in variants:
+                drawn[v].update(d[v])
     res = {"update": update, "variants": {}}
     for v in variants:
         z = PR.cells(L, so, rows, drawn[v], rterr)
         np.savez_compressed(HERE / f"cells_{update}_{v}{'_smoke' if smoke else ''}.npz", **z)
         res["variants"][v] = PM.summarise(z, np.random.default_rng(0), reps=300 if smoke else 1000)
         print(v, json.dumps(res["variants"][v]["matched_minus_first"])[:600], flush=True)
-    res["pose_conf_mean"] = float(np.mean([float(mem[e]["conf"][1:].mean()) for e in eps]))
+    res["pose_conf_mean"] = float(np.mean(confs))
     (HERE / f"eval_{update}{'_smoke' if smoke else ''}.json").write_text(json.dumps(res, indent=1) + "\n")
 
 
-def episode_memory(loc, en, pos, inject_at=None, delta=(4, 0), memory_term=True, stop=None):
+def episode_memory(loc, en, pos, inject_at=None, delta=(4, 0), memory_term=True, stop=None, wrong=True):
     """One real episode through the localizer: read features before each frame at the predicted address [T + 1, 63, 9,
     FEAT], the same at the wrong address (+ SHIFT, read before the frame writes), poses, predicted confidences;
     optionally a self-consistent drift injected before frame `inject_at`. Simulator positions only label the entries."""
-    T1 = len(en["p"])
+    T1 = len(en["p"]) if stop is None else min(len(en["p"]), stop + 1)  # features kept on the CPU
     mp = Map(1, DEV)
     tc = truth_cells(torch.as_tensor(pos, device=DEV))
-    out = {"feat": torch.zeros(T1, MAP, 9, FEAT, device=DEV), "wrong": torch.zeros(T1, MAP, 9, FEAT, device=DEV),
+    out = {"feat": torch.zeros(T1, MAP, 9, FEAT), "wrong": torch.zeros(T1, MAP, 9, FEAT) if wrong else None,
            "pose": torch.zeros(T1, 2, dtype=torch.long), "xhat": torch.zeros(T1, 2, dtype=torch.long), "conf": torch.zeros(T1)}
     sh = torch.tensor([SHIFT], device=DEV)
     for t in range(T1):
         one = lambda k: en[k][t][None].to(DEV)
         tt = torch.tensor([t], device=DEV)
         inj = torch.tensor([delta], device=DEV) if inject_at is not None and t == inject_at else None
-        before = mp.clone() if t > 0 else None
+        before = mp.clone() if wrong and t > 0 else None
         f, xhat, chat = advance(loc, mp, one("p").float(), one("v").float(), one("g").float(), one("fix"),
                                 torch.tensor([int(en["prev_action"][t])], device=DEV), tt, tt,
                                 torch.tensor([t == 0], device=DEV), torch.tensor([True], device=DEV), truth=tc[t][None],
                                 memory_term=memory_term, inject=inj, drift=inj)
         if before is not None:
             ent, cp, fp, dream = before.view()
-            out["wrong"][t] = read_features(ent, cp, fp, dream, xhat + sh, chat, tt)[0]
-        out["feat"][t] = f[0]; out["xhat"][t] = xhat[0].cpu(); out["pose"][t] = mp.pose[0].cpu(); out["conf"][t] = float(chat[0])
-        if stop is not None and t == stop:
-            break
+            out["wrong"][t] = read_features(ent, cp, fp, dream, xhat + sh, chat, tt)[0].cpu()
+        out["feat"][t] = f[0].cpu(); out["xhat"][t] = xhat[0].cpu(); out["pose"][t] = mp.pose[0].cpu(); out["conf"][t] = float(chat[0])
     out["map"] = mp
     return out
 
@@ -991,13 +996,14 @@ def inject(update, smoke=False):
         for t0, s in cand:
             events.append((int(e), t0, s))
     print("events", len(events), flush=True)
-    mems = {}
+    P = cfg["data"]["context_prefix"]
+    follow, slices = [], {}
     for e, t0, s_ret in events:
         T = int(L["ep_T"][e]); pos = L["s_pos"][so[e]:so[e] + T + 1].astype(np.int64)
         stop = min(T, t0 + 32)
-        run = {"oracle": episode_memory(loc, enc[sub[e]], pos, stop=stop),
-               "full": episode_memory(loc, enc[sub[e]], pos, inject_at=t0, stop=stop),
-               "odometry": episode_memory(loc, enc[sub[e]], pos, inject_at=t0, memory_term=False, stop=stop)}
+        run = {"oracle": episode_memory(loc, enc[sub[e]], pos, stop=stop, wrong=False),
+               "full": episode_memory(loc, enc[sub[e]], pos, inject_at=t0, stop=stop, wrong=False),
+               "odometry": episode_memory(loc, enc[sub[e]], pos, inject_at=t0, memory_term=False, stop=stop, wrong=False)}
         ev = {"e": e, "t0": t0, "return": s_ret}
         for k, m in run.items():
             rel = m["pose"][t0:stop + 1] - m["pose"][t0 - 1]
@@ -1006,25 +1012,23 @@ def inject(update, smoke=False):
             ev[f"{k}_recovered_at"] = int(torch.nonzero(ok)[0, 0]) if ok.any() else None
             ev[f"{k}_drifted_writes_aligned"] = aligned(m["map"], m["pose"][stop], pos[stop], t0, stop, doubtful=False)
         res_ev.append(ev)
-        mems[(e, t0)] = run
-    # the following view: per episode its first event; the frame drawn is the first return step after the full rule
-    # recovered (or the return step), rendered from each localizer's own memory
-    follow, run_of = [], {}
-    for ev in res_ev:
-        if ev["e"] in run_of:
-            continue
+        # the following view, per episode its first event: the first return step strictly after the frame at which
+        # the full rule recovered (that frame's read was computed before its correction; Codex 11-24), rendered
+        # from each localizer's own memory. Only the frames that view needs are kept.
         r = ev["full_recovered_at"]
-        tr = max(ev["return"], ev["t0"] + (r if r is not None else 0))
-        if tr <= min(int(L["ep_T"][ev["e"]]), ev["t0"] + 32):
-            follow.append((ev["e"], tr - 1)); run_of[ev["e"]] = mems[(ev["e"], ev["t0"])]
+        tr = max(s_ret, t0 + (r + 1 if r is not None else 0))
+        if e not in slices and tr <= stop:
+            follow.append((e, tr - 1))
+            slices[e] = {k: {fr: m["feat"][fr] for fr in range(max(0, tr - P), tr + 1)} for k, m in run.items()}
+        del run
     new = {(e, t): entering(L, so, e, t) for e, t in follow}
 
     def feat_of(v, e, t, drawn):
-        run = run_of[e]
+        sl = slices[e]
         if v == "empty":
-            f = run["oracle"]["feat"][t]
+            f = sl["oracle"][t].to(DEV)
             return torch.where(new[(e, t - 1)][:, None, None], blank(f), f) if drawn else f
-        return run[v]["feat"][t]
+        return sl[v][t].to(DEV)
     rows_f = follow
     drawn = one_step(model, cfg, R, enc, sub, rows_f, feat_of, ("oracle", "full", "odometry", "empty")) if rows_f else {}
     out = {"update": update, "events": len(res_ev),
@@ -1081,7 +1085,7 @@ def dream(update, smoke=False, H=16, MF=4):
             f, _, _ = advance(loc, mp, one("p").float(), one("v").float(), one("g").float(), one("fix"),
                               torch.tensor([int(en["prev_action"][t])], device=DEV), tt, tt, torch.tensor([t == 0], device=DEV),
                               torch.tensor([True], device=DEV), truth=tc[t][None])
-            feats_real.append(f[0])
+            feats_real.append(f[0].cpu())
             if t in chosen:
                 snaps[t] = mp.clone()
         for t in chosen:
@@ -1103,7 +1107,7 @@ def dream(update, smoke=False, H=16, MF=4):
             at = lambda key, dt: en[key][t + dt][None].to(DEV)
             with TR.autocast(DEV, cfg):
                 for dt in range(1 - P, 1):
-                    fr = feats_real[t + dt][None].expand(Bn, -1, -1, -1)
+                    fr = feats_real[t + dt][None].to(DEV).expand(Bn, -1, -1, -1)
                     den.place_input = torch.where(noarm, blank(fr), fr)[:, None]
                     cache = M.context_pass(den, tuple(rep(at(k, dt)).float()[:, None] for k in ("p", "g", "v")),
                                            rep(at("prev_action", dt))[:, None],
@@ -1151,7 +1155,7 @@ def dream(update, smoke=False, H=16, MF=4):
                 write(dm, pose, torch.ones(Bn, device=DEV), parts[0], parts[2], parts[1], fixj, torch.full((Bn,), t + j, device=DEV),
                       torch.full((Bn,), -1, device=DEV), arm_of > 0, layer=dm.overlay)
                 last_p, last_v = parts[0], parts[2]
-                te = B.terrain(R, parts[0][:, None], parts[2][:, None])[:, 0].cpu().numpy()   # [Bn, 7, 9]
+                te = B.terrain(R, parts[0][:, None], parts[2][:, None])[:, 0]                 # [Bn, 7, 9], numpy
                 right = ((pose - pose0).cpu().numpy() == (pos[t + j] - pos[t])).all(1)         # per row
                 motion.append(right[arm_of.cpu().numpy() == 2].mean())
                 prev = {(int(pos[t + j - 1][0] + KR[k]), int(pos[t + j - 1][1] + KC[k])) for k in range(MAP)}

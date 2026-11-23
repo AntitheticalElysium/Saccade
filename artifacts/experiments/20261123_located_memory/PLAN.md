@@ -331,6 +331,26 @@ episode-bootstrap 95% intervals.
    - **Bar:** with inferred poses, where the dream's pose is right, agreement at gap ≤ 16 at least 0.85 (the
      simulator through S2's readers is 0.94), and at least +0.20 above the empty memory.
 
+**Amended 11-24, before any of readings 1, 3 and 4 at update 2,000 (code only, no bar changed):**
+- **Why:** the first attempt ran out of GPU memory, holding all 120 episodes' read features at once
+  (`readings_v5.log`). The 8-episode smoke never reached that size.
+- **The fix:**
+  - reading 1 processes one episode at a time, with features on the CPU, and the sampler's seed set per episode;
+  - reading 3 keeps only the frames its following view needs;
+  - reading 4 keeps the real prefix's features on the CPU, and no longer converts the terrain reader's output, which is
+    already an array (it crashed at its first drawn step; the smoke had never run reading 4).
+- **One correction, to match this PLAN's "on the first revisit after recovery"** (Codex, 11-24): reading 3's
+  following view is the first return step strictly after the frame at which the full rule recovered. The earlier code
+  could score the very frame that made the correction, whose read was computed before it.
+- **Known limits, reported with the results** (Codex, 11-24, checked):
+  - reading 3's "oracle" arm is the localizer with no injection, so it inherits the localizer's own drift; there is no
+    true-alignment arm;
+  - the swap's identity labels assume the entry three rows away holds the true cell three rows away, which an
+    inferred map doesn't guarantee;
+  - the fine swap also moves the fine entry's age and metadata.
+- The readings run with the fifth localizer, which the read was trained with. Since the 11-24 design decision they
+  measure the grid baseline, not the design (AGENT.md decision 6).
+
 **Working memory, as the user asked, means readings 1, 2, 3 and 4 all pass.** Anything less is reported with where
 the chain broke: localization, retrieval, or use.
 

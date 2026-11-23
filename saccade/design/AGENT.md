@@ -1891,7 +1891,12 @@ precedents, the end-to-end flow, the readers, updating.**
    - every view cell's coarse token replaces its address's coarse entry, with time, pose confidence and provenance
      "real";
    - the glimpsed cells' fine tokens replace their fine entries, with their own time;
-   - a fine entry whose cell's new coarse token contradicts it is marked stale.
+   - a fine entry whose cell's new coarse token contradicts it is marked stale;
+   - each entry also keeps its source context and a pointer to its source frame in replay (Codex, 11-23):
+     - the context is the lighting at write time, plus the crop window for a fine entry. A token seen at night
+       differs from the same place by day, so the reader needs to know which it holds;
+     - the pointer lets a long life re-encode old entries once the encoders have moved on. Memory Forcing's points
+       also point back to their source frames.
 7. **The belief and the record update** as today.
 
 *Dreaming, from a real moment:*

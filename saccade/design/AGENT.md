@@ -1394,7 +1394,10 @@ decisions 1-3:
      - **Provisional:** dreams get half of the offline GPU time. At replay ratio 16 that is about 11 dreamed steps per
        real step.
 
-### Decision 5: knowing what it doesn't know (opened 11-23; research and proposal, undecided)
+### Decision 5: knowing what it doesn't know (opened 11-23; closed for now 11-23 by the user: nothing is built)
+
+The validated signal (a decision's confidence across several dreams) and the triggers below stay on record for after
+agentic Saccade's first runs.
 
 **What it is for: three jobs the life cycle exposes.**
 1. **Trusting a dream.** A world that is wrong where the policy goes teaches the policy to exploit it. On 07-06, a
@@ -1561,7 +1564,7 @@ use.**
    - **The trigger:** the hidden-rule benchmark shows adaptation too slow even with that replay. Then the candidate is
      per-module step-size adaptation (IDBD-like), on evidence.
 
-### Decision 6: memory beyond the frame and the episode (opened 11-23; agreed 11-23, the first test running)
+### Decision 6: memory beyond the frame and the episode (opened 11-23; agreed 11-23, the first test running; how location is known and read reopened by the user 11-23)
 
 **What it is for: four jobs.**
 1. **Places beyond the frame, within an episode.** The world has to redraw what it has seen, in life (prediction) and
@@ -1864,7 +1867,8 @@ precedents, the end-to-end flow, the readers, updating.**
   - **Imagination:** the memory advanced there by predicted motion.
 - **What ours adds:**
   - the eye decides what detail enters;
-  - the address is inferred, never given;
+  - the address is meant to be inferred, never given. The estimator measured so far was trained on simulator
+    positions (corrected 11-23, below);
   - the stored content is the world's own tokens;
   - dreams write only to an overlay.
 - **Adopted from them:**
@@ -1922,8 +1926,8 @@ precedents, the end-to-end flow, the readers, updating.**
 - **The agent:** its read is trained by the agent's losses: imitation while watching, PMPO and real advantages in
   life. The value and policy reading off-screen memory are what can teach "where water is" (the belief probe: today
   nothing does).
-- **The motion head** is trained on real displacements, from the odometry's estimates (inferred, not simulator
-  positions).
+- **The motion head** is trained on real displacements, from the odometry's estimates. These are not yet label-free:
+  the measured visual reader was trained on simulator positions (see "Updating and pose errors").
 
 *Episodes:*
 - in Classic, the belief, the record and the place memory reset at each episode end (a new world);
@@ -1956,6 +1960,11 @@ time, trust is learned from what each entry carries.
 - **If the pose is wrong,** writes land at wrong addresses. Four things limit that:
   1. **Action-constrained visual odometry** is right on 97.2% of revisit lookups, and the relative position is exact
      at step 16 in 95.96% of cases (Codex's audits, reproduced).
+     - The visual reader in that audit is S2's camera-shift reader. It was trained by cross-entropy on simulator
+       position differences (`20261119_s2/s2.py`), so the agent couldn't have it.
+     - The only label-free estimate measured is Codex's two-hypothesis coarse-pixel alignment
+       (`20261123_place_memory/RESULTS.md`). It gets 66.0% of 16-step displacements exact. On movement commands in
+       low light it is right 71.7% of the time, below the command alone (81.2%).
   2. **Relocalisation against the memory:** choose the shift whose view agrees with the stored entries. GTM-SM's
      appendix uses memory to correct position, and EPM corrects heading from images at real observations.
   3. **Pose confidence travels with each entry,** so the reader discounts entries written under doubt.
@@ -1972,9 +1981,12 @@ time, trust is learned from what each entry carries.
   - a content latent z (16 or 64 numbers, the VAE latent its decoder renders from);
   - a low-dimensional position state s (2-D; 3-D with orientation).
 - **Position:** s is dead-reckoned from actions by a learned, nearly deterministic transition (noise 10^-3 to 10^-2),
-  never supervised by true positions. It learns its own coordinates, "rotated and stretched with respect to the
-  ground truth one". There is no correction from what is seen in the main model; the appendix proposes one, tested
-  only on an obstacle task.
+  never supervised by true positions. In 2-D it learns its own coordinates, "rotated and stretched with respect to
+  the ground truth one", from frames and actions alone.
+  - The 3-D walking agent is different. True displacements are a regression target at training ("the agent feels
+    its movement"), never an input (Codex, checked 11-23).
+  - There is no correction from what is seen in the main model; the appendix proposes one, tested only on an
+    obstacle task.
 - **Storage:** the (s, z) pairs, as their means and variances, written every step of an observation phase, append
   only. No overwriting, eviction or time stamp: the worlds are static.
 - **Reading:**
@@ -2044,6 +2056,9 @@ time, trust is learned from what each entry carries.
    - How much an old entry is worth (terrain lasts, a zombie moves) is learned by the reader.
 5. **Exact or vague addresses: exact for drawing, vague where the agent decides. Codex measured it, and I withdraw
    the soft key.**
+   - Corrected 11-23: what was measured is a fixed position-only weighting over a radius-1 neighbourhood. A learned
+     read was never measured, and nor were its keys (relative location, content, age, confidence).
+   - The choice rested on a Craftax fact (exact grid motion). The user reopened it 11-23.
    - On 25,371 real revisits, the exact estimated cell holds the right entry 97.2% of the time.
    - A radius-1 search adds only 0.6 points, while always bringing in wrong neighbours: 5.9 candidates, with 28.5% of
      a position-only weight on the right one.
@@ -2574,10 +2589,11 @@ References:
 
 **Designed in from the start, built on a measured trigger:**
 
-5. **Knowing what it doesn't know** (Decision 5, opened 11-23; proposal above, undecided): readings from the start
+5. **Knowing what it doesn't know** (Decision 5, opened 11-23; closed for now 11-23, nothing built): readings from the start
    (surprise on arrival, learning progress, the world's own flow instability and inter-seed variance), validation
    before use, uses on triggers (dream trust, curiosity, change); ensembles only as an evaluation tool.
-6. **Memory beyond the frame and the episode** (Decision 6, agreed 11-23; first test running): a place memory of
+6. **Memory beyond the frame and the episode** (Decision 6, agreed 11-23; first test running; how location is known
+   and read reopened 11-23): a place memory of
    the world's own tokens at inferred addresses (odometry refined against the memory, with pose confidence); the
    world's read per cell and the agent's read over all entries, trust learned at read time; writes from every real
    frame, detail where the eye looked, dreams to an overlay; reset with the episode in Classic, never on a robot.

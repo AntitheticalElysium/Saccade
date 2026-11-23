@@ -116,6 +116,29 @@ out, because no policy or value exists yet to teach it.
       ([Cummins & Newman 2008](https://doi.org/10.1177/0278364908090961), abstract).
   - Training, readings and bars are unchanged. Reading 2's panel episodes 23-119 stay unseen: the third localizer's
     diagnoses read episodes 0-2.
+- **The fourth localizer, 11-24** (`run/localizer_v4.pt`; diagnosis, code and outputs in `diagnosis_v4/`). It removed
+  the "no motion" bias: the agent's cell went from +34.5 nats to +0.1. On 3 episodes, moved steps on the match alone
+  were 0.973 by day and 0.854 in the dark (the third localizer: 0.55 in the dark). But it fails reading 2 worse:
+  - lookups 0.120; blocked steps 0.276 after the frame; 7,083 relocalisations.
+  - On blocked dark steps the match never says "no motion" (0.0 of 61). The commanded move's memory gains +90 nats on
+    the cells where it beats the null, against +18 for "no motion", with all 63 cells present under both.
+  - **The cause.** Under "no motion", memory is the same density as the sensor-fixed component in the null. So its
+    gain per cell is capped, at a fraction of a nat. A wrong hypothesis's costs are capped too, at log(1 - trust)
+    (about -0.29 here), but its gains are not. On the 29% of dark cells where noise happens to favour the shifted entry
+    (median log density 6.4 for the sensor-fixed explanation against -32 for the shifted entry), sharp scales turn
+    small residual differences into tens of nats.
+  - Godard et al.'s auto-masking assumes a camera that moves, and removes the evidence of a static one. Here, "did I
+    move?" is the question.
+  - The content trust didn't separate uniform cells from the rest (median -0.97 against -0.90). The learned
+    per-observation offset is the same at every screen cell (0.81). The sensor-response terms of the first amendment
+    were never learned in any version.
+- **Decided 11-24 at 06:20, before any of readings 1, 3 and 4.** The read's fine-tune and readings 1, 3 and 4 run with
+  the localizer that scores best on reading 2's bar measure, the second one (`run/localizer_v2.pt`, lookups 0.434), on
+  its own pinned code. `diagnosis_v2/memory_v2.py` has the same training and reading functions as `memory.py`.
+  - The memory as a whole therefore fails reading 2, so it is not "working" by this PLAN.
+  - Readings 1, 3 and 4 show where the chain breaks beyond localization: whether the read tolerates these pose errors,
+    the return, and dreams.
+  - The next localizer is designed in parallel, from the four measured failures, and scored on reading 2 alone.
 - **The geometry, declared:**
   - which screen cells view the world (the 7 × 9 map cells), and their offsets, are the sensor's embodiment facts;
   - the status rows are not written to the place memory;

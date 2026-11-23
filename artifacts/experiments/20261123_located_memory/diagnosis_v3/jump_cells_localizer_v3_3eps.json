@@ -1,0 +1,31 @@
+{
+ "jumps": 126,
+ "true_pose_score_by_dominant_null": {
+  "spatial_prior": {
+   "cells": 4697,
+   "score_sum_per_jump": -24.62,
+   "memory_minus_component_median": -66.2
+  },
+  "background": {
+   "cells": 1507,
+   "score_sum_per_jump": 199.31,
+   "memory_minus_component_median": -287.9
+  },
+  "sensor_fixed": {
+   "cells": 1692,
+   "score_sum_per_jump": 14.72,
+   "memory_minus_component_median": -58.4
+  }
+ },
+ "log_scales": {
+  "spatial_prior_offset": -0.722065269947052,
+  "sensor_fixed_offset": -0.16050420701503754,
+  "memory_age_parts_1_4_16_64_256": [
+   3.4869093894958496,
+   3.267080307006836,
+   2.7896647453308105,
+   2.300103187561035,
+   1.8639287948608398
+  ]
+ }
+}

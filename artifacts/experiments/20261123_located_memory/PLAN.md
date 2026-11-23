@@ -82,6 +82,40 @@ out, because no policy or value exists yet to teach it.
       weights are learned.
   - **Reading 2 also reports panel episodes 23-119.** No diagnosis or code check touched these (the diagnoses read
     episodes 0-11, and the code checks 0-2 and 20-22).
+- **Amended a third time 11-24, before the fourth localizer's results.** The third localizer (`run/localizer_v3.pt`;
+  diagnosis, code and outputs in `diagnosis_v3/`) failed reading 2:
+  - lookups 0.345 (0.353 on panel episodes 23-119);
+  - on moved steps, 0.750 after the frame against 0.764 before it; dark 0.584;
+  - 3,829 natural relocalisations, with 0.1% of their pending writes landing aligned.
+
+  Two measured causes:
+  - **The sensor-fixed component's own scale collapsed onto exact repeats.** On static day frames, 12-15% of cells
+    repeat exactly, and a mixture component with a free scale fits them (Bishop 2006, section 9.2.1).
+    - Its log-scale reached -8.3 by day; memory's age-1 entry sits at -4.6.
+    - On the agent's own cell after a move (median change 0.30 L1), it scored -1,025 nats, against memory-under-"no
+      motion" +34. So the "no motion" bonus survived: +34.5 nats by day, +27.8 in the dark. 90% of wrong dark matches
+      still said "no motion".
+  - **Indistinctive content made mapped poses lose to empty grid.** 52% of the jumps landed on a pose with no entries
+    (score exactly 0), while the true pose scored -23.3 (median).
+    - The negative part comes from cells the spatial prior explains: uniform terrain, whose neighbours in the same
+      frame repeat exactly. There memory is 66 nats below the prior, and each present cell pays log(1 - trust).
+    - A present cell therefore costs what an absent one doesn't.
+  - **Correction to the second amendment.** The night static is drawn anew every frame. Only its strength by screen
+    position is fixed.
+- **The amendment:**
+  - **The sensor-fixed explanation is scored by memory's own function:** the previous frame's token as an age-1 entry
+    seen at that screen cell. Only its mixture weight is its own.
+    - Godard et al.'s auto-masking compares the unwarped and warped sources under the same error. With a scale of its
+      own, the third localizer's component broke that.
+    - Under "no motion", memory and the sensor-fixed explanation are now the same density. Checked: they are
+      identical.
+  - **Memory's trust gains a part from each observation's own content:** a small network on the token, zero at the
+    start. It enters memory's trust only, not the null's weights.
+    - The marginal likelihood can then learn that content the null already explains is little evidence of place:
+      "identical but indistinctive observations receive a low probability of having come from the same place"
+      ([Cummins & Newman 2008](https://doi.org/10.1177/0278364908090961), abstract).
+  - Training, readings and bars are unchanged. Reading 2's panel episodes 23-119 stay unseen: the third localizer's
+    diagnoses read episodes 0-2.
 - **The geometry, declared:**
   - which screen cells view the world (the 7 × 9 map cells), and their offsets, are the sensor's embodiment facts;
   - the status rows are not written to the place memory;

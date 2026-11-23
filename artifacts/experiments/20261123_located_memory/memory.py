@@ -75,7 +75,10 @@ class Localizer(nn.Module):
     2018; content that moves with the sensor, Godard et al. 2019); the entry adds its age's parts. The terms are per
     observation, never per pair, so 'seen at the same screen cell' cannot itself become evidence of no motion. A cell
     with no entry is scored by its predictive density given its parent cell in the same view (the spatial prior), so
-    covering more of the store is no evidence in itself; the match's outlier component is that same density."""
+    covering more of the store is no evidence in itself; the match's outlier component is that same density.
+    Amended 11-24 (v4, diagnosis_v3/): the sensor-fixed explanation is scored by memory's own function, and memory's
+    trust also has a part from each observation's own content, so an entry whose content the null already explains
+    (uniform terrain: identical but indistinctive, Cummins & Newman 2008) costs a mapped pose nothing."""
 
     def __init__(self):
         super().__init__()
@@ -84,8 +87,10 @@ class Localizer(nn.Module):
         self.obs = nn.Sequential(nn.Linear(16 + 8, 64), nn.GELU(), nn.Linear(64, 18))
         nn.init.zeros_(self.obs[-1].weight); nn.init.zeros_(self.obs[-1].bias)      # starts position- and light-free
         self.age = nn.Linear(5, 2)
+        self.tc = nn.Sequential(nn.Linear(16, 32), nn.GELU(), nn.Linear(32, 1))    # trust from an observation's content
+        nn.init.zeros_(self.tc[-1].weight); nn.init.zeros_(self.tc[-1].bias)
         self.nb = nn.Parameter(torch.zeros(2))                                     # the spatial prior's (log scale, trust)
-        self.nid = nn.Parameter(torch.zeros(2))                                    # the sensor-fixed component's
+        self.nid = nn.Parameter(torch.zeros(1))         # the sensor-fixed component's mixture weight (its scale is memory's)
         self.log_b_bg = nn.Parameter(torch.zeros(()))
         self.logit_eps = nn.Parameter(torch.tensor(-9.0))
 
@@ -110,13 +115,15 @@ class Localizer(nn.Module):
         """An entry's (offset-corrected token, log-scale part, trust part), its age's parts included. e [..., NE]."""
         d, s, tau = self.obs_terms(e[..., CPOS], e[..., CLIGHT])
         a = self.age(PR.age_features(age, present))
-        return e[..., CT] - d, s + a[..., 0], tau + a[..., 1]
+        return e[..., CT] - d, s + a[..., 0], tau + a[..., 1] + self.tc(e[..., CT])[..., 0]
 
     def null(self, c, now, prev=None):
         """log density of each new cell without the world memory [B, 63]: a mixture of its parent cell in the same view
         (the spatial prior; none for the centre cell), the same screen cell in the previous frame (sensor-fixed content:
-        the agent's own sprite, the night static's pattern; amended 11-24, Godard et al. 2019's auto-masking in
-        probabilistic form) and the background. c [B, 63, 16]; prev = (previous coarse view [B, 63, 16], its lighting
+        the agent's own sprite, the night tint and the static's strength by screen position; amended 11-24, Godard et
+        al. 2019's auto-masking in probabilistic form) and the background. The sensor-fixed explanation is scored by the
+        same function as memory's: the previous frame's token as an age-1 entry seen at this cell (amended again 11-24;
+        with a scale of its own it collapsed onto exact repeats, diagnosis_v3/). c [B, 63, 16]; prev = (previous coarse view [B, 63, 16], its lighting
         [B, 8], whether it exists [B])."""
         d, s, tau = now
         dev = c.device
@@ -129,8 +136,10 @@ class Localizer(nn.Module):
         if prev is not None:
             cp, vp, hp = prev
             dp, sp, tp = self.now_terms(vp)
-            comps.append(laplace(c, cp.float() - dp + d, self.nid[0] + s + sp))
-            logits.append(torch.where(hp[:, None], self.nid[1] + tau + tp, torch.full_like(tau, -1e4)))
+            one = torch.ones(1, device=dev)                                      # scored as memory scores an age-1 entry
+            a1 = self.age(PR.age_features(one, one.bool()))[0, 0]               # seen at this screen cell (11-24, v4)
+            comps.append(laplace(c, cp.float() - dp + d, sp + a1 + s))
+            logits.append(torch.where(hp[:, None], self.nid[0] + tau + tp, torch.full_like(tau, -1e4)))
         lw = torch.stack(logits, -1).log_softmax(-1)
         return (lw + torch.stack(comps, -1)).logsumexp(-1)
 
@@ -138,7 +147,7 @@ class Localizer(nn.Module):
         """log(trust Laplace(c; entry + offsets) + (1 - trust) p_null(c)) - log p_null(c), zero without an entry.
         c [..., 16]; now = the new cell's (offset, log-scale, trust) parts; ent = entry_terms; null [...]."""
         (d, s, tau), (e0, s_e, t_e) = now, ent
-        logit = t_e + tau
+        logit = t_e + tau + self.tc(c)[..., 0]
         mix = torch.logaddexp(F.logsigmoid(logit) + laplace(c, e0 + d, s_e + s), F.logsigmoid(-logit) + null)
         return torch.where(present, mix - null, torch.zeros_like(mix))
 

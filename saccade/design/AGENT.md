@@ -1769,45 +1769,105 @@ the one that teaches what to remember?")**
 Incoherence in irrelevant terrain costs nothing (value equivalence, Grimm et al. 2020). Incoherence where a decision
 depends on it teaches the choice wrong things: that the table it built vanishes, or that lava disappears.
 
-**Proposed (undecided, revised 11-23):**
-1. **A compact place memory.** Per world place:
-   - the last coarse observation and its time;
-   - the last fine observation (the glimpse tokens) and its own time.
-2. **The fovea's privileged route** (the user asked):
-   - **writes:** what the eye looked at is stored in detail at its place, with its own timestamp (Codex). The eye's
-     learnt drives, relevance from real returns and information from belief change, decide what is looked at, so
-     the world teaches what is remembered in detail;
-   - **invalidation:** a new coarse observation that contradicts the place marks its fine entry stale;
-   - **reads:** when that place is in view, awake or dreamed, the denoiser's glimpse tokens there read the fine
-     entry, and the act tokens read it with the current evidence;
-   - **effect:** looking once is enough, and a second look agrees with the first. Predictive gain (Decision 3), zero
-     today, is its judge;
-   - **learning at fixation** stays as now: the crop losses train fine detail only where the eye looks;
-   - in Classic it carries little, because the periphery shows nearly everything. Where acuity is low it is the main
-     content.
-3. **Location:** action-constrained visual odometry (Codex; 97.2% correct lookups, reproduced). It is inferred by
-   the agent, and the displacement is predicted before rendering in dreams.
-4. **Dreams** read the memory and write to a branch-local copy, never merged.
-5. **Scope:**
-   - cleared at Classic's resets (a new world each episode);
-   - a robot's memory persists, with pruning by relevance later;
-   - the screen-fixed record and Mamba are unchanged.
-6. **Two judges (Codex):**
-   - remembering: swap one old entry with the view and action fixed, and the prediction at that place should change;
-   - finding: a route back to off-screen water, which needs the memory read before the place re-enters view. Mamba or
-     the act tokens read it; Decision 7 and the build decide which.
-7. **For robots** the same three memories carry over:
-   - the place memory becomes features of what was seen, with the camera's pose and the time, retrieved by view
-     overlap (WorldMem, Context-as-Memory, ReMEmbR's timestamps and coordinates);
-   - Craftax's grid is the degenerate case;
-   - it grows with explored space, not time;
-   - localisation drift and loop closure are the hard parts, and belong to self-location.
-8. **Fallbacks:**
-   - learned writes: a block-wise Mamba memory (Po et al.), or a surprise-gated memory that "memorizes" what violates
-     expectations (Titans, Behrouz et al. 2025);
-   - pose-retrieved past views (WorldMem).
+**What Mamba keeps of the map (measured 11-23, `20261123_belief_map/RESULTS.md`; the user asked).**
+- **Nothing beyond the view.**
+  - From the belief, the direction to the nearest out-of-view water, lava, table, tree, stone, sand, path, zombie or
+    cow decodes at or below the majority rate, at every age. That includes water when thirsty.
+  - Displacement from the start doesn't decode, so there is no path integration.
+- **The probes work:** the drink value decodes at 0.44 (majority 0.13) and an adjacent zombie at 0.84 balanced.
+- **So Mamba keeps what its heads ask for, and the heads are myopic:** next-step reward and continuation, forecasts
+  to 8 steps. Nothing asks where anything is. Recurrent agents form "selective and task dependent" maps when the task
+  needs them (Wijmans et al. 2023). Our teacher for that would be a value or policy reaching water, which doesn't
+  exist yet, and goal gradients into the belief are on hold (Decision 9).
 
-   They are kept for if the compact memory fails a judge or capacity binds.
+**The user's three challenges (11-23), with the research.**
+1. **"Why remember everything? A tree it doesn't know is useful, no; lava it knows is dangerous, yes."**
+   - **The brain gates encoding by what it knows and values:**
+     - masters recall real chess positions far better than weaker players, and the advantage nearly vanishes for
+       random positions (Chase & Simon 1973; a small advantage remains, Gobet & Simon 1996). Knowledge decides what is
+       encoded;
+     - cues of high reward improve memory for the scene that follows, through mesolimbic activation before encoding
+       (Adcock et al. 2006);
+     - novelty gates entry through dopamine (Lisman & Grace 2005);
+     - attention "determines what will be encoded" (Chun & Turk-Browne 2007);
+     - hippocampal place maps reorganise around learned goal locations (Dupret et al. 2010).
+   - **But encoding isn't all or nothing.** Incidental memory is large (Brady et al. 2008), and weak traces can be
+     strengthened later when they turn out to matter (Dunsmoor et al. 2015).
+   - **So:** strength of encoding is learned and graded, not "everything" and not "only what the task names". What a
+     novice keeps weakly, an expert keeps strongly.
+2. **"X at Y is error-prone; a learned, vague notion of location."**
+   - **Human location memory is imprecise in systematic ways:**
+     - it is held at two levels, a noisy fine-grained value and a category, combined, with bias toward prototypes
+       (Huttenlocher, Hedges & Duncan 1991);
+     - map memories are distorted toward alignment and canonical axes (Tversky 1981);
+     - object-location bindings are the fragile part of forgetting, with swap errors (Pertzov et al. 2012).
+   - **A learned location code is what brains and networks build:**
+     - networks trained to path-integrate grow grid-like codes (Banino et al. 2018);
+     - TEM learns a location code by path integration and binds it to content (Whittington et al. 2020).
+   - **I agree with the user, with one distinction:**
+     - the estimate of where the agent is should be inferred (odometry, path integration);
+     - the key should be soft: a code compared by attention, so an entry a few tiles off is still retrieved and its
+       weight reflects trust;
+     - the vagueness comes from the soft read and the reader's learnt trust in age, not from deliberately noisy keys.
+   - **Mobs:** the entry is "something seen here, this long ago", not "a zombie is at Y". The reader learns what that
+     implies, as object-trace cells fire where an object used to be.
+3. **"Store an encoding of the glimpse, keyed by a learned location token? Would the denoiser trust it?"**
+   - **This is a known design, not fantasy:**
+     - Generative Temporal Models with Spatial Memory store learned representations in a non-parametric spatial
+       memory, indexed by a low-dimensional position state from a state-space model of the agent's motion. They report
+       "coherent predictions over hundreds of time steps" in 2D and 3D environments (Fraccaro et al. 2018);
+     - the Scene Memory Transformer embeds every observation with its pose and lets the policy attend to them,
+       beating recurrent memories on long navigation tasks (Fang et al. 2019);
+     - a learned key-value memory works for lifelong one-shot learning (Kaiser et al. 2017);
+     - WorldMem's denoiser attends to retrieved memory frames.
+   - **Would ours trust it?** Our own evidence says yes when the memory is read where it is predictive. P1.5 learned
+     its clocks from the record because the record is read at the cell (swap 0.99). P1.6's foveal record went unread
+     because what it held was rarely at the cell being predicted.
+
+**Proposed (undecided, revised again 11-23): one learned place memory, taught by its reads.**
+1. **An entry, written each real frame for each cell in view:**
+   - **key:** the agent's inferred location at that moment plus the cell's offset, encoded as a soft code. The
+     working choice is a Fourier (rotary) code of the integrated displacement, grid-cell-like (Banino). Offsets
+     compose exactly, and the denoiser already uses rotary position codes for space. A fully learned code (TEM) is the
+     step for when noisy motion needs it;
+   - **content:** a learned encoding of what was perceived there: the cell's fused coarse-and-fine token (F1.6's
+     per-cell fusion). Fine detail exists only where the eye looked;
+   - **strength:** a learned salience from the content and the belief at writing, so what the agent has learnt to
+     value is written strongly;
+   - **age.**
+2. **Reads by attention:**
+   - the denoiser's cell tokens read entries near their own location (coherence of imagination), awake and dreamed;
+   - the act tokens read entries by content and location, off-screen included, so "where was water" is retrievable
+     before the place re-enters view (Codex).
+3. **Taught by the reads, end to end within a training chunk:**
+   - what is stored, and how strongly, is learnt from what the reads need: the world's prediction at revisits now,
+     the agent's decisions later;
+   - 75% of revisit gaps are 64 steps or less and the p90 is 177 (October's E2), so most writes and their reads fall
+     inside one 256-frame chunk;
+   - entries written before the chunk are kept but carry no gradient.
+4. **Initialised to write broadly.** Codex's route audit (reproduced) shows the coarse layout carries routes, not
+   only destinations: 89.6% of routes to remembered water survive with fixation-only memory, 96.7% with the full
+   coarse layout. So the salience starts open and learns to discount.
+5. **Dreams** read the memory. They write only new places and action-caused changes, to a branch overlay never merged.
+   - Codex's audit (reproduced): unconditional writes from dream renders would contradict 32.2% of returning observed
+     places, against 1.6% for real renders.
+6. **What stays:** Mamba as working memory taught by the goals, the screen-fixed record for clocks and recent change,
+   and the weights for rules.
+7. **Judges:**
+   - remembering: swap one entry with the view and action fixed, and the prediction at that place should change; the
+     revisit difference should rise above zero;
+   - finding: a route back to off-screen water;
+   - selectivity: once the agent has a value, the learned salience should be higher for lava, water and its table
+     than for sand.
+8. **Robots:** the same design.
+   - The key is the camera pose's code, from visual-inertial odometry, and the content is the encoding of what was
+     seen. That is GTM-SM's and the Scene Memory Transformer's form.
+   - It grows with space explored. Pruning by learned salience comes when capacity binds, and loop closure belongs to
+     self-location.
+9. **Fallbacks:**
+   - if learned content or salience fails to learn, the compact last-seen entry (Codex's payload audit: 98.1% of
+     revisits identifiable);
+   - for implicit memory, a block-wise Mamba scan (Po et al.).
 
 ## Parked: thinking when it's worth it (user 11-23, explore after the first proof)
 
@@ -2100,10 +2160,10 @@ References:
 5. **Knowing what it doesn't know** (Decision 5, opened 11-23; proposal above, undecided): readings from the start
    (surprise on arrival, learning progress, the world's own flow instability and inter-seed variance), validation
    before use, uses on triggers (dream trust, curiosity, change); ensembles only as an evaluation tool.
-6. **Memory beyond the frame and the episode** (Decision 6, opened 11-23; proposal above, undecided): three
-   memories with three teachers (Mamba for goals, a compact place memory written from what was seen with detail where
-   the eye looked, the weights for rules); located by action-constrained visual odometry; dreams on a branch copy;
-   cleared at Classic's resets.
+6. **Memory beyond the frame and the episode** (Decision 6, opened 11-23; proposal above, undecided): Mamba keeps
+   nothing spatial beyond the view (measured); one learned place memory, keyed by a soft code of the inferred location,
+   content and salience taught by its reads (the world's revisits now, decisions later), read by the denoiser and the
+   act tokens; dreams write to an overlay; cleared at Classic's resets.
 7. **The fast channel:** how adapting in context is learnt (variation in training, scoped above).
 
 **Framing and judging:**

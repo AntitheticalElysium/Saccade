@@ -21,6 +21,7 @@ S2 = importlib.import_module("artifacts.experiments.20261119_s2.s2")
 DEV = S2.DEV
 CLASSES = {"water": 3, "tree": 5, "lava": 14, "table": 11, "stone": 4, "sand": 13, "path": 7}
 MOBS = ("zombies", "cows")
+LAST = ("zombies_last", "cows_last")                                      # where it was last seen (added after reading 1, Codex)
 AGES = ((1, 16), (17, 64), (65, 10 ** 9))
 
 
@@ -36,6 +37,7 @@ def targets(L, e, so, stride, first=16):
     rr, cc = np.meshgrid(np.arange(7) - 3, np.arange(9) - 4, indexing="ij")
     gr, gc = np.meshgrid(np.arange(64), np.arange(64), indexing="ij")
     mob_seen = {m: np.full(L[f"s_{m}_m"].shape[1], -10 ** 6) for m in MOBS}
+    mob_last = {m: np.zeros((L[f"s_{m}_m"].shape[1], 2), int) for m in MOBS}
     rows = []
     for t in range(T + 1):
         inview = (np.abs(gr - pos[t, 0]) <= 3) & (np.abs(gc - pos[t, 1]) <= 4)
@@ -62,6 +64,16 @@ def targets(L, e, so, stride, first=16):
                             best = (int(sector(dr, dc)), d, int(t - mob_seen[mname][s]))
                 if best is not None:
                     row[mname] = (best[0], float(np.log(best[1])), best[2])
+                lb = None                                                   # the same rule on the last sighting
+                for s in range(len(mm)):
+                    out = abs(mp[s, 0] - pos[t, 0]) > 3 or abs(mp[s, 1] - pos[t, 1]) > 4
+                    if mm[s] and out and t - mob_seen[mname][s] <= 32:
+                        lr_, lc_ = mob_last[mname][s] - pos[t]
+                        d = float(np.hypot(lr_, lc_))
+                        if lb is None or d < lb[1]:
+                            lb = (int(sector(lr_, lc_)), max(d, 1.0), int(t - mob_seen[mname][s]))
+                if lb is not None:
+                    row[mname + "_last"] = (lb[0], float(np.log(lb[1])), lb[2])
             rows.append(row)
         ok = (pos[t, 0] + rr >= 0) & (pos[t, 0] + rr < 64) & (pos[t, 1] + cc >= 0) & (pos[t, 1] + cc < 64)
         grid[pos[t, 0] + rr[ok], pos[t, 1] + cc[ok]] = view[t][ok]
@@ -72,7 +84,7 @@ def targets(L, e, so, stride, first=16):
                 if not mm[s]:
                     mob_seen[mname][s] = -10 ** 6
                 elif abs(mp[s, 0] - pos[t, 0]) <= 3 and abs(mp[s, 1] - pos[t, 1]) <= 4:
-                    mob_seen[mname][s] = t
+                    mob_seen[mname][s] = t; mob_last[mname][s] = mp[s]
     return rows
 
 
@@ -140,7 +152,7 @@ def main():
     enc = S.encode(model, S2.sublabels(L, eps), cfg)
     feats = {"belief": [], "view": [], "view_record": []}
     meta = {"episode": [], "split": [], "drink": [], "self": [], "zombie_adjacent": []}
-    tg = {k: [] for k in (*CLASSES, *MOBS)}
+    tg = {k: [] for k in (*CLASSES, *MOBS, *LAST)}
     for i, e in enumerate(eps):
         rows = targets(L, int(e), so, 3)
         en = enc[i]

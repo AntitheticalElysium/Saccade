@@ -60,3 +60,9 @@ the belief is known to carry:
 - a zombie adjacent to the player (AP 0.92 on 11-22), scored by balanced accuracy.
 
 If the belief probe decodes these well, the map null is real. If not, the probe is the problem.
+
+## Last-seen mob targets (added 11-23 after the first reading, Codex)
+
+The mob targets were the creature's current hidden position. That mixes remembering the sighting with predicting the
+motion since: the direction differs from the last sighting in 13.0% of zombie and 21.3% of cow cases (Codex). Added: the
+direction to where the same creature was last seen, with the same rule and probes.

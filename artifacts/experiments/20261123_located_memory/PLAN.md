@@ -116,6 +116,15 @@ episode-bootstrap 95% intervals.
 3. **Return after an injected pose error beyond the local window** (Codex 1).
    - At movement steps that precede a revisit within 32 steps, the belief is shifted by 4 cells, beyond both the
      motion window and the read's neighbourhood.
+   - **The last frame's writes move with it** (amended 11-23, before any result). A real drift is self-consistent:
+     the recent entries share the error. Without this, the previous frame's correct entries would undo the injection
+     at the next frame, odometry included, and the control couldn't separate anything. Only older memory can reveal
+     the error.
+   - **The repair reading applies to doubtful writes only.** Writes during a self-consistent drift are confident, so
+     the agreed rule commits them; reversibility covers doubtful writes (Codex's "uncertain writes").
+     - The repair bar is read on natural relocalisations in the panel: pending entries aligned after the jump.
+     - Confident drifted writes are reported as the known limit. Repairing them needs pose-graph loop closure, which
+       the design doesn't have yet.
    - **Three localizers on the same trajectories,** with the store and read fixed:
      - oracle (the injection undone);
      - odometry only (the memory term limited to the previous frame);
@@ -125,8 +134,9 @@ episode-bootstrap 95% intervals.
        odometry only is the separating control;
      - **the following view:** on the first revisit after recovery, agreement in the surprising context at least
        0.8 of the oracle's gain over first sightings;
-     - **pending writes repaired:** after recovery, entries written during the error sit at their true world cell in
-       at least 0.90 of cases.
+     - **pending writes repaired:** after a natural relocalisation, pending entries from the run before it are
+       aligned with the corrected pose in at least 0.90 of cases;
+     - **confident drifted writes:** their alignment after recovery is reported (expected to fail by design).
 4. **Dreams** (Codex 3): 16-step self-fed dreams under recorded commands from real starts (the panel's starts).
    - **Scored on world cells entering view** that the real prefix verified (a clear sighting) and that the
      simulator says are unchanged at that step: does the dream draw the verified class?

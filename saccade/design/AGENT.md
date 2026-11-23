@@ -780,33 +780,111 @@ proof.
    - **Watching:** imitation of expert-flagged actions, exogenous ones masked, with multi-token prediction of length
      8 (Dreamer 4's default, untested there). The crop-swap and label-swap checks apply.
    - **Dreams:** PMPO, α 0.5, plus a reverse KL with β 0.3 to an anchor policy (Dreamer 4).
-   - **The anchor over a life.** It starts as the imitation policy. VPT shows why the expert's pull must fade, and
-     Dreamer 4 why the anchor matters in dreams: it keeps the policy where the world is accurate, near the behaviour
-     the world learnt from. In a life that behaviour becomes the agent's own, so the anchor follows a slowly updated
-     copy of the agent's policy, and the expert's influence fades as the agent's own experience grows. The rate is
-     open (decision 4), and the rule-change benchmark judges it.
-   - **Real experience** reaches the choice through the world and the value, as in Dreamer 3 and 4. Demonstrations or
-     corrections that arrive in life go to imitation, the specification channel.
+   - **The anchor (revised 11-23 after the research below; the user asked what robots do).**
+     - **How systems anchor, read at the source:**
+       - **Robots mostly anchor through data:**
+         - HIL-SERL keeps demonstrations and human corrections in an off-policy RLPD-style replay; corrections are
+           "crucial for enabling the policy to learn from its mistakes" (Luo et al. 2024);
+         - ResiP keeps a frozen BC model and learns an RL residual on top (Ankile et al. 2024);
+         - AWAC's supervised actor update keeps the policy close to the data (Nair et al. 2020);
+         - RECAP conditions on advantages over all its data;
+         - WSRL warm-starts and then drops the offline data (Zhou et al. 2024);
+         - DPPO fine-tunes the diffusion policy by policy gradient, with no BC regulariser in what I read.
+       - **Agents and language models use an explicit reference:**
+         - frozen, constant: Dreamer 4, β 0.3;
+         - frozen, decaying: VPT, ρ 0.2 x 0.9995 per iteration;
+         - fixed: InstructGPT's "per-token KL penalty from the SFT model";
+         - moved during training: TR-DPO blends the policy into the reference or replaces it after N steps, +19% win
+           rate (Gorbatovski et al. 2024).
+     - **What an anchor is for:**
+       - guiding exploration where values don't yet discriminate (VPT replaces entropy with it);
+       - protecting latent skills until their value is realised (VPT);
+       - keeping dream-trained behaviour where the world is accurate (Dreamer 4);
+       - limiting the size of each step (trust regions; TR-DPO);
+       - safety on real hardware (residuals, corrections).
+     - **Proposal, agreeing with Codex and withdrawing my moving copy.** A slowly moving copy of the policy can follow a
+       series of individually small, mistaken dream updates. It would carry dream errors into the anchor. So:
+       - the reference starts as the frozen imitation policy, at Dreamer 4's β 0.3;
+       - its influence fades as the agent shows real competence (VPT's decay, tied to real performance);
+       - the reference is replaced by the current policy only when that policy has earned trust in **real**
+         experience (Codex), which is TR-DPO's replacement gated by reality instead of a step count;
+       - the reference keeps its own copy of the agent-token weights and head. Its logits are checked on fixed
+         histories, because the world it reads keeps learning (Codex);
+       - the corpus stays in the replay, as the data anchor robots use.
+   - **Real experience reaches the motor choice directly as well (the user: "both").** The agent replays its own
+     successful decisions, with a value baseline. Self-imitation learning: −log π(a|s) (R − V(s))+, imitating past
+     actions "only when such decisions resulted" in a return above the value (Oh et al. 2018). So routine, mistaken and
+     lucky actions inside a success aren't copied (Codex). RECAP is the robotics precedent. This gives reality a
+     direct route to correct dream errors. Codex's return-order audit matters here: P1.5's single dreams order DO
+     against NOOP wrongly 19.9% of the time at 15 steps, and PMPO uses only the sign. In the brain, reverse replay
+     rates track reward (Ambrose, Pfeiffer & Foster 2016). Demonstrations and corrections go to plain imitation.
+   - **Imitation targets** are masked per target, not per window: only 35.7% of eight-action windows are all expert
+     (Codex, TRAIN census).
 3. **The value:** dreamed and real-replay λ-returns, through its own weights, with DreamerV3's slow regulariser and a
    held-out check against real continuations.
-4. **The look:**
-   - **While watching:**
-     - cross-entropy toward the chooser's rule, 0.8 softmax(0.5 C + 0.5 S) + 0.2 / 49;
-     - S is the world's own error per window. The P1 loss computes per-cell error at randomly sampled noise levels,
-       which is noisy. The chooser's S was a deterministic forecast error. So S needs a defined estimator, such as a
-       fixed-level estimate, and a check that it ranks windows like the chooser's did;
-     - C is the action's contingency, taken minus NOOP. It needs a NOOP forecast, which is the cost to measure
-       (Codex);
-     - plus the decision value of a crop, counterfactual on recorded frames.
-   - **In dreams:** PMPO on the look as part of the action, once look schedules can't change later outcomes.
-   - **Risk:** raw surprise draws the eye to irreducible noise, such as night static (Burda et al. 2018). Learning
-     progress (Gottlieb et al. 2013) is the replacement, on a measured trigger.
-5. **Order inside the run:**
-   - watching first: world, imitation and the look's signals together;
-   - dreaming once imitation is competent, as Dreamer 4's phases do;
-   - then life.
+   - **Dreamer 4 doesn't do this.** It trains the value only on imagined λ-returns, offline, because its dataset's
+     returns belong to the demonstrators. The real-replay value is DreamerV3's (`repval` 0.3). In a life the agent's
+     own real returns exist, and short dreams put more of the return on the value.
+4. **The look (revised 11-23; the chooser retires entirely, formula included).**
+   - **Measured** (`artifacts/experiments/20261123_eye_drives/RESULTS.md`):
+     - the old chooser's raw surprise finds creatures by day (lift 4.32) and halves at night (2.04), when the static
+       draws it;
+     - the world's own foveal surprise, the TSP likelihood under the content-blind faithful decoder, can't tell night
+       creatures from night static (lift 1.20 against 1.21);
+     - contingency is broad (lift 1.2-1.5);
+     - night is where the fovea's one known gain lies.
+   - **Neuroscience:**
+     - gaze follows a priority map combining salience and relevance (Fecteau & Munoz 2006);
+     - Bayesian surprise, the belief change, attracts gaze, "irrespectively of how rare" an observation is (Itti &
+       Baldi 2009);
+     - the basal ganglia orient the eyes to reward (Hikosaka, Nakamura & Nakahara 2006);
+     - parietal neurons encode a saccade's expected information gain, independent of reward (Foley et al. 2017);
+     - fixations are chosen to reduce uncertainty about task-relevant variables (Sprague & Ballard 2003).
+   - **ML precedents:**
+     - glimpses learnt from task reward (Mnih et al. 2014);
+     - SUGARL needed an intrinsic sensorimotor reward for its gaze policy (Shang & Ryoo 2023).
+   - **Proposed: two drives, both from the system's own signals, with no imitation of a formula and no counterfactual
+     supervision.**
+     1. **Relevance:** the look shares the step's advantage. That means PMPO in dreams once look schedules can't change
+        later outcomes, and real advantages, including self-imitation, in life. This is the drive that can find night
+        zombies, because they change returns.
+     2. **Information:** an intrinsic reward for the look, on **real** glimpses only: the world's foveal surprise at
+        the chosen window, the TSP likelihood. This is what the look revealed beyond what the coarse view and belief
+        predicted.
+        - By day it picks creatures like the old chooser (argmax 0.548 against 0.525). At night it is diluted
+          (measured).
+        - In dreams it would be the world's surprise at itself, not information, so it isn't used there.
+        - Its jobs are a dense early signal for gaze (SUGARL's lesson) and the world's curriculum. The curriculum
+          value is unproven: P1-F2 was mixed.
+     - **While watching** there is no task advantage. The look learns from drive 2, plus possibly the information its
+       chosen glimpse adds to the demonstrated action: likelihood with against without the glimpse, for the chosen
+       window only. That is realisable by any eye.
+     - **A 0.2 / 49 uniform floor** for exploration.
+   - **Dropped:**
+     - **counterfactual decision value over all 49 windows.** It needs privileged full frames, which a real eye can't
+       see, plus many passes and an oracle-style objective. It stays an evaluation reading;
+     - **the NOOP forecast for contingency.**
+   - **Trigger:** if the eye still misses night creatures in the run, look at content-aware precision for drive 2.
+     The 10-31 pitfall applies: learned content-dependent variance made the pixel decoder digit-blind. Learning
+     progress is the other candidate.
+   - **Open:** the weighting of the two drives, in nats as Dreamer 4 balances its terms.
+5. **Order (the user, 11-23):** watch, then dream and live interleaved, on the fly, with dreaming possible before the
+   first real step.
+   - Watching comes first, because living is only worth its cost once the world and the imitation are competent.
+   - After that, dreaming and living alternate or run in parallel, as DayDreamer's learner and actor threads do.
+   - Dreaming before the first real step is what Dreamer 4 shows works offline.
+   - The schedule is decision 4's and can change on the fly.
+6. **The brain parallel, stated carefully.** The actor-critic model of the basal ganglia is a well-supported
+   hypothesis: dopamine firing resembles the critic's temporal-difference error (Schultz, Dayan & Montague 1997;
+   reviewed by Joel, Niv & Ruppin 2002), and its anatomical details are debated. Our parts take those computational
+   roles:
+   - the world predicts, as cortex does;
+   - the value is the critic and the choice the actor;
+   - the advantage plays dopamine's role;
+   - replay of successes resembles reward-modulated reverse replay;
+   - the eye combines salience and reward-learnt relevance.
 
-   Whether dreaming starts during watching, and the mix, belong to decision 4.
+   It is an analogy of roles, not an anatomical identity.
 
 ## Parked: thinking when it's worth it (user 11-23, explore after the first proof)
 
@@ -1077,11 +1155,12 @@ References:
    - Isolation, trust and fresh starts are recorded.
    - Practice first; deliberation is parked (its own section).
 3. **Learning, awake and dreaming** (Decision 3, opened 11-23; proposal above, undecided):
-   - the world by the P1 losses on real data;
-   - the motor choice by imitation while watching, then PMPO with a reverse KL to an anchor that moves from the
-     imitation policy to the agent's own;
-   - the value from dreams and real replay;
-   - the look from surprise, contingency and decision value, then dream returns.
+   - the world: P1 losses on real data;
+   - the motor choice: imitation, then PMPO with a frozen imitation reference whose influence fades with real
+     competence and which is replaced only by a policy that earned trust in reality; plus self-imitation of its own
+     real successes;
+   - the value: dreams and real replay;
+   - the look: reward-learnt relevance plus the world's foveal surprise on real glimpses. The chooser retires.
 4. **The life cycle:**
    - what runs awake and what asleep;
    - replay contents and mix (the corpus plus its own life);

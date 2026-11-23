@@ -2147,6 +2147,145 @@ time, trust is learned from what each entry carries.
      revisits identifiable);
    - for implicit memory, a block-wise Mamba scan (Po et al.).
 
+### Decision 7: the fast channel, adapting in context (opened 11-23; research and proposal, undecided)
+
+**Its job:** within a context (an episode in Classic, a stretch of life on a robot), evidence about something hidden
+that varies changes what the world predicts and what the agent does, with no weight change. **Generic measure:** the
+world's prediction after the evidence, with the current inputs held fixed and only the earlier evidence varied
+(Codex's matched histories, 11-22), and, in life, the return after a few observations against a fresh agent.
+
+**What we have (measured):**
+- **Hidden states that varied in training are inferred in context.** Clock phases and cooldowns are carried by the
+  record and drawn from it (P1.5).
+- **A rule that never varied is not** (`20261122_rule_change`). After eight or more observations of water giving +2
+  in the same episode, the world still draws +1 in 70% of draws and +2 in 0.7%. Memory, not adaptation.
+- **The two carriers we already have differ in reach and teacher:**
+  - **The record** is fixed (S4D-Lin, no parameters), per cell. All 32 modes share one decay rate, a time constant of
+    64 frames. It needs no gradient through time, since the denoiser reads its state at the frame being predicted;
+    that is why clocks became learnable once it existed. In the rule-change pairs, its trace of a +1 versus a +2
+    history shrinks from an RMS difference of 0.028 at lags 1-7 to 0.006 at 33-96.
+  - **The belief (Mamba)** is long-span and learned. It keeps what its readers ask for, which today is almost entirely
+    the reward heads (P1-F6's gradient magnitudes, 11-14; not re-measured on P1.5). It keeps no map (decision 6's
+    probes).
+- **Evidence spans** (11-22 EDA, DEV): thirst's second drop at a median step 42; zombie damage first and second at
+  112 / 155; water yield 117 / 208; cow food first at 293.
+  - So clock periods sit inside the record's reach. Yields and creature rules mostly need the belief.
+
+**Research (read at the source 11-23 unless noted):**
+- **Memory plus variation is how in-context adaptation is obtained everywhere it works:**
+  - **Lu et al. 2023 (S5 for in-context RL):** a reset flag inside S5's scan keeps it parallel. Trained on DMControl
+    tasks under random projections of observations and actions, which "vastly increase the number of tasks", it
+    "outperforms LSTMs in both sample efficiency and ultimate performance". It transfers to some held-out tasks and
+    "fails to successfully transfer" to one with unseen structure. GRUs "appear to have overfit to the training
+    horizon" while S5 kept working at twice the trained number of trials.
+  - **AdA (2023):** "the memory of the agent is not reset at trial boundaries, but is reset at episode boundaries".
+    Adaptation comes from meta-RL over a vast task space, a large attention memory and an automatic curriculum.
+  - **RMA (2021):**
+    - simulation randomises friction, payload, motor strength and more;
+    - an adaptation module reads the last 50 steps (0.5 s) and estimates the environment's latent, regressed onto
+      what a privileged encoder made of the true parameters;
+    - success is 73.5% against 52.1% without the module and 76.2% with the true latent;
+    - a policy fed the raw history instead gave "unnatural gaits and poor performance" (no number).
+  - **The Dreamer line:**
+    - **MAMBA for meta-RL (Rimon et al. 2024):** DreamerV3 with the reward and time step added to the observation,
+      trained on whole meta-episodes to "avoid missing signals about the identity of the current MDP". Runtime is its
+      stated limit (results tables read from a summary).
+    - **cRSSM (2024) and DALI (2025):** DreamerV3 trained across randomised contexts, with no context input, already
+      generalises better than one trained on the default context (pixel CartPole gravity, extrapolation, about 0.56
+      against 0.76). An explicit context input or a learned context encoder adds gains in some settings, not all
+      (numbers read from a summary of the tables).
+  - **"Considering Context" (2026)** is the closest to us. On a DreamerV3 backbone:
+    - a context mechanism helps only where predictive headroom remains under the agent's own visitation;
+    - in the hard setting all methods' returns stay within 2%: "successful control does not have to resolve predictive
+      context";
+    - keeping the recurrent state across episode resets (RL²'s mechanism) gave the worst episode starts at every
+      drift rate (+1.41, +1.12, +1.15 against plain DreamerV3, two-sample SE 0.26-0.45);
+    - its own limit: "The proposed criterion does not cover imagined rollouts".
+- **When it emerges (the data decides):**
+  - **Chan et al. 2022:** in-context learning needs burstiness and many rare classes, and "trades off against
+    in-weights learning". A skewed (Zipfian) mix keeps both. Matched LSTMs and RNNs were "never able to achieve
+    in-context learning" on the same data.
+  - **Park et al. 2024:** Mamba matches transformers on most in-context regression tasks. It fails at retrieval
+    (vector MQAR test error 0.86 against 5e-6). A hybrid with Mamba first and attention after succeeds on all.
+  - **Raventós et al. 2023:**
+    - for 8-dimensional regression, a task-diversity threshold lies "between 2^14 and 2^15 pretraining tasks";
+    - below it, the model "behaves like a Bayesian estimator with the non-diverse pretraining task distribution as
+      the prior": it recognises the variants it saw instead of inferring new ones.
+- **The brain:**
+  - **Wang et al. 2018 (read 11-22):** slow dopamine-driven plasticity trains the prefrontal network into a
+    free-standing learner in its activity.
+  - **Heald, Lengyel & Wolpert 2021 (COIN):** creating, updating and expressing motor memories are "all controlled by
+    a single computation – contextual inference". Adaptation is partly "proper learning" (memories updated) and partly
+    "apparent learning" (the same memories expressed differently as context probabilities change). Memories aren't
+    overwritten, updates are weighted by each context's responsibility, single-trial learning depends on the inferred
+    context, and abrupt change creates a new memory where gradual change updates the old one.
+  - **Collins & Frank 2013** (abstract level): people build and reuse task-set structure even unprompted.
+- **Alternatives, read at abstract level:**
+  - test-time training of the world's dynamics (JEPA-TTT, NeurIPS 2026: 83% lower latent error after 500 episodes),
+    which is a weight channel;
+  - large-chunk fast weights (LaCT);
+  - in-context world modelling from self-generated probing interactions (2606.26025).
+
+**Proposed:**
+1. **No new module.**
+   - The fast channel is the memories we have: the record for short spans, the belief for long ones, plus the place
+     memory and the denoiser's context.
+   - The world's own prediction is the teacher. The agent reads the belief.
+   - The same holds in dreams: a dream starts from the real belief, so it draws under the rule the agent has
+     inferred, and the policy practises the situation it is actually in. That is the part "Considering Context" left
+     open.
+2. **What teaches it is variation in the training world:** 11-22's family of hidden rules, under the conditions the
+   research gives.
+   - **Constant within an episode, varied across episodes** (burstiness).
+   - **Continuous ranges, several rules varied together,** so that diversity clears any threshold. A handful of
+     values would teach recognition of those values (Raventós).
+   - **The native rules stay the most frequent,** so in-weights knowledge of Classic survives (Chan's skew).
+   - **The evidence and its consequence within reach:**
+     - for the record, always;
+     - for the belief, inside the 256-frame chunk (83.2% of thirst triples) or through replay pairs, as in
+       decision 6, since MAMBA trains on whole meta-episodes for this reason.
+   - **The data:** the corpus's recorded actions re-simulated under sampled rules. Exact replay is verified (all
+     18,204 steps of a thirst-patch audit). The actions were chosen for the native rules (Codex).
+   - **Where it enters:** the new world run (pretraining and watching), so no extra run is needed.
+   - **For robots:** randomisation in simulation (RMA, OpenAI 2019) or the natural variety of broad video. The variation
+     lives in the training world, not in the agent; which Classic rules to vary is the same kind of choice as RMA's
+     parameter list.
+3. **Resets stay as decided in decision 6.**
+   - The belief resets at a Classic episode end. A rule that persists across episodes is the weights' job: the slow
+     channel, with decision 5's change replay.
+   - Keeping the state across resets measurably hurt episode starts in the closest precedent.
+   - Revisit if the lifetime benchmark shows each episode re-inferring a persistent rule too slowly.
+   - A robot never resets.
+4. **The long-span risk.**
+   - Yields and creature rules need the belief, and the belief is taught by what its readers ask for (today the reward
+     heads).
+   - If such a rule fails while the record-span rules succeed, the culprit to measure first is the missing request: who
+     asks the belief to carry it. That ties to decision 9.
+   - An event memory ("what happened, in what order", pushed here from decision 6) or an explicit context encoder
+     (DALI's, label-free) come only after that measurement.
+5. **The brain parallel, stated carefully.** A world trained across variation has COIN's shape without COIN's
+   machinery:
+   - every rule stays in the weights, conditioned on context;
+   - the belief holds the inferred context;
+   - a rule change in life arrives first as a change of context ("apparent learning"), not an overwrite. Returning to
+     the trained rule should then be fast, which is savings, tested by Codex's protocol.
+
+   The machinery differs: there is no explicit count of contexts.
+6. **Judges:**
+   - matched histories (current inputs fixed, earlier evidence varied);
+   - held-out values inside and outside the trained range;
+   - water yield held out entirely, as the hard transfer test. Lu et al.'s failure on unseen structure says to expect
+     difficulty;
+   - native Classic quality within tolerance (the in-weights trade-off);
+   - in life, Codex's protocol: trained rule, then a changed rule, an unannounced return, and a held-out variant.
+7. **First mechanism test (proposed, not run), on the record route: the thirst period.**
+   - P1.5's denoiser fine-tuned by test 3's recipe on corpus episodes re-simulated with an awake thirst period drawn
+     per episode from a range, the native 21 most frequent, some periods held out.
+   - Judged by when the next drink drop is drawn, under matched histories with the same last drop and digit and a
+     different earlier interval.
+   - Bars to be fixed in its plan before running.
+   - Then the long-span test (water yield or zombie damage) on the belief route.
+
 ## Parked: thinking when it's worth it (user 11-23, explore after the first proof)
 
 **The idea.** At decision time the agent may imagine before acting, using the denoiser on candidate futures, but only
@@ -2442,7 +2581,10 @@ References:
    the world's own tokens at inferred addresses (odometry refined against the memory, with pose confidence); the
    world's read per cell and the agent's read over all entries, trust learned at read time; writes from every real
    frame, detail where the eye looked, dreams to an overlay; reset with the episode in Classic, never on a robot.
-7. **The fast channel:** how adapting in context is learnt (variation in training, scoped above).
+7. **The fast channel** (Decision 7, opened 11-23; proposal above, undecided): no new module; the record (short
+   spans) and the belief (long spans) carry the evidence, the world's prediction teaches; learnt from variation in the
+   training world (constant within an episode, continuous and joint across rules, native rules most frequent); resets
+   unchanged; the long-span request is the risk to measure; first test: the thirst period on the record route.
 
 **Framing and judging:**
 

@@ -1,0 +1,111 @@
+{
+ "1": {
+  "consensus_non_tie": 130,
+  "wrong": 0,
+  "episodes": 120
+ },
+ "4": {
+  "consensus_non_tie": 178,
+  "wrong": 23,
+  "episodes": 156,
+  "dream_spread": {
+   "auroc": 0.3929873772791024,
+   "ci95": [
+    0.29246815353910965,
+    0.4948616152450088
+   ]
+  },
+  "dream_low_confidence": {
+   "auroc": 0.8496493688639551,
+   "ci95": [
+    0.7740923036284952,
+    0.9104845947063689
+   ]
+  },
+  "simulator_spread": {
+   "auroc": 0.7612903225806451,
+   "ci95": [
+    0.6651349506406217,
+    0.8548924993302327
+   ]
+  },
+  "dream_spread_within_sim_terciles": {
+   "terciles": [
+    {
+     "n": 0,
+     "wrong": 0,
+     "auroc": null
+    },
+    {
+     "n": 0,
+     "wrong": 0,
+     "auroc": null
+    },
+    {
+     "n": 178,
+     "wrong": 23,
+     "auroc": 0.3929873772791024
+    }
+   ],
+   "mean": 0.3929873772791024
+  },
+  "wrong_confident_share_z_ge_2": 0.13043478260869565,
+  "right_confident_share_z_ge_2": 0.6645161290322581,
+  "zero_spread_share": {
+   "wrong": 0.0,
+   "right": 0.2129032258064516
+  }
+ },
+ "15": {
+  "consensus_non_tie": 309,
+  "wrong": 91,
+  "episodes": 214,
+  "dream_spread": {
+   "auroc": 0.4831384212118157,
+   "ci95": [
+    0.41544930459821783,
+    0.5502509952566584
+   ]
+  },
+  "dream_low_confidence": {
+   "auroc": 0.7591743119266054,
+   "ci95": [
+    0.7032217191500396,
+    0.8123155616956603
+   ]
+  },
+  "simulator_spread": {
+   "auroc": 0.586072184696038,
+   "ci95": [
+    0.5178968997541293,
+    0.6522548613848376
+   ]
+  },
+  "dream_spread_within_sim_terciles": {
+   "terciles": [
+    {
+     "n": 103,
+     "wrong": 18,
+     "auroc": 0.5254901960784314
+    },
+    {
+     "n": 103,
+     "wrong": 40,
+     "auroc": 0.48313492063492064
+    },
+    {
+     "n": 103,
+     "wrong": 33,
+     "auroc": 0.5108225108225108
+    }
+   ],
+   "mean": 0.5064825425119542
+  },
+  "wrong_confident_share_z_ge_2": 0.07692307692307693,
+  "right_confident_share_z_ge_2": 0.463302752293578,
+  "zero_spread_share": {
+   "wrong": 0.0,
+   "right": 0.06422018348623854
+  }
+ }
+}

@@ -62,11 +62,11 @@ each scene. This does not measure a trained eye or the benefit of the crop to a 
 Reproduce with
 `JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 MAMBA_DETERMINISTIC=1 .venv/bin/python -m artifacts.experiments.20261123_look_information.belief_static_audit`.
 
-## Third reading: belief change on C8's failure classes (`belief_categories.py`, `belief_categories.json`)
+## Third reading: belief change on the 11-20 eye's failure classes (`belief_categories.py`, `belief_categories.json`)
 
-On 11-20 a different "belief change" failed: the switching dissection's C8 measured the shift in the world's
+On 11-20 a different "belief change" failed: the switching dissection's belief-change eye measured the shift in the world's
 zero-signal prediction of frame t + 1 from seeing the real frame t. Today's definition (fine minus periphery-acuity
-crop, the current corrected belief) is read here on C8's failure classes. Starts are frames where the player moved or a
+crop, the current corrected belief) is read here on the 11-20 eye's failure classes. Starts are frames where the player moved or a
 HUD value changed.
 
 | Belief change, absolute (relative) | Creature | Entering terrain | Static map | Changed HUD | Unchanged HUD |
@@ -76,7 +76,7 @@ HUD value changed.
 
 Counts: day 621 / 570 / 952 / 451 / 952; night 266 / 212 / 326 / 141 / 326. Intervals are in the JSON.
 
-- **C8's failure doesn't recur.** Entering terrain scores below static (C8 gave it 43% of its score). Newly entering
+- **The 11-20 failure doesn't recur.** Entering terrain scores below static (the 11-20 eye gave it 43% of its score). Newly entering
   terrain's fine detail adds little beyond what the coarse view identifies.
 - **Changed HUD scores above unchanged,** clearly at night (1.00 against 0.71) and modestly by day (0.73 against 0.64).
 - **A caveat:** unchanged HUD still moves the belief 1.6-2x as much as static, although the coarse view holds the HUD

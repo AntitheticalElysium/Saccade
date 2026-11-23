@@ -149,8 +149,7 @@ staged "first loop" variants (frozen world, uniform gaze); those were mine and a
    - the look by its signals (part 1);
    - goal shaping on hold.
 
-   Open: the learning rate (no annealing to zero), plasticity tools on a measured trigger, and surprise-driven
-   learning later.
+   The learning rate, the optimizer and plasticity are proposed in Decision 4. Surprise-driven learning comes later.
 4. **Acting sparsely, practising long offline.** Mostly schedules, with two jobs offline:
    - replaying real experience for the world;
    - dreaming for the choice, the look and the value.
@@ -794,7 +793,8 @@ proof.
   expert acted on full symbolic state, so wherever it used something the screen doesn't show, the belief and record
   must carry it.
 
-**Proposed (undecided), part by part, in one system:**
+**Agreed 11-23 (the user: "your drive and real experience splits seem correct"), with Codex's corrections applied, part
+by part, in one system:**
 1. **The world** learns by the P1 losses on real experience: the corpus while watching, its own transitions while
    living. Goal shaping is on hold, so it stays as today. Following Dreamer 4, no outcome-selected data reaches the
    world's loss.
@@ -831,10 +831,15 @@ proof.
          - so the policy can move far within behaviour the reference takes, but barely toward actions the reference
            almost never takes, however good a dream says they are. That caps dream exploitation;
          - PMPO's sign-based loss is not exactly this closed form, but it strikes the same balance.
-       - **Worked example:**
+       - **Worked example (softened 11-23, Codex; arithmetic verified):**
          - with π_ref [DO 0.70, NOOP 0.20, sleep 0.10], dreamed advantages [-0.2, +0.3, 0] and β 0.3, the target is
            about [0.36, 0.54, 0.10];
-         - an action at 0.1% in the reference stays below 1% even with an advantage of +0.5.
+         - the KL is a soft preference with no fixed ceiling, and what moves a rare action is its advantage *relative*
+           to the others. An action at 0.1% in the reference with advantage +0.5 rises to 0.53% when the others have
+           advantage 0, and to 2.73% when they have -0.5;
+         - PMPO averages signed log-probability terms separately over positive and negative samples, so its update
+           differs from this closed form. β 0.3 stays the starting coefficient, and policy drift from the reference is
+           a reading in the run.
        - **The life cycle of the reference:**
          1. When imitation is competent, π_ref is a frozen snapshot of the agent-token weights and the motor head. Its
             action distributions on a fixed set of real histories are recorded.
@@ -844,9 +849,11 @@ proof.
          4. If it is better on return and loses no skill beyond a tolerance, it becomes the new reference, which is
             snapshotted and re-recorded. This is TR-DPO's replacement gated by reality instead of a step count
             (Codex), and VPT's fading achieved by replacement rather than by decaying β.
-         5. The reference's distributions are re-checked on the fixed histories after world updates, since it reads a
+         5. The reference's distributions are re-checked on fixed histories after world updates, since it reads a
             learning world (Codex: "the thing to freeze is the reference's behaviour on a fixed history"). On drift
-            beyond a tolerance, its copy is distilled back to its recorded outputs.
+            beyond a tolerance, its copy is distilled back to its recorded outputs. Distillation and the check use
+            separate history sets (Codex, 11-23): otherwise a passing check only shows the distillation fitted those
+            examples. The check set includes histories where its retained skills matter.
        - **Why this form:**
          - Dreamer 4 for dreams; VPT for skills (the retained-skill panel); robots for verification in reality;
            TR-DPO for references that move;
@@ -898,8 +905,11 @@ proof.
         - A value read by the look tokens before the crop, against the motor's value after it.
         - If the look's baseline had already seen the crop, it would subtract the very gain the look should get
           credit for.
-        - V_post - V_pre is the realised value of the look's information for that decision: Sprague & Ballard's
-          quantity, learnt by the critic, at no extra cost.
+        - **The grounded signal is the future task return minus V_pre** (Codex, 11-23).
+          - V_post - V_pre is a cheaper estimate of the same advantage when both values predict the same return under
+            the same downstream policy. It is Sprague & Ballard's quantity, learnt by the critic.
+          - A single difference can be negative because a good look revealed bad news. So it is only a shortcut,
+            trusted as far as it agrees with real returns across repeated looks.
         - In dreams this is PMPO once look schedules can't change later outcomes. In life it is real advantages.
         - The reward of the previous motor action belongs to that action.
         - This is the drive that can find night zombies, because they change returns.
@@ -910,13 +920,30 @@ proof.
         - Measured on P1.5: creatures move the belief 2.4x more than entity-free cells by day, and 2.2x at night.
           Pixel surprise couldn't separate them at night (lift 1.20 against 1.21), and it flips with sensor noise at a
           fixed scene (Codex's static control: the best window changes on 26-31 of 48 dark repeat pairs, verified).
+        - **Static still moves it, less.** Codex's static control for belief change: the best window switches on 11 of
+          48 dark repeat pairs, against 26 for pixel surprise under the same fixed periphery (0 of 48 at night onset
+          for both).
+        - **It doesn't repeat the 11-20 failure.** The switching dissection's "belief-change eye" scored a different
+          quantity: how far seeing the real frame t shifted the world's zero-signal prediction of frame t + 1. It
+          failed, drawn to newly entering terrain (43% of its score) and night static (49%), with mobs at 10%,
+          because a mob's next position is hedged. Today's measure, read on those failure classes (third reading,
+          `20261123_look_information/RESULTS.md`):
+          - entering terrain scores below static (0.365 / 0.227 against 0.408 / 0.340, day / night);
+          - creatures score highest by day (0.936), and changed HUD highest at night (1.003, against 0.708 for
+            unchanged HUD);
+          - unchanged HUD still scores 1.6-2x static, although the coarse view holds its digits. Belief change partly
+            rewards structured detail, not only new information.
         - It costs one extra belief step, and any eye can compute it: the periphery-acuity crop comes from the
           periphery.
         - **The principled target is predictive gain:** whether the crop improves the prediction of subsequent real
-          evidence (Codex). Sensor noise can't earn it. It reads zero on P1.5 for every category, because the memory
-          doesn't carry glimpse content forward. So it becomes the drive's definition once the memory keeps what was
-          seen, which couples the eye to memory beyond the frame. Until then it is a reading, beside raw foveal
-          likelihood as a diagnostic.
+          evidence (Codex). Sensor noise can't earn it. It read zero on P1.5 for every category.
+          - **Softened (Codex, 11-23):** that test gave the predictor the actual next periphery. A zero gain can mean
+            redundancy (the next frame already shows it), weak retention, or a readout that barely uses the carried
+            belief.
+          - A forecast scored before the next frame is revealed would separate these. P1.5's trans-saccadic head has
+            no forecast mode (`heads.forecast.tsp` is false), so that needs its own generation pass.
+          - Predictive gain becomes the drive's definition once memory demonstrably carries glimpse content forward.
+            Until then it is a reading, beside raw foveal likelihood as a diagnostic.
         - In dreams it would be the world's surprise at itself, so it isn't used there.
      - **While watching** there is no task advantage. The look learns from drive 2, plus the information its chosen
        glimpse adds to the demonstrated action: likelihood with against without it, for the chosen window only.
@@ -933,14 +960,18 @@ proof.
      - **counterfactual decision value over all 49 windows.** It needs privileged full frames, which a real eye can't
        see, plus many passes and an oracle-style objective. It stays an evaluation reading;
      - **the NOOP forecast.**
-   - **Weighting (Codex, accepted):**
+   - **Weighting (Codex, accepted, revised 11-23):**
      - "nats" don't fix the information drive's scale: averaging a crop's pixel losses or summing them changes it
        arbitrarily;
-     - so each drive enters the look's update as its own sign-based term, as PMPO treats task advantages: crops whose
-       belief change beat its running baseline are reinforced, those below are discouraged;
-     - the terms then balance like Dreamer 4's nats, by dimensionless weights. The weight is judged by what it does to
-       gaze and to real decisions at the same sensing budget;
-     - task value stays in task-reward units.
+     - **the information drive is a bounded auxiliary reward, not a sign.** A sign removes the units but keeps the
+       risk of reinforcing small, noisy differences: a crop that beats the baseline by a hair gets the full push, and
+       static still moves the belief (11 of 48 repeat pairs);
+     - so belief change, minus a running baseline, is divided by its running 5th-95th percentile range and clipped.
+       The scale is the one DreamerV3 uses for returns (without its floor of 1, which assumes reward units).
+       Magnitude survives, so a creature's 2.4x counts for more than a hair's breadth;
+     - task advantages keep PMPO's sign form (Dreamer 4) and task-reward units;
+     - the two terms balance by one dimensionless weight, judged by what it does to gaze and to real decisions at the
+       same sensing budget.
    - **During world learning (the user asked).** There is no separate P1 phase with a different eye in the full
      system. The look is the agent's from the first watched frame:
      - early on, both drives are uninformative, so the look is near-uniform by itself (the floor plus untrained
@@ -951,6 +982,27 @@ proof.
      - the feedback loop that made P1-F2 mixed (the eye shapes the world's data, the world's state shapes the eye) is
        bounded by the floor, and read in the run (coverage by category, day and night);
      - the alternative, a fixed uniform eye during watching, is not the agent.
+   - **What this means for P1 (the user asked, 11-23): the agent is in the world's training from its first frame.**
+     - There is no P1-then-agent and no uniform-gaze P1. The new run is watching: one run in which the world, the
+       agent tokens (look and act) and their heads all train on the corpus.
+     - **Per update**, the structure P1.5 already has:
+       1. a no-gradient pass over the chunk's coarse frames, in which the look tokens choose each frame's window
+          (P1.5's chooser does the same today in `Controller.prepare`, before its training pass);
+       2. the training pass on those crops: the P1 world losses; imitation of expert-flagged actions by the act
+          tokens, which read that frame's glimpse; and the look's information drive (one extra belief step with the
+          periphery-acuity crop at the chosen window), plus the chosen glimpse's gain on the demonstrated action.
+     - **Early on** the look tokens are untrained, so the looks are near-uniform by themselves (with the 0.2 / 49
+       floor). The uniform start we discussed happens, but only while the eye knows nothing, and then the eye takes
+       over.
+     - **Why not Dreamer 4's staging** (world first, agent tokens added after): its world's data doesn't depend on its
+       agent. Ours does, because the look picks which crops train the trans-saccadic and fovea losses. Staging would
+       train the world under one eye and then live with another.
+     - **What goes away:** the chooser, its surprise and contingency head, and its separate network.
+     - **Cost:** the look pre-pass reads the denoiser's coarse-frame computation rather than a small head, plus the
+       imitation and one belief step. Unmeasured; it is the first build measurement. For scale, P1.5 (chooser) took
+       15.3 h and P1.6 16.6 h for 25.6 M frames.
+     - It is a new world run: P1.5 can't be reused, because the eye, the outcome heads (pre-look) and the learning
+       rate schedule (Decision 4) all change.
    - **Trigger:** if the eye still misses night creatures in the run, look at content-aware precision or predictive
      gain. The 10-31 pitfall applies: learned content-dependent variance made the pixel decoder digit-blind.
 5. **Order (the user, 11-23):** watch, then dream and live interleaved, on the fly, with dreaming possible before the
@@ -970,6 +1022,206 @@ proof.
    - the eye combines salience and reward-learnt relevance.
 
    It is an analogy of roles, not an anatomical identity.
+
+### Decision 4: the life cycle (opened 11-23; proposal, undecided)
+
+**What it settles:** which weights act and which dream, when each faculty learns and from what data, at what pace,
+on one 6 GB GPU. The user framed it on 11-22 as "largely just figuring out training schedules". It has to honour
+decisions 1-3:
+- one run from the first watched frame;
+- the frozen reference, promoted by reality;
+- signed real advantages;
+- dreams from coherent snapshots;
+- a world that never learns from its own dreams.
+
+**Precedents, read at the source 11-23:**
+- **DreamerV3 code** (`third_party/sources/danijar__dreamerv3`):
+  - one agent object; `run/parallel.py` runs an actor thread and a learner thread on it, so acting always uses the
+    newest weights and carries its latent across updates;
+  - one update every `batch_size × batch_length / train_ratio` real steps. For Crafter that is 1,024 / 512, so an update
+    every 2 steps and each real frame replayed about 512 times, over 1.1 M steps;
+  - replay of 5 M steps (more than the run), sampled uniformly, plus an online queue: each newly completed sequence is
+    trained on next (`core/replay.py`, `online: True`);
+  - `replay_context`: each step's latent is stored at acting time, starts its training sequence, and is overwritten
+    with the current model's latent after every update;
+  - learning rate 4e-5, constant after 1,000 warm-up updates, never annealed; no weight decay.
+- **DayDreamer** (PDF):
+  - a learner thread and an actor thread;
+  - "there is no training frequency hyperparameter because the decoupled learner optimizes the neural networks in
+    parallel with data collection, without rate limiting";
+  - FIFO replay of 10^6, learning from step 10^4, learning rate 1e-4.
+- **HIL-SERL code** (`examples/train_rlpd.py`):
+  - the learner publishes weights every `steps_per_update` updates, and the actor receives them by callback;
+  - "50/50 sampling from RLPD, half from demo and half from online experience";
+  - human interventions are kept in their own store and used as demonstrations.
+- **RLPD:** symmetric 50/50 offline/online batches, "not very sensitive" to the proportion.
+- **CLEAR** (PDF):
+  - a 50-50 mix of new and replayed experience ("performance does not appear to be very sensitive to this ratio");
+    75-25 already removes most forgetting, and all-replay costs performance;
+  - behavioural cloning of its own past outputs on replay (a KL on the policy, L2 on the value);
+  - reservoir sampling when memory is bounded: storing 1 in 200 experiences changed little.
+- **Isele & Cosgun** (PDF):
+  - long-term memory by distribution matching, which is reservoir sampling, "consistently the best approach on all
+    domains tested";
+  - kept with "a small FIFO buffer that constantly refreshes to ensure that the network has the opportunity to train
+    on all incoming experiences", which they relate to complementary learning systems.
+- **Kessler et al. 2023**, a DreamerV2 world model learning continually:
+  - reservoir sampling "robustly mitigates forgetting";
+  - 50:50 recent/old "causes inconsistent effects";
+  - a larger buffer "prevents forgetting" but makes it "harder to learn new tasks".
+- **R2D2** (the paper wasn't readable; its slides were): recurrent states stored from older networks suffer
+  "representational drift", a zero start state is much worse, and burn-in helps the start of replayed sequences.
+- **MuZero Unplugged:**
+  - Reanalyse recomputes targets on stored data with the latest network;
+  - "the gain from bootstrapping with the actually observed environment rewards seems to outweigh any harm" from
+    being off-policy.
+- **IMPALA:** the learner runs ahead of its actors ("policy lag"), corrected by V-trace.
+- **Our staleness audit** (`20261119_switching/STALENESS.md`):
+  - between P1.5 checkpoints the drift was the jointly trained encoder's;
+  - cached states were 1.7-13x the fresh error early, and 1.03-1.13x late, after the cosine schedule had lowered the
+    learning rate.
+- **Plasticity:**
+  - continually trained networks lose the ability to learn; continual backprop reinitialises a few little-used units
+    (Dohare et al. 2024);
+  - the primacy bias; reset the last layers and keep the replay (Nikishin et al. 2022);
+  - resets let the replay ratio scale (D'Oro et al. 2023);
+  - in model-based RL, resetting the agent hurts and resetting the world model helps (Qiao et al. 2023);
+  - layer norm plus weight decay maintain plasticity (Lyle et al. 2024);
+  - shrink and perturb (Ash & Adams 2020);
+  - resetting Adam's moments helps at hard target-network updates, little with soft ones (Asadi et al. 2023).
+- **Schedules:** a constant learning rate with a short cooldown (under 20%) matches cosine, while cosine needs the
+  length in advance (Hägele et al. 2024).
+- **Brain:**
+  - complementary learning systems: fast hippocampal storage, replayed interleaved into a slow neocortex (McClelland,
+    McNaughton & O'Reilly 1995). Replay "allows goal-dependent weighting of experience statistics" (Kumaran, Hassabis
+    & McClelland 2016);
+  - awake replay "occurs most often during relative immobility" (Carr, Jadhav & Frank 2011);
+  - sleep favours consolidation, and waking favours encoding and retrieval (Diekelmann & Born 2010);
+  - sleep renormalises synaptic strength, restoring learning capacity (Tononi & Cirelli 2014);
+  - the wake-sleep algorithm: waking trains the generative model on real input, sleep trains recognition on its
+    fantasies (Hinton, Dayan, Frey & Neal 1995). That is our split: the world learns from reality, the choice from
+    dreams.
+
+**Proposed:**
+
+1. **Snapshots: one learner; the awake agent adopts its weights at segment boundaries; dreams always run on the
+   current weights.**
+   - **Dreams:** there is one set of learning weights. Dreams run on them, starting from states computed within the
+     same update: a start is the training stream's state at that frame, as DreamerV3 imagines from its training
+     batch. Every dream is a coherent snapshot by construction.
+   - **Acting:** the awake agent acts with a frozen copy for a segment of S real steps, then adopts the learner's
+     weights.
+     - On adoption, the current episode's state (coarse tokens, record, belief, context) is rebuilt by re-encoding
+       its stored frames and looks with the new weights.
+     - The reason is R2D2's: a state computed by older weights is stale. Our audit puts the drift in the encoder, and
+       a constant learning rate (point 4) keeps the encoder moving, unlike P1.5's late, annealed phase.
+   - **Why not act on live weights as DreamerV3 does:**
+     - its latent is re-anchored by each observation, while our record and belief integrate the whole episode
+       through an encoder that keeps learning;
+     - a frozen copy per segment also gives each segment's data one known policy, which the signed real advantages
+       need.
+   - **The reference** (Decision 3) is a third copy, frozen, of the agent tokens and heads.
+   - **S, working: 256 real steps,** P1's long chunk, so a segment is one replay chunk.
+     - The reading is the difference between the carried and the rebuilt state's action logits at adoption (R2D2's
+       discrepancy, in our units).
+     - If it stays small, S can grow; if large, adoption needs to be more frequent.
+   - **Policy lag:** signed real advantages use only the last few segments, so lag is bounded by construction, and the
+     advantages come from the current value. V-trace (IMPALA; CLEAR on replay) is the precedent correction if the
+     value's held-out check against real continuations fails.
+   - **Robots:** the same contract runs with parallel threads (DreamerV3's `parallel.py`, DayDreamer, HIL-SERL's
+     nodes): the learner never stops, and the actor adopts weights at its own boundaries. On Craftax with one GPU the
+     segments run serially: act S steps, then the offline updates they buy.
+2. **Watching, then a life of alternating segments.**
+   - **Watching:** the full system on the corpus (Decision 3). It runs for P1's frame budget, 25.6 M frames (ten
+     passes); under P1.5's recipe the monitor loss fell at every checkpoint over that budget.
+   - **At handover:**
+     - the reference is snapshotted;
+     - imitation of the corpus stops. The reference's KL becomes the behavioural anchor, as in Dreamer 4's phase 3,
+       which has no imitation loss;
+     - the corpus stays in replay as the world's data anchor;
+     - demonstrations or corrections arriving later go to imitation (Decision 3).
+   - **Life:** segments of S real steps, each followed by the offline updates it buys:
+     - world updates on replay batches;
+     - dreams from the same batches' states.
+   - **One knob, the replay ratio r:** replayed frames per real step. Dreams scale with it, as in DreamerV3.
+   - **Optional:** a dream-only period between handover and the first real step (Dreamer 4 shows offline dreaming
+     works). The order can change on the fly.
+3. **Replay: keep everything, sample uniformly, train on the new at once.**
+   - **What's stored:** every real step's full frame, look, action, reward and termination, plus the corpus's expert
+     flag. Disk is the only limit: a 63 × 63 RGB frame is 11.9 kB raw, 12 GB per million steps before compression.
+   - **World batches:** uniform over all real experience, corpus included. That is DreamerV3's replay, Kessler's
+     reservoir result, Isele's distribution matching and CLEAR's buffer.
+     - **Plus an online queue:** each new segment is trained on in the offline phase right after it (DreamerV3's
+       `online`, Isele's small FIFO).
+     - In the brain, that is replay right after experience (awake replay) and interleaving with old memories
+       (complementary learning systems).
+     - **How a new segment enters P1's streams.** P1 trains whole episodes as streams with a carried state, and a
+       segment can start mid-episode.
+       - The stream that takes it starts from the state stored at acting time, as DreamerV3's `replay_context` does.
+       - In the serial schedule that state was computed by the weights the learner holds when the offline phase
+         begins, so it is fresh at the first update.
+       - Training writes the refreshed states back.
+       - Uniformly drawn episodes start from their beginning, as in P1.
+   - **The corpus's share falls by itself** as life accumulates (half at 2.56 M real steps). There is no mixing
+     schedule.
+   - **Not 50/50** (RLPD, HIL-SERL): those are actor-critic replay mixes. For a world model, Kessler found 50:50
+     recent/old inconsistent and uniform best.
+   - **Dream starts follow the world's batch.**
+     - Through the online queue, each new segment supplies starts in the update right after it: one stream of the 16
+       in P1's batch shape.
+     - If the agent's own states are still too rare among starts, RLPD's symmetric split, applied to dream starts
+       only, is the precedent fix.
+   - **Held out:** fixed history sets for the reference's drift check (distil on one, check on another).
+4. **The world keeps learning: a constant learning rate, one optimizer, plasticity tools on a trigger.**
+   - **The learning rate is constant after warm-up, for the whole life:** P1's peak 1e-4 after its 1,024,000-frame
+     warm-up (DreamerV3: constant, never annealed; DayDreamer 1e-4).
+     - Cosine needs the training length in advance, and a life has none.
+     - Hägele et al. find a short cooldown supplies the drop cosine gets at its end. So a comparison with the
+       cosine-trained P1.5 uses a cooldown branch, while the life itself never cools down.
+   - **One AdamW for the whole life, never recreated** (our fine-tune rule).
+     - Asadi et al.'s resets help where a hard target network changes the loss abruptly. Our world has no target
+       network, so no reset.
+     - The value's slow regulariser is a soft target, where their gain was small.
+   - **Plasticity:**
+     - layer norm and weight decay are already in (the Mamba and denoiser norms; AdamW 0.01 on linear and conv
+       weights): Lyle et al.'s combination;
+     - no default resets: Qiao et al. found resetting the agent hurts in model-based RL, and resetting the world
+       erases the watching;
+     - **the reading:** how much the online-queue update lowers the world's loss on a new segment, measured on
+       arrival and after;
+     - **the trigger:** that gain falls over the life while the loss on arrival stays high. Then shrink-and-perturb
+       or continual backprop for the world, and a last-layers reset for the value and policy heads (Nikishin, with
+       the replay kept).
+     - In the brain, renormalisation in sleep plays this role (Tononi & Cirelli), as an analogy only.
+5. **Episodes inside one life.**
+   - Craftax resets on death:
+     - the weights, replay, optimizer and reference persist;
+     - the belief, record and context restart (P1's episode start).
+   - What survives a reset beyond the weights is Decision 6, memory beyond the episode.
+   - Segments count real steps, not episodes, so a robot without resets runs the same schedule.
+6. **Checks, every 10% of the life's real-step budget** (P1's checkpoint cadence):
+   - promotion: real return and each achievement's rate, the current policy against the reference, on paired
+     evaluation episodes outside the learning budget (DreamerV3 keeps separate evaluation environments);
+   - the reference's drift on its held-out histories;
+   - dreamed against real action differences at steps 1, 4 and 15;
+   - eye coverage by category, day and night;
+   - plasticity (point 4);
+   - forgetting: the world's loss on the corpus monitor set;
+   - adoption staleness (point 1).
+7. **The budget on one 6 GB GPU.**
+   - **Measured:** P1 trains at about 464 frames/s (25.6 M frames in 15.3 h for P1.5; 16.6 h for P1.6).
+   - **At that rate DreamerV3's Crafter schedule is out of reach:** 1.1 M real steps × 512 replays is 563 M frames,
+     about 337 h. Our replay ratio will be far lower.
+   - **A life of 1 M real steps**, Crafter's standard budget, costs about 0.6 h of world training per unit of r: r 16
+     is about 10 h, r 32 about 19 h. That's before dreams and acting.
+   - **Unmeasured, and needed before fixing r:**
+     - the awake step (split pass, Mamba step, Craftax's CPU step);
+     - the dream step (the four-step sampler for the coarse view, one crop, the context pass);
+     - the rebuild at adoption.
+
+     These are the first build measurement. r then follows from the time we give a life and the measured costs, not
+     from tuning.
+   - One GPU job at a time; replay on disk.
 
 ## Parked: thinking when it's worth it (user 11-23, explore after the first proof)
 
@@ -1239,19 +1491,21 @@ References:
      4 and 15 inside the run (Codex).
    - Isolation, trust and fresh starts are recorded.
    - Practice first; deliberation is parked (its own section).
-3. **Learning, awake and dreaming** (Decision 3, opened 11-23; proposal above, undecided):
+3. **Learning, awake and dreaming** (Decision 3, agreed 11-23):
    - the world: P1 losses on real data;
    - the motor choice: imitation, then PMPO in dreams with a frozen reference (β 0.3) replaced only by a policy that
      earned trust in reality; plus signed real advantages from recent life;
    - the value: dreams and real replay;
    - the look: relevance with a pre-look baseline, plus belief change from the acquired crop on real glimpses
      (predictive gain once memory keeps glimpses). The chooser and contingency retire.
-4. **The life cycle:**
-   - what runs awake and what asleep;
-   - replay contents and mix (the corpus plus its own life);
-   - the world learning online without the learning rate annealing away (plasticity, optimizer continuity);
-   - refreshing stored states;
-   - the 6 GB budget.
+4. **The life cycle** (Decision 4, opened 11-23; proposal above, undecided):
+   - one learner; the awake agent adopts its weights every S real steps, with the episode's state rebuilt; dreams
+     always on the current weights;
+   - watching for P1's budget, then segments of living, each followed by the offline updates it buys (one knob, the
+     replay ratio);
+   - replay keeps everything, uniform plus an online queue; the corpus's share falls by itself;
+   - a constant learning rate, one optimizer for life, plasticity tools on a measured trigger;
+   - checks every 10% of the life; the budget arithmetic, with the step costs as the first build measurement.
 
 **Designed in from the start, built on a measured trigger:**
 

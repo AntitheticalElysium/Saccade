@@ -53,17 +53,17 @@ Episode-bootstrap 95% intervals.
 
 `JAX_PLATFORMS=cpu MAMBA_DETERMINISTIC=1 .venv/bin/python -m artifacts.experiments.20261123_look_information.look_information`
 
-## Third reading: belief change on C8's failure classes (added 11-23, before running)
+## Third reading: belief change on the 11-20 eye's failure classes (added 11-23, before running)
 
-On 11-20 a different "belief change" failed (switching dissection C8). It measured the shift in the world's
+On 11-20 a different "belief change" failed (the switching dissection's belief-change eye). It measured the shift in the world's
 zero-signal prediction of frame t + 1 when given the real frame t instead of its own estimate. Entering terrain took 43%
 of its score, static 49% at night, and mobs 10%, because a mob's next position is hedged. Today's definition (fine
 minus periphery-acuity crop, the current corrected belief) was read only on creature, static and HUD windows, so it
-has not met C8's failure classes.
+has not met the 11-20 eye's failure classes.
 
 - **Claim:** today's belief change ranks creature windows above entering-terrain windows, and changed-HUD windows
   above unchanged ones.
-- **Competing explanation:** like C8, it is drawn to newly entering terrain.
+- **Competing explanation:** like the 11-20 eye, it is drawn to newly entering terrain.
 - **Setup:** the same split and model. Starts are frames where the player moved or a HUD value changed (up to 8 per
   episode, seed 20261163).
 - **Windows per start, at most one per category:**

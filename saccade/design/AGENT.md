@@ -1564,7 +1564,7 @@ use.**
    - **The trigger:** the hidden-rule benchmark shows adaptation too slow even with that replay. Then the candidate is
      per-module step-size adaptation (IDBD-like), on evidence.
 
-### Decision 6: memory beyond the frame and the episode (opened 11-23; agreed 11-23, the first test running; how location is known and read reopened by the user 11-23)
+### Decision 6: memory beyond the frame and the episode (opened 11-23; agreed 11-23; location form agreed 11-23; its world-side test fails at localization 11-24)
 
 **What it is for: four jobs.**
 1. **Places beyond the frame, within an episode.** The world has to redraw what it has seen, in life (prediction) and
@@ -1966,15 +1966,54 @@ time, trust is learned from what each entry carries.
        (`20261123_place_memory/RESULTS.md`). It gets 66.0% of 16-step displacements exact. On movement commands in
        low light it is right 71.7% of the time, below the command alone (81.2%).
   2. **Relocalisation against the memory:** choose the shift whose view agrees with the stored entries. GTM-SM's
-     appendix uses memory to correct position, and EPM corrects heading from images at real observations.
+     appendix uses memory to correct position, and EPM corrects heading from images at real observations. Measured
+     11-24 (below): it fails in our test, because the tokens of a place change with daylight.
   3. **Pose confidence travels with each entry,** so the reader discounts entries written under doubt.
   4. **A revisit that disagrees overwrites** (newest wins), so a mislocated entry is corrected when the place is seen
      again.
 - On a robot, loop closure belongs to self-location (10-23).
 
-**The first test is running (`20261123_place_read/PLAN.md`):**
-- the coarse half, with simulator addresses, as a denoiser fine-tune of P1.5 by test 3's recipe;
-- judged by the revisit difference and the correct / empty / wrong-address swap.
+**The first test passed (`20261123_place_read/`):** the coarse half, with simulator addresses, as a denoiser
+fine-tune of P1.5. On hard revisits after 2-16 steps, at 4,000 updates, the world draws the cell right 0.927 of the
+time with the correct entry, against 0.310 with none and 0.307 with a shifted one (0.924 at 17-64 steps).
+
+**The location form, agreed 11-23 and built whole for the world's side (`20261123_located_memory/`):**
+- **Self-location:** Markov localization on the agent's own grid at the sensor's resolution (Fox, Burgard & Thrun
+  1999), trained label-free.
+  - A motion prior from the current view and the command (the same head dreams use) predicts the pose.
+  - The new view, matched against the memory under every grid hypothesis, corrects it. Recovery at a remembered place
+    and frame-to-frame odometry are one rule.
+- **The store:** native coarse tokens, and fine tokens where the eye looked. Each entry has its time, write
+  confidence, source frame and context (lighting, the screen cell it was seen at, the glimpse's crop position).
+  Writes made under doubt stay pending and move with a correction.
+- **The world's read:** each drawn cell's token attends to the 9 entries around its predicted address plus a null
+  slot. The keys are an MLP of the whole entry: content, context, age codes, confidences, offset, the current pose's
+  confidence. The address comes from the motion prior, before the frame is seen.
+- **Dreams** read the same way, through a copy-on-write overlay.
+- **The agent's cell is declared an embodiment fact** (11-24). The agent's own sprite is neither matched nor
+  written: it moves with the sensor, and it biased the first two localizers toward "no motion" (about 30 nats; +27.5 at
+  night). The user may
+  veto this.
+
+**Its result (11-24): not working yet; the chain breaks at localization** (`20261123_located_memory/RESULTS.md`).
+- Five localizers, each diagnosed and amended before its successor's result. The best finds the right entry on 0.438
+  of revisit lookups, against a bar of 0.95.
+- **By day the trail holds.** The pose after the frame is right on 0.968 of moved daylight steps. In the dark it's
+  0.688.
+- **Recovery never happens.** At revisits whose entries were written under an older drift, the pose those entries
+  imply never beats the current one (0 of 920 steps). So the map fragments: 32% of lookups find their cell stored six
+  or more cells away.
+- **The cause: P1.5's coarse tokens change with daylight.**
+  - Two daylight sightings of a world cell match 0.94-1.00 of the time at a steady light, at every gap and screen
+    shift.
+  - After a change of 0.1 or more, they match 0.00-0.14.
+  - Craftax's light drifts through the day, so most long revisits cross such a change. The match's tolerance was
+    calibrated on consecutive frames.
+- **A label-free remedy measured per cell, not yet in the filter:** the within-place scatter of the agent's own still
+  periods, Fisher's within-class scatter, as Fisherfaces use it against illumination (Belhumeur, Hespanha & Kriegman
+  1997). As the match's metric, it raises same-cell matching across a large lighting change from 0.018 to 0.864.
+  Chance matches rise from 0.010 to 0.345, which FAB-MAP's new-place term is there to discount.
+- Readings 1, 3 and 4, with the best localizer, are running.
 
 **GTM-SM read in full (Fraccaro et al. 2018, ar5iv, 11-23).**
 - **The model** has two latents per step:

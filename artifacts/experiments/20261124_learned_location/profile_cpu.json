@@ -1,0 +1,12 @@
+{
+ "device": "cpu",
+ "frames": 301,
+ "ms_per_frame": {
+  "predict (motion model)": 0.06553628571000626,
+  "read (lookup + features)": 4.511685043193047,
+  "step total": 19.892842146174097,
+  "write extras": 0.10147808970609323,
+  "recognition (propose)": 19.237548209307427,
+  "step: write + gate (step minus recognition)": 0.6552939368666678
+ }
+}

@@ -920,14 +920,15 @@ def evaluate(update, smoke=False):
     (HERE / f"eval_{update}{'_smoke' if smoke else ''}.json").write_text(json.dumps(res, indent=1) + "\n")
 
 
-def episode_memory(loc, en, pos, inject_at=None, delta=(4, 0), memory_term=True, stop=None, wrong=True):
+def episode_memory(loc, en, pos, inject_at=None, delta=(4, 0), memory_term=True, stop=None, wrong=True, keep_from=0):
     """One real episode through the localizer: read features before each frame at the predicted address [T + 1, 63, 9,
     FEAT], the same at the wrong address (+ SHIFT, read before the frame writes), poses, predicted confidences;
     optionally a self-consistent drift injected before frame `inject_at`. Simulator positions only label the entries."""
-    T1 = len(en["p"]) if stop is None else min(len(en["p"]), stop + 1)  # features kept on the CPU
+    T1 = len(en["p"]) if stop is None else min(len(en["p"]), stop + 1)  # features kept on the CPU, frames >= keep_from
     mp = Map(1, DEV)
     tc = truth_cells(torch.as_tensor(pos, device=DEV))
-    out = {"feat": torch.zeros(T1, MAP, 9, FEAT), "wrong": torch.zeros(T1, MAP, 9, FEAT) if wrong else None,
+    nk = T1 - keep_from
+    out = {"feat": torch.zeros(nk, MAP, 9, FEAT), "wrong": torch.zeros(nk, MAP, 9, FEAT) if wrong else None, "keep_from": keep_from,
            "pose": torch.zeros(T1, 2, dtype=torch.long), "xhat": torch.zeros(T1, 2, dtype=torch.long), "conf": torch.zeros(T1)}
     sh = torch.tensor([SHIFT], device=DEV)
     for t in range(T1):
@@ -939,10 +940,12 @@ def episode_memory(loc, en, pos, inject_at=None, delta=(4, 0), memory_term=True,
                                 torch.tensor([int(en["prev_action"][t])], device=DEV), tt, tt,
                                 torch.tensor([t == 0], device=DEV), torch.tensor([True], device=DEV), truth=tc[t][None],
                                 memory_term=memory_term, inject=inj, drift=inj)
-        if before is not None:
+        if before is not None and t >= keep_from:
             ent, cp, fp, dream = before.view()
-            out["wrong"][t] = read_features(ent, cp, fp, dream, xhat + sh, chat, tt)[0].cpu()
-        out["feat"][t] = f[0].cpu(); out["xhat"][t] = xhat[0].cpu(); out["pose"][t] = mp.pose[0].cpu(); out["conf"][t] = float(chat[0])
+            out["wrong"][t - keep_from] = read_features(ent, cp, fp, dream, xhat + sh, chat, tt)[0].cpu()
+        if t >= keep_from:
+            out["feat"][t - keep_from] = f[0].cpu()
+        out["xhat"][t] = xhat[0].cpu(); out["pose"][t] = mp.pose[0].cpu(); out["conf"][t] = float(chat[0])
     out["map"] = mp
     return out
 
@@ -1001,9 +1004,10 @@ def inject(update, smoke=False):
     for e, t0, s_ret in events:
         T = int(L["ep_T"][e]); pos = L["s_pos"][so[e]:so[e] + T + 1].astype(np.int64)
         stop = min(T, t0 + 32)
-        run = {"oracle": episode_memory(loc, enc[sub[e]], pos, stop=stop, wrong=False),
-               "full": episode_memory(loc, enc[sub[e]], pos, inject_at=t0, stop=stop, wrong=False),
-               "odometry": episode_memory(loc, enc[sub[e]], pos, inject_at=t0, memory_term=False, stop=stop, wrong=False)}
+        kf = max(0, t0 - P)                                              # the following view needs frames >= t0 - P
+        run = {"oracle": episode_memory(loc, enc[sub[e]], pos, stop=stop, wrong=False, keep_from=kf),
+               "full": episode_memory(loc, enc[sub[e]], pos, inject_at=t0, stop=stop, wrong=False, keep_from=kf),
+               "odometry": episode_memory(loc, enc[sub[e]], pos, inject_at=t0, memory_term=False, stop=stop, wrong=False, keep_from=kf)}
         ev = {"e": e, "t0": t0, "return": s_ret}
         for k, m in run.items():
             rel = m["pose"][t0:stop + 1] - m["pose"][t0 - 1]
@@ -1019,7 +1023,7 @@ def inject(update, smoke=False):
         tr = max(s_ret, t0 + (r + 1 if r is not None else 0))
         if e not in slices and tr <= stop:
             follow.append((e, tr - 1))
-            slices[e] = {k: {fr: m["feat"][fr] for fr in range(max(0, tr - P), tr + 1)} for k, m in run.items()}
+            slices[e] = {k: {fr: m["feat"][fr - kf] for fr in range(max(0, tr - P), tr + 1)} for k, m in run.items()}
         del run
     new = {(e, t): entering(L, so, e, t) for e, t in follow}
 

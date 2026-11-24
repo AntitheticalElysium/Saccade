@@ -336,7 +336,8 @@ episode-bootstrap 95% intervals.
   (`readings_v5.log`). The 8-episode smoke never reached that size.
 - **The fix:**
   - reading 1 processes one episode at a time, with features on the CPU, and the sampler's seed set per episode;
-  - reading 3 keeps only the frames its following view needs;
+  - reading 3 keeps only the frames its following view needs, and builds features only from P frames before each
+    event (the rerun after a machine restart ran out of host memory on a long episode, 11-24);
   - reading 4 keeps the real prefix's features on the CPU, and no longer converts the terrain reader's output, which is
     already an array (it crashed at its first drawn step; the smoke had never run reading 4).
 - **One correction, to match this PLAN's "on the first revisit after recovery"** (Codex, 11-24): reading 3's

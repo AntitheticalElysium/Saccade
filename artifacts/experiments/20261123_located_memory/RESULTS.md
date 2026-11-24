@@ -1,6 +1,6 @@
 # Decision 6's place memory, the world's side, tested whole: results (2026-11-24)
 
-**Verdict: not working yet. The chain breaks at localization.**
+**Verdict: not working yet. All four readings fail; the chain breaks at localization.**
 - **Reading 2 fails.** The best localizer finds the right entry on 0.438 of revisit lookups, against a bar of 0.95.
 - **The cause is measured.** P1.5's coarse tokens change with daylight by more than the match's repeatability.
   - Two daylight sightings of the same world cell match 0.94-1.00 of the time when the light hasn't changed, at
@@ -30,8 +30,26 @@
     from `eval_2000.json`). That is a small real gain.
   - The localizer's mean confidence (0.85) and its lookup accuracy (0.438) describe different events. Whether the
     confidence predicts which individual reads help was not measured (Codex, 11-24).
-- **Readings 3 and 4** were cut off by a machine restart at 11:50, during reading 3. They are rerunning on the same
-  code and checkpoint (`inject_v5.log`, then `dream_v5.log`).
+- **Reading 3 fails (13:30): the full rule never recovers an injected drift** (`inject_2000.json`, 119 events, one
+  per episode).
+  - The exact relative pose is restored within 16 steps in 0.000 of injections with the full rule, against a bar of 0.80
+    (odometry only: 0.008).
+  - The "oracle" arm is the localizer with no injection, so it inherits the localizer's own drift: it is exact within 16
+    steps in 0.891 (Codex, 11-24). There is no true-alignment arm.
+  - Since the full rule never recovered, the following view is scored at each event's return step. In the surprising
+    context (237 cells), revisited cells agree 0.409 with the no-injection memory, 0.387 with the full rule, and 0.371
+    with odometry only and with an empty memory. The full rule gets 0.42 of the no-injection arm's gain, against a bar of
+    0.8, and that gain is itself only +0.038.
+  - The confident drifted writes, reported as the known limit: aligned 0.63 after the event with the full rule, 0.47 with
+    odometry only.
+- **Reading 4 fails (13:30): memory helps dreams, but by half the bar** (`dream_2000.json`).
+  - The dream's own pose is right on 0.60 of drawn steps.
+  - Where it is right, at gaps up to 16, cells entering view agree 0.756 with memory under inferred poses, against 0.653
+    with an empty memory: +0.10, against bars of 0.85 and +0.20 (the simulator through S2's readers is 0.94).
+  - Memory under oracle poses gives the same, 0.751. So the dream's poses aren't what limits it; the read's weak use of
+    memory (reading 1) is.
+  - Further out, with the pose right: 0.664 against 0.563 at gaps 17-64, and 0.638 against 0.556 beyond 64. Where the
+    dream's pose is wrong: 0.684 against 0.615 at gaps up to 16.
 
 - **The sixth localizer's reading 2 (09:00): lookups 0.584, still failing the bar.** It beats the fifth (0.438), so the
   PLAN's rule would restart the read with it. That switch is held: on 11-24 the user reopened the localizer's

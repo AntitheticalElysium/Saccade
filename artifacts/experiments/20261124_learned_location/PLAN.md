@@ -273,6 +273,22 @@ If a gate fails, the run stops and the failure is diagnosed before anything chan
   learn a ray and depth instead.
 - The motion sensor is exact in Classic, so outages are what make the corrective machinery necessary.
 
+## As built (11-24, before any result; `location.py`, `world.py`)
+
+- **The read's shortlist** first takes the 100 entries of the current trail nearest the query by displacement. It then
+  ranks them by code similarity and keeps at most 5 per place, newest first, 25 in all.
+  - The nearest-100 step is a nearest-neighbour shortcut, as a vector index would use.
+  - It agrees with ranking every entry whenever code similarity falls with distance, which the kernel training
+    imposes.
+- **Absent candidate slots are masked** in the attention. Cells the calibration gives no world projection get no
+  candidates, only the null slot.
+- **Stage B runs stage A's estimator unchanged,** one per stream, so the trained gate sees the features it was trained
+  on. Training outages are seeded by episode.
+- **Reading 3's true-alignment reference is the clean-sense code.** Classic's sensor is exact, so the two coincide.
+- **The current-only arm** is the full run's codes with the logged repairs undone on earlier frames. So it shares the
+  accepted matches and the corrected current code by construction.
+- **Dreams start from snapshots of the memory as of the start frame.** No later repair leaks into a dream.
+
 ## Build and cost
 
 - One module beside `memory.py`, reusing its read installation, panel, one-step and dream code: the motion model,

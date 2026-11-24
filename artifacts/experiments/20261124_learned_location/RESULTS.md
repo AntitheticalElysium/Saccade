@@ -39,7 +39,8 @@ place. On those frames, 46% of the view's world cells have one, on average.
   - The winner's support has a median of 49.7 cells; the true place's, 0.
   - Even where at least half the view was seen before (559 frames), the winner is true only 0.027 of the time.
 - **The true place's entries rarely reach the candidates.** For a cell with an entry at its true place, that entry is in
-  the cell's top 32 by key for 0.17 of cells, and among its kept 8 for 0.06.
+  the cell's top 32 by key for 0.17 of cells, and among its kept 8 for 0.13. Over all the view's world cells, those
+  shares are 0.078 and 0.059.
 - **The cause is aliasing: one cell's appearance is shared by many places.** For such a cell, a median of 114 entries
   at other places are at least as close by raw token (ties count). That is 106 at matching light and 130 after a light
   change of 0.05 or more, out of a median of 4,588 entries.
@@ -64,6 +65,18 @@ place. On those frames, 46% of the view's world cells have one, on average.
   - drifted entries outvoting old ones. The true place's support comes 0.98 from entries written before the outage,
     and the drifted place's only 0.05 from entries written during or after it.
 - **Drift at these revisits:** 5.0 cells at the median (10th to 90th percentile: 1.7 to 11.0).
+- **Paired against no recognition (Codex, 11-24, checked):** on the 1,522 panel returns where the no-recognition arm
+  is drifted, recognition rescued 22 that the control missed and spoiled 21 that the control recovered.
+- **The view's arrangement already separates many lookalikes (Codex, 11-24, rerun and reproduced).** This is a
+  read-only ranking check on 136 drifted revisit frames from these episodes, each with at least 16 cells seen before at
+  the true place.
+  - Memory: the newest observation at each place from before the outage, at the true positions. Before an outage the
+    estimator's positions are exact too.
+  - Candidates: every place in the episode's extent with at least 16 observed cells.
+  - The frozen raw tokens, compared under one shift by mean L1 over the overlap, rank the true place first on 0.728 of
+    frames (0.630 after a light change of 0.05 or more), and in the top five on 0.853.
+  - Comparing pooled means instead gives 0.404 (0.167 across a light change).
+  - Not tested: a drifted map, and declining a convincing false match.
 
 ## What this does and doesn't touch
 

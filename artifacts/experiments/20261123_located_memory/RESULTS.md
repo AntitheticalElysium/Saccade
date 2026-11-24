@@ -46,8 +46,9 @@
   - The dream's own pose is right on 0.60 of drawn steps.
   - Where it is right, at gaps up to 16, cells entering view agree 0.756 with memory under inferred poses, against 0.653
     with an empty memory: +0.10, against bars of 0.85 and +0.20 (the simulator through S2's readers is 0.94).
-  - Memory under oracle poses gives the same, 0.751. So the dream's poses aren't what limits it; the read's weak use of
-    memory (reading 1) is.
+  - The "oracle" arm gives the same, 0.751. It supplies only the true future motion: the map and the starting pose are
+    still the ones inferred from the real prefix (Codex, 11-24). So fixing future motion alone buys little on these
+    starts; inherited map errors and the read's weak use of memory (reading 1) both remain in play.
   - Further out, with the pose right: 0.664 against 0.563 at gaps 17-64, and 0.638 against 0.556 beyond 64. Where the
     dream's pose is wrong: 0.684 against 0.615 at gaps up to 16.
 

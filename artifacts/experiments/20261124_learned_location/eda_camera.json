@@ -1,0 +1,40 @@
+{
+ "geometry_episodes_0_22": {
+  "day": {
+   "transitions": {
+    "(-1, 0)": 578,
+    "(1, 0)": 590,
+    "(0, -1)": 579,
+    "(0, 1)": 524
+   },
+   "world_cells_matched_one_move_back": 1.0,
+   "pairs": 212,
+   "match_margin_median": 8.517161390270074,
+   "sensor_fixed_cells_matching_themselves": 0.9444444444444444,
+   "offset_table_recovered_exactly": 1.0,
+   "map_cells_in_table": 63,
+   "offset_error_max": 1.4654943925052066e-14
+  },
+  "dark": {
+   "transitions": {
+    "(-1, 0)": 390,
+    "(1, 0)": 438,
+    "(0, -1)": 343,
+    "(0, 1)": 359
+   },
+   "world_cells_matched_one_move_back": 1.0,
+   "pairs": 212,
+   "match_margin_median": 0.7252454247744023,
+   "sensor_fixed_cells_matching_themselves": 0.9444444444444444,
+   "offset_table_recovered_exactly": 1.0,
+   "map_cells_in_table": 63,
+   "offset_error_max": 1.4654943925052066e-14
+  }
+ },
+ "codex_counts_all_120": {
+  "revisit_lookups": 85863,
+  "share_with_25_or_more_earlier_sightings": 0.5130032726552765,
+  "first_sightings": 65785,
+  "share_whose_address_already_held_a_status_row_token": 0.3396214942616098
+ }
+}

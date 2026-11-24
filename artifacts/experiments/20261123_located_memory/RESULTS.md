@@ -10,9 +10,26 @@
     never beats the current one (0 of 920 steps), the map fragments, and on the diagnosis episodes 32% of lookups
     find their cell stored six or more cells from where the pose says it is.
   - In the dark the view itself is weaker: moved steps are right 0.688 after the frame, against 0.968 by day.
-- **Readings 1, 3 and 4** run with the fifth localizer, as the PLAN's rule requires. They show what the read does with
-  the entries this localizer puts in reach. The fine-tune ends about 10:30, and the readings follow. They are added
-  here when they land.
+- **Reading 1 fails (11:31): with this localizer's addresses, memory barely helps.** These readings are the grid
+  baseline's, since the 11-24 design decision (AGENT.md decision 6).
+  - The read was trained 2,000 updates with the fifth localizer.
+  - The gain of correct entries over first sightings, in the surprising context (`eval_2000.json`):
+
+    | Variant | 2-16 steps | 17-64 steps |
+    |---|---|---|
+    | Correct entries | +0.064 [+0.044, +0.081] | +0.028 [+0.010, +0.050] |
+    | Empty | +0.002 | -0.027 |
+    | Fine swap | +0.057 | +0.019 |
+
+  - Stage 1's ceiling, with simulator addresses, is +0.570 at 2-16. So this is about 11% of the ceiling, below the
+    PLAN's partial bar (+0.20).
+  - **The read learned to trust memory little.** A wrong entry's class is drawn 0.481 against 0.347 with no entry
+    (+0.134; stage 1: +0.56; `identity_2000.json`). The swap's labels assume the true map, which this localizer
+    doesn't give (Codex), so that figure is indicative only.
+  - The localizer's confidence was high on average (0.85) even though only 0.438 of its lookups were right. So the
+    confidence key couldn't tell the read when to trust an entry.
+- **Readings 3 and 4** were cut off by a machine restart at 11:50, during reading 3. They are rerunning on the same
+  code and checkpoint (`inject_v5.log`, then `dream_v5.log`).
 
 - **The sixth localizer's reading 2 (09:00): lookups 0.584, still failing the bar.** It beats the fifth (0.438), so the
   PLAN's rule would restart the read with it. That switch is held: on 11-24 the user reopened the localizer's

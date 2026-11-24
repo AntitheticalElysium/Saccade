@@ -1,0 +1,260 @@
+{
+ "units": 2079,
+ "draws": 8,
+ "smoke_check_w1_max_abs": null,
+ "arms": {
+  "unguided": {
+   "keep": {
+    "zombies|day": {
+     "world": 0.9831989247311828,
+     "real_frame": 1.0,
+     "units": 372
+    },
+    "zombies|night": {
+     "world": 0.8829787234042553,
+     "real_frame": 0.9829787234042553,
+     "units": 235
+    },
+    "zombies|night_inner": {
+     "world": 0.8829787234042553,
+     "real_frame": 0.9829787234042553,
+     "units": 235
+    },
+    "cows|day": {
+     "world": 0.939989235737352,
+     "real_frame": 1.0,
+     "units": 929
+    },
+    "cows|night": {
+     "world": 0.7666984732824428,
+     "real_frame": 0.9770992366412213,
+     "units": 262
+    },
+    "cows|night_inner": {
+     "world": 0.7666984732824428,
+     "real_frame": 0.9770992366412213,
+     "units": 262
+    }
+   },
+   "stay": {
+    "zombies": {
+     "world_share_of_kept_draws": 0.6705316123386568,
+     "real_frame": 0.5986733001658375,
+     "units": 603
+    },
+    "cows": {
+     "world_share_of_kept_draws": 0.6856276955356102,
+     "real_frame": 0.6025316455696202,
+     "units": 1185
+    }
+   },
+   "spurious_mobs_per_frame": 0.8405118584632874,
+   "token_error_by_region": {
+    "mob": 5.491047664053254,
+    "changed_hud": 5.414816869603884,
+    "hud_static": 0.039457504130189024,
+    "entering_map": 3.7275922931977457,
+    "terrain_edit": 2.3726126634199836,
+    "map_static": 0.24603707130071892
+   },
+   "spread_by_region": {
+    "mob": 1.5620132137983982,
+    "changed_hud": 1.2129571013728209,
+    "hud_static": 0.02512361161728078,
+    "entering_map": 1.6275287416597075,
+    "terrain_edit": 0.4593430458449542,
+    "map_static": 0.12510129509146942
+   }
+  },
+  "frames_1.5": {
+   "keep": {
+    "zombies|day": {
+     "world": 0.9828629032258065,
+     "real_frame": 1.0,
+     "units": 372
+    },
+    "zombies|night": {
+     "world": 0.8978723404255319,
+     "real_frame": 0.9829787234042553,
+     "units": 235
+    },
+    "zombies|night_inner": {
+     "world": 0.8978723404255319,
+     "real_frame": 0.9829787234042553,
+     "units": 235
+    },
+    "cows|day": {
+     "world": 0.9422766415500539,
+     "real_frame": 1.0,
+     "units": 929
+    },
+    "cows|night": {
+     "world": 0.7972328244274809,
+     "real_frame": 0.9770992366412213,
+     "units": 262
+    },
+    "cows|night_inner": {
+     "world": 0.7972328244274809,
+     "real_frame": 0.9770992366412213,
+     "units": 262
+    }
+   },
+   "stay": {
+    "zombies": {
+     "world_share_of_kept_draws": 0.6642002176278564,
+     "real_frame": 0.5986733001658375,
+     "units": 603
+    },
+    "cows": {
+     "world_share_of_kept_draws": 0.6950543101455974,
+     "real_frame": 0.6025316455696202,
+     "units": 1185
+    }
+   },
+   "spurious_mobs_per_frame": 0.8519818782806396,
+   "token_error_by_region": {
+    "mob": 5.46705859624423,
+    "changed_hud": 5.459106365257171,
+    "hud_static": 0.039841769473894346,
+    "entering_map": 3.732597927502449,
+    "terrain_edit": 2.627656857915489,
+    "map_static": 0.24864807478107614
+   },
+   "spread_by_region": {
+    "mob": 1.555372789041837,
+    "changed_hud": 1.2255284795848227,
+    "hud_static": 0.025542790715247295,
+    "entering_map": 1.629584005652674,
+    "terrain_edit": 0.6022446312105915,
+    "map_static": 0.12559139771681022
+   }
+  },
+  "frames_3": {
+   "keep": {
+    "zombies|day": {
+     "world": 0.9815188172043011,
+     "real_frame": 1.0,
+     "units": 372
+    },
+    "zombies|night": {
+     "world": 0.9164893617021277,
+     "real_frame": 0.9829787234042553,
+     "units": 235
+    },
+    "zombies|night_inner": {
+     "world": 0.9164893617021277,
+     "real_frame": 0.9829787234042553,
+     "units": 235
+    },
+    "cows|day": {
+     "world": 0.9409311087190527,
+     "real_frame": 1.0,
+     "units": 929
+    },
+    "cows|night": {
+     "world": 0.8478053435114504,
+     "real_frame": 0.9770992366412213,
+     "units": 262
+    },
+    "cows|night_inner": {
+     "world": 0.8478053435114504,
+     "real_frame": 0.9770992366412213,
+     "units": 262
+    }
+   },
+   "stay": {
+    "zombies": {
+     "world_share_of_kept_draws": 0.6555003241841366,
+     "real_frame": 0.5986733001658375,
+     "units": 603
+    },
+    "cows": {
+     "world_share_of_kept_draws": 0.7117848970251717,
+     "real_frame": 0.6025316455696202,
+     "units": 1185
+    }
+   },
+   "spurious_mobs_per_frame": 0.8864700198173523,
+   "token_error_by_region": {
+    "mob": 5.451054643097733,
+    "changed_hud": 5.609999454039328,
+    "hud_static": 0.043469105582621494,
+    "entering_map": 3.776802585219705,
+    "terrain_edit": 2.6578962156283006,
+    "map_static": 0.25816371668985666
+   },
+   "spread_by_region": {
+    "mob": 1.5591693499744732,
+    "changed_hud": 1.2437586947104162,
+    "hud_static": 0.026596394661623918,
+    "entering_map": 1.662394467094876,
+    "terrain_edit": 0.627360913648902,
+    "map_static": 0.12669729240463878
+   }
+  },
+  "all_1.5": {
+   "keep": {
+    "zombies|day": {
+     "world": 0.9956317204301075,
+     "real_frame": 1.0,
+     "units": 372
+    },
+    "zombies|night": {
+     "world": 0.9180851063829787,
+     "real_frame": 0.9829787234042553,
+     "units": 235
+    },
+    "zombies|night_inner": {
+     "world": 0.9180851063829787,
+     "real_frame": 0.9829787234042553,
+     "units": 235
+    },
+    "cows|day": {
+     "world": 0.9756458557588805,
+     "real_frame": 1.0,
+     "units": 929
+    },
+    "cows|night": {
+     "world": 0.8187022900763359,
+     "real_frame": 0.9770992366412213,
+     "units": 262
+    },
+    "cows|night_inner": {
+     "world": 0.8187022900763359,
+     "real_frame": 0.9770992366412213,
+     "units": 262
+    }
+   },
+   "stay": {
+    "zombies": {
+     "world_share_of_kept_draws": 0.6943016281062554,
+     "real_frame": 0.5986733001658375,
+     "units": 603
+    },
+    "cows": {
+     "world_share_of_kept_draws": 0.7622135271101174,
+     "real_frame": 0.6025316455696202,
+     "units": 1185
+    }
+   },
+   "spurious_mobs_per_frame": 0.8721910119056702,
+   "token_error_by_region": {
+    "mob": 5.000877801188877,
+    "changed_hud": 6.96078893240237,
+    "hud_static": 0.3880945267960178,
+    "entering_map": 3.5059744233672587,
+    "terrain_edit": 2.308828712806904,
+    "map_static": 0.2938988903289276
+   },
+   "spread_by_region": {
+    "mob": 1.3471325955464335,
+    "changed_hud": 1.348056788648685,
+    "hud_static": 0.04413635833854285,
+    "entering_map": 1.2846089628361634,
+    "terrain_edit": 0.6974170943347937,
+    "map_static": 0.12070127208042176
+   }
+  }
+ },
+ "unguided_reproduces_c5": 1.0
+}

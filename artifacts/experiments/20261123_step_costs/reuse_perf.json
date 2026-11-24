@@ -1,0 +1,74 @@
+{
+  "16": {
+    "watching": {
+      "full_streaming": {
+        "median_wall_ms": 9.241865312560549,
+        "median_stream_ms": 9.236608028411865
+      },
+      "prepared_coarse_record": {
+        "median_wall_ms": 8.370443874810007,
+        "median_stream_ms": 8.353983879089355
+      },
+      "prepare_ms_per_chunk": 6.644267001320259,
+      "chunk_frames": 8,
+      "max_abs_checked_delta_by_frame": [
+        0.0,
+        0.078125,
+        0.0546875,
+        0.1015625,
+        0.107177734375,
+        0.07421875,
+        0.0546875,
+        0.11328125
+      ],
+      "peak_reserved_gib": 0.759765625
+    },
+    "dreaming": {
+      "native": {
+        "median_wall_ms": 114.33820241685073,
+        "median_stream_ms": 114.33360799153647
+      },
+      "project_record_once": {
+        "median_wall_ms": 112.6728229167687,
+        "median_stream_ms": 112.6655985514323
+      },
+      "max_abs_delta": 0.0
+    }
+  },
+  "64": {
+    "watching": {
+      "full_streaming": {
+        "median_wall_ms": 31.414451687624023,
+        "median_stream_ms": 31.397247314453125
+      },
+      "prepared_coarse_record": {
+        "median_wall_ms": 27.803910499869744,
+        "median_stream_ms": 27.793344497680664
+      },
+      "prepare_ms_per_chunk": 24.613359000795754,
+      "chunk_frames": 8,
+      "max_abs_checked_delta_by_frame": [
+        0.06911534070968628,
+        0.125,
+        0.14990234375,
+        0.11328125,
+        0.08642578125,
+        0.103515625,
+        0.1005859375,
+        0.156494140625
+      ],
+      "peak_reserved_gib": 1.943359375
+    },
+    "dreaming": {
+      "native": {
+        "median_wall_ms": 179.52426599974083,
+        "median_stream_ms": 179.48646036783856
+      },
+      "project_record_once": {
+        "median_wall_ms": 178.4491609168981,
+        "median_stream_ms": 178.42019653320312
+      },
+      "max_abs_delta": 0.0
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+ "training_positive_pairs_same_screen_cell_share": 0.09265205095744326,
+ "queries": 1834,
+ "training_positive_age_median": 39.5,
+ "sim_same_token_light_other_screen_cell": 0.808868408203125,
+ "sim_same_token_cell_other_lighting": 0.8842702507972717,
+ "sim_same_light_cell_other_token": 0.5624275803565979
+}

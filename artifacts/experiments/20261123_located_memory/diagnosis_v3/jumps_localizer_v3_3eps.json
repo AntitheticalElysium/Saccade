@@ -1,0 +1,215 @@
+{
+ "jumps": 126,
+ "dark_share": 0.07936507936507936,
+ "present_win_median": 0.0,
+ "present_true_median": 45.0,
+ "win_has_no_entries_share": 0.5238095238095238,
+ "L_win_median": 0.0,
+ "L_true_median": -23.3,
+ "examples": [
+  {
+   "ep": 0,
+   "t": 308,
+   "dark": false,
+   "true_step": [
+    0,
+    0
+   ],
+   "jump": [
+    -42,
+    -53
+   ],
+   "present_win": 0,
+   "present_true": 63,
+   "L_win": 0.0,
+   "L_true": -41.9
+  },
+  {
+   "ep": 0,
+   "t": 309,
+   "dark": false,
+   "true_step": [
+    0,
+    0
+   ],
+   "jump": [
+    1,
+    9
+   ],
+   "present_win": 0,
+   "present_true": 20,
+   "L_win": 0.0,
+   "L_true": -12.8
+  },
+  {
+   "ep": 0,
+   "t": 329,
+   "dark": false,
+   "true_step": [
+    0,
+    0
+   ],
+   "jump": [
+    -1,
+    -9
+   ],
+   "present_win": 0,
+   "present_true": 45,
+   "L_win": 0.0,
+   "L_true": -29.1
+  },
+  {
+   "ep": 0,
+   "t": 330,
+   "dark": false,
+   "true_step": [
+    0,
+    0
+   ],
+   "jump": [
+    1,
+    9
+   ],
+   "present_win": 45,
+   "present_true": 20,
+   "L_win": 396.4,
+   "L_true": 208.6
+  },
+  {
+   "ep": 0,
+   "t": 334,
+   "dark": false,
+   "true_step": [
+    0,
+    0
+   ],
+   "jump": [
+    -1,
+    -9
+   ],
+   "present_win": 0,
+   "present_true": 45,
+   "L_win": 0.0,
+   "L_true": -29.1
+  },
+  {
+   "ep": 0,
+   "t": 335,
+   "dark": false,
+   "true_step": [
+    0,
+    0
+   ],
+   "jump": [
+    1,
+    9
+   ],
+   "present_win": 45,
+   "present_true": 20,
+   "L_win": 429.3,
+   "L_true": 187.8
+  },
+  {
+   "ep": 0,
+   "t": 337,
+   "dark": false,
+   "true_step": [
+    0,
+    0
+   ],
+   "jump": [
+    -1,
+    -9
+   ],
+   "present_win": 0,
+   "present_true": 45,
+   "L_win": 0.0,
+   "L_true": -29.1
+  },
+  {
+   "ep": 0,
+   "t": 338,
+   "dark": false,
+   "true_step": [
+    0,
+    0
+   ],
+   "jump": [
+    1,
+    19
+   ],
+   "present_win": 0,
+   "present_true": 20,
+   "L_win": 0.0,
+   "L_true": -12.9
+  },
+  {
+   "ep": 0,
+   "t": 339,
+   "dark": false,
+   "true_step": [
+    0,
+    0
+   ],
+   "jump": [
+    -1,
+    -19
+   ],
+   "present_win": 20,
+   "present_true": 45,
+   "L_win": 45.1,
+   "L_true": 28.6
+  },
+  {
+   "ep": 0,
+   "t": 340,
+   "dark": false,
+   "true_step": [
+    0,
+    0
+   ],
+   "jump": [
+    1,
+    9
+   ],
+   "present_win": 45,
+   "present_true": 20,
+   "L_win": 268.5,
+   "L_true": 170.7
+  },
+  {
+   "ep": 0,
+   "t": 341,
+   "dark": false,
+   "true_step": [
+    0,
+    0
+   ],
+   "jump": [
+    -1,
+    9
+   ],
+   "present_win": 0,
+   "present_true": 45,
+   "L_win": 0.0,
+   "L_true": -29.1
+  },
+  {
+   "ep": 0,
+   "t": 342,
+   "dark": false,
+   "true_step": [
+    0,
+    0
+   ],
+   "jump": [
+    1,
+    9
+   ],
+   "present_win": 0,
+   "present_true": 36,
+   "L_win": 0.0,
+   "L_true": -23.3
+  }
+ ]
+}

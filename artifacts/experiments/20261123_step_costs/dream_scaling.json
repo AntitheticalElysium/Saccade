@@ -1,0 +1,17 @@
+{
+ "batch_64": {
+  "dream_frame_ms": 201.81516549928347,
+  "dream_ms_per_stream": 3.153361960926304,
+  "peak_gib": 0.5632257461547852
+ },
+ "batch_128": {
+  "dream_frame_ms": 371.749287500279,
+  "dream_ms_per_stream": 2.90429130859593,
+  "peak_gib": 0.9654464721679688
+ },
+ "batch_256": {
+  "dream_frame_ms": 714.9250479997136,
+  "dream_ms_per_stream": 2.792675968748881,
+  "peak_gib": 1.8549094200134277
+ }
+}

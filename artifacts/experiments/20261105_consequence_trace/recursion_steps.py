@@ -61,24 +61,31 @@ def main():
     enc=S.encode(model,sub,cfg)
     reader=S.load_reader(path.parent/'s1/results.reader.pt',path,DEV)
     grids=G.episode_grids(L)
-    K=4;allrows=[];prefix_errors=[];replay_errors=[]
+    K=4;allrows=[];prefix_errors=[];replay_errors=[];same_errors=[]
     for st in range(0,len(rows),16):
         rr=rows[st:st+16];br=[r for r in rr for _ in range(K)]
         take=lambda k,dt:torch.stack([enc[new_of[e]][k][t+dt] for e,t in br]).to(DEV)
         # Rebuild every full real prefix once, retaining the native Mamba carry after action at t0.
-        cs=[];bs=[];rl=[]
+        cs=[];bs=[];rl=[];same=[]
         for e,t in rr:
             en=enc[new_of[e]]
             with TR.autocast(DEV,cfg):
                 pp=M.Percept(*(en[k][:t+1].to(DEV).float()[None] for k in ('p','g','v')),en['fix'][:t+1].to(DEV)[None])
-                reads,_,last=S.history(model,pp.p)   # P1.5: the record from the episode start, carried with Mamba's
+                reads,_,last=S.history(model,pp.p,g=pp.g,fix=pp.fix)   # P1.5: the record from the episode start, carried with Mamba's
                 emb=S.embed(model,pp,reads)
                 x=model.belief.tokens(emb, en['reward'][:t+1].to(DEV)[None],
                                       en['terminated'][:t+1].to(DEV)[None],en['action'][:t+1].to(DEV)[None])
                 y,c=model.belief(x,model.belief.initial(1,DEV))
-            cs.append(c);bs.append(y[:,-1].float());rl.append(last)
+                # 11-21 (P1.6): the replay's reference at its own precision, one pass over the same stored fp16 tokens
+                # through t+16. Encode's bp (full-precision tokens) differs from it by the storage rounding alone, which
+                # took P1.6 to 0.028 at its worst window (P1.5 0.013); the step path stays 0.017 from it (P1.5 0.010).
+                q=M.Percept(*(en[k][:t+17].to(DEV).float()[None] for k in ('p','g','v')),en['fix'][:t+17].to(DEV)[None])
+                yq,_=model.belief(model.belief.tokens(S.embed(model,q,S.history(model,q.p,g=q.g,fix=q.fix)[0]),en['reward'][:t+17].to(DEV)[None],
+                                  en['terminated'][:t+17].to(DEV)[None],en['action'][:t+17].to(DEV)[None]),model.belief.initial(1,DEV))
+            cs.append(c);bs.append(y[:,-1].float());rl.append(last);same.append(yq[0,1::2][t+1:t+16].float())
             ref=en['bp'][t+1].to(DEV).float()
             prefix_errors.append(float((y[0,-1].float()-ref).square().mean().sqrt()))
+        same=torch.stack(same).repeat_interleave(K,0)                      # [rows, 15, W]: bp at t+2 .. t+16
         carry=tuple(type(cs[0][l])(*(torch.cat([getattr(c[l],f.name) for c in cs]).repeat_interleave(K,0)
                                      for f in dataclasses.fields(cs[0][l]))) for l in range(len(cs[0])))   # Mamba-2 or -3
         initial_bp=torch.cat(bs).repeat_interleave(K,0)
@@ -104,7 +111,7 @@ def main():
                     parts=tuple(x[:,0].float() for x in M.sample(model.denoiser,dims,pa[:,None],
                         S.cond(model.belief.memory(bp)[:,None],S.at(rs,np.s_[:,None])),fix[:,None],cc,cfg,g))
                     actual=tuple(take(k,j).float() for k in ('p','g','v'))
-                    h=model.outcome.features(bp,S.embed(model,M.Percept(*parts,fix),S.history(model,parts[0],state=rs)[0])).float()
+                    h=model.outcome.features(bp,S.embed(model,M.Percept(*parts,fix),S.history(model,parts[0],state=rs,g=parts[1],fix=fix)[0])).float()
                     prob=model.outcome.bin_logp(h).exp()
                     d=T.marginal_death(model.outcome,h,prob)
                     r=model.outcome.sample_reward(h,g)
@@ -120,18 +127,20 @@ def main():
                     if mode=='teacher':
                         context_parts=actual
                         next_bp=take('bp',j+1).float() if j<16 else bp
-                        next_rs=S.history(model,actual[0],state=rs)[2]
+                        next_rs=S.history(model,actual[0],state=rs,g=actual[1],fix=fix)[2]
                     else:
                         evidence=actual if mode=='replay' else parts
                         r_in=take('reward',j).float() if mode=='replay' else r
                         d_in=take('terminated',j) if mode=='replay' else done
-                        reads,_,next_rs=S.history(model,evidence[0],state=rs)
+                        reads,_,next_rs=S.history(model,evidence[0],state=rs,g=evidence[1],fix=fix)
                         embed=S.embed(model,M.Percept(*evidence,fix),reads)[:,None]
                         yy,state=model.belief(model.belief.tokens(embed,r_in[:,None],d_in[:,None],take('action',j)[:,None]),state)
                         next_bp=yy[:,-1].float();context_parts=evidence
                         if mode=='replay' and j<16:
                             err=(next_bp-take('bp',j+1).float()).square().mean(-1).sqrt()
                             replay_errors.extend(err.cpu().tolist())
+                            err=(next_bp-same[:,j-1]).square().mean(-1).sqrt()
+                            same_errors.extend(err.cpu().tolist())
                             assert err.max()<.03,('real_replay',float(err.max()))
                         alive=alive & ~d_in
                     cc=M.context_pass(model.denoiser,tuple(a[:,None] for a in context_parts),pa[:,None],
@@ -156,6 +165,8 @@ def main():
         'first_step_equal':True,'prefix_belief_rms_error_max':max(prefix_errors),
         'prefix_belief_rms_error_mean':float(np.mean(prefix_errors)),
         'real_replay_belief_rms_error_max':max(replay_errors),
-        'real_replay_belief_rms_error_mean':float(np.mean(replay_errors))},indent=1))
+        'real_replay_belief_rms_error_mean':float(np.mean(replay_errors)),
+        'real_replay_same_precision_rms_error_max':max(same_errors),
+        'real_replay_same_precision_rms_error_mean':float(np.mean(same_errors))},indent=1))
 
 if __name__=='__main__':main()

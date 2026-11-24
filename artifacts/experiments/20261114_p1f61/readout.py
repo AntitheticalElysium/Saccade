@@ -57,6 +57,10 @@ def budget(ck, out):
     if model.gaze_forecast is not None:
         ctl = C.Controller(model, cfg, tempfile.mkdtemp(), dev)
         ctl.head.load_state_dict(state["fixation_controller"]["head"]); ctl.gaze.set_state(state["fixation_controller"]["gaze_rng"].cpu())
+        if eye := state["fixation_controller"].get("eye"):              # P1.6 (Codex 11-20): after a world-eye fill the
+            path = Path(ck).parent / eye["file"]                         # teacher training used scores S from that cache
+            assert C._digest(path) == eye["sha256"], "the checkpoint's world-eye cache is missing or changed"
+            ctl.eye = np.load(path, mmap_mode="r")
         ctl.prepare(copy.deepcopy(chunk), streams)
     boot = TR.bootstrap_rows(cfg, 1, update)
     sigma = dict(zip(model.harmoniser.groups, model.harmoniser.log_sigma.detach().exp().tolist()))

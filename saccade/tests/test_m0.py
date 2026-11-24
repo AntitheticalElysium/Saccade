@@ -740,3 +740,72 @@ def test_shortcut_conditioning_reads_signal_and_step(cfg):
         o = copy.deepcopy(cfg); o[key[0]][key[1]] = old
         with pytest.raises(AssertionError):
             M.Denoiser(o)
+
+
+def test_fovea_record_writes_where_it_looks(cfg):
+    """P1.6 (G1): Record.input places each glimpse at its window and zero elsewhere; the periphery group is the P1.5
+    record bit for bit; a never-fixated cell's fovea record stays zero; the fovea group follows the S4D recurrence; a
+    chunked scan from the carried state equals the contiguous scan."""
+    import copy
+    base = copy.deepcopy(cfg)
+    base["record"] = {"basis": "s4d_lin", "modes": 32, "dt": 1 / 32}
+    fov = copy.deepcopy(base)
+    fov["record"]["fovea_modes"] = 8
+    R0, R1 = M.Record(base), M.Record(fov)
+    assert R1.dim == R0.dim + 2 * 64 * 8 and M.Record.size(fov) == R1.dim
+    torch.manual_seed(0)
+    B, L = 2, 12
+    p, g = torch.randn(B, L, 81, 16), torch.randn(B, L, 9, 64)
+    fix = torch.randint(1, 8, (B, L, 2))
+    fix[0, :, 0] = torch.randint(1, 4, (L,))                             # stream 0 never looks at the bottom rows
+    first = torch.zeros(B, L, dtype=torch.bool)
+    first[1, 5] = True
+    x = R1.input(p, g, fix)
+    assert torch.equal(R0.input(p), p) and x.shape[-1] == 80 and torch.equal(x[..., :16], p)
+    cells = M.window(fix)
+    for b in range(B):
+        for t in range(L):
+            assert torch.equal(x[b, t, cells[b, t], 16:], g[b, t])
+            off = torch.ones(81, dtype=torch.bool)
+            off[cells[b, t]] = False
+            assert x[b, t, off, 16:].abs().max() == 0
+    i0, s0 = R0.scan(p, first, R0.zero(B))
+    i1, s1 = R1.scan(x, first, R1.zero(B))
+    assert torch.equal(i1[..., :R0.dim], i0) and torch.equal(s1[..., :R0.dim], s0)
+    assert s1[0, :, 80, R0.dim:].abs().max() == 0                        # row 8 is never inside stream 0's windows
+    c, ch, m = int(cells[1, 7, 4]), 3, 5                                 # one fixated cell, channel, mode: explicit
+    h = torch.zeros((), dtype=torch.complex64)
+    for t in range(L):
+        h = torch.zeros_like(h) if first[1, t] else h
+        h = R1.a_f[m] * h + R1.b_f[m] * x[1, t, c, 16 + ch]
+        k = R0.dim + ch * 8 + m
+        assert torch.allclose(s1[1, t, c, k], h.real, atol=1e-5) and torch.allclose(s1[1, t, c, k + 64 * 8], h.imag, atol=1e-5)
+    a_, b_ = R1.scan(x[:, :5], first[:, :5], R1.zero(B))
+    c_, d_ = R1.scan(x[:, 5:], first[:, 5:], b_[:, -1])
+    assert torch.allclose(torch.cat([a_, c_], 1), i1, atol=1e-6) and torch.allclose(torch.cat([b_, d_], 1), s1, atol=1e-6)
+
+
+def test_two_stream_estimate_equals_per_frame_windows(cfg):
+    """P1.6's world-eye (Denoiser.estimate): each frame's output from the two-stream pass equals forward() on that
+    frame's own window [the context stream's earlier frames, the query stream's frame], across an episode reset, an
+    invalid frame and beyond the temporal window, under different context and query codes."""
+    c, den = _f4(cfg)
+    B, T, w = 2, 13, den.window
+    xc, mem, _, act, fix, _ = _den_inputs(c, B, T, 3)
+    xq = _den_inputs(c, B, T, 4)[0]
+    cc, cq = _codes(B, T, 5), _codes(B, T, 6)
+    episode = torch.zeros(B, T, dtype=torch.long)
+    episode[1, 7:] = 1
+    valid = torch.ones(B, T, dtype=torch.bool)
+    valid[0, 4] = False
+    with torch.no_grad():
+        out = den.estimate(xc, xq, (cc, cq), act, mem, fix, episode, valid)
+        for b in range(B):
+            for t in range(T):
+                a = max(0, t - w)
+                sl = lambda z: torch.cat([z[b:b + 1, a:t], z[b:b + 1, t:t + 1]], 1)
+                xs = tuple(torch.cat([u[b:b + 1, a:t], q[b:b + 1, t:t + 1]], 1) for u, q in zip(xc, xq))
+                code = torch.cat([cc[b:b + 1, a:t], cq[b:b + 1, t:t + 1]], 1)
+                ref = den(xs, code, sl(act), sl(mem), sl(fix), sl(episode), sl(valid))
+                for o, r in zip(out, ref):
+                    assert torch.allclose(o[b, t], r[0, -1], atol=1e-4), (b, t)

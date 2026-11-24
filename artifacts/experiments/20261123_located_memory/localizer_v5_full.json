@@ -1,0 +1,28 @@
+{
+ "tag": "full",
+ "movement_commands": 23782,
+ "prior": {
+  "all": 0.7878647716760575,
+  "moved": 0.7691818567189487,
+  "blocked": 0.859674134419552,
+  "dark": 0.6416309012875536
+ },
+ "posterior": {
+  "all": 0.8744428559414683,
+  "moved": 0.8524268757948283,
+  "blocked": 0.9590631364562118,
+  "dark": 0.7316523605150215
+ },
+ "relocalisations": 1116,
+ "pending_aligned_after_relocalisation": 0.07033363393129155,
+ "pending_entries_at_relocalisations": 1109,
+ "relative_pose_exact_16": 0.6031806134040136,
+ "revisit_lookups": 85863,
+ "lookup_correct": 0.4377787871376495,
+ "unseen_episodes_23_on": {
+  "lookup_correct": 0.43977482703794424,
+  "posterior_moved": 0.8515028863380001,
+  "posterior_dark": 0.7322614934892373,
+  "prior_moved": 0.764249220356977
+ }
+}

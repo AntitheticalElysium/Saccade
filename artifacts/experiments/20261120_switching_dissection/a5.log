@@ -1,0 +1,23 @@
+/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/.venv/lib/python3.12/site-packages/mamba_ssm/utils/determinism.py:73: UserWarning: Deterministic mode: set TRITON_CACHE_AUTOTUNING=1 for cached autotuning.
+  warnings.warn(msg)
+encoded 0/257
+encoded 200/257
+orig 272s
+on 549s
+away 825s
+orig vs S2's saved step-1 frames: 0.9957 of futures identical
+on vs orig: state-0 glimpse |diff| 0.3660; drawn step-1 periphery |diff| all cells 0.00106, around the target 0.00174
+away vs orig: state-0 glimpse |diff| 0.3814; drawn step-1 periphery |diff| all cells 0.00111, around the target 0.00168
+step-1 deletion of the target mob: on / away / orig (paired on - away, episode-bootstrap SE), units
+  cows      day   inner on 0.050 away 0.050 orig 0.049 | on-away +0.000 (0.001) units 334
+  cows      day   ring  on 0.062 away 0.063 orig 0.064 | on-away -0.001 (0.001) units 438
+  cows      night inner on 0.121 away 0.121 orig 0.119 | on-away +0.000 (0.003) units 89
+  cows      night ring  on 0.289 away 0.290 orig 0.290 | on-away -0.001 (0.001) units 107
+  skeletons day   inner on 0.098 away 0.103 orig 0.103 | on-away -0.005 (0.006) units 23
+  skeletons day   ring  on 0.152 away 0.152 orig 0.155 | on-away +0.000 (0.000) units 41
+  skeletons night inner on 0.361 away 0.361 orig 0.361 | on-away +0.000 (0.000) units 9
+  skeletons night ring  on 0.533 away 0.517 orig 0.525 | on-away +0.017 (0.009) units 16
+  zombies   day   inner on 0.017 away 0.020 orig 0.018 | on-away -0.003 (0.002) units 228
+  zombies   day   ring  on 0.040 away 0.040 orig 0.040 | on-away +0.000 (0.003) units 72
+  zombies   night inner on 0.081 away 0.083 orig 0.080 | on-away -0.002 (0.003) units 146
+  zombies   night ring  on 0.304 away 0.307 orig 0.307 | on-away -0.003 (0.003) units 47

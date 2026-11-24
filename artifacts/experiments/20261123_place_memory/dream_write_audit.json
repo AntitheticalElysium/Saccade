@@ -1,0 +1,26 @@
+{
+  "starts": 1000,
+  "draws_per_start": 8,
+  "real_render": {
+    "exposed": 1165317,
+    "changed": 20589,
+    "passability_change": 14514,
+    "reentries": 18035,
+    "changed_reentries": 285,
+    "water_exposed": 128712,
+    "water_changed": 2966,
+    "last_write_disagrees": 6377,
+    "unique_slots_touched": 354307
+  },
+  "dream": {
+    "exposed": 1172386,
+    "changed": 69857,
+    "passability_change": 48369,
+    "reentries": 18137,
+    "changed_reentries": 5843,
+    "water_exposed": 129914,
+    "water_changed": 6544,
+    "last_write_disagrees": 22176,
+    "unique_slots_touched": 354673
+  }
+}

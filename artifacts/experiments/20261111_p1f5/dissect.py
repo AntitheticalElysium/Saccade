@@ -100,7 +100,7 @@ def generate(model, cfg, row, slot, reader, routes, event):
     out = {}
     with TR.autocast(DEV, cfg):
         p = model.perception(torch.as_tensor(f, device=DEV), fix)
-        reads, rin, last = S.history(model, p.p, keep=range(n + q - 7, n + q + 1))   # P1.5: rides with the belief stream b
+        reads, rin, last = S.history(model, p.p, keep=range(n + q - 7, n + q + 1), g=p.g, fix=p.fix)   # P1.5: rides with the belief stream b
         inputs = model.belief.tokens(S.embed(model, p, reads), torch.as_tensor(rw, device=DEV, dtype=torch.float32),
                                      torch.as_tensor(td, device=DEV), act)
         y, _ = model.belief(inputs, model.belief.initial(2, DEV))

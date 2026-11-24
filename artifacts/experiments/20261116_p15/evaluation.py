@@ -108,7 +108,9 @@ def check(model, cfg, enc, L, dev):
     res["history_chunked_reads"] = rel(reads, model.belief.record_in(rst))
     res["history_chunked_kept"] = rel(kept, rin[:, [0, 1, T - 1]])
     res["history_chunked_state"] = rel(last, rst[:, -1])
-    res["encode_states_vs_stored_tokens"] = max(rel(r["record_every"], full[i][0][0, ::S.EVERY]) for i, r in enumerate(enc))
+    res["encode_states_vs_stored_tokens"] = max(
+        rel(r["record_every"].to(dev), full[i][0][0, ::S.EVERY]) for i, r in enumerate(enc)
+    )
     js = sorted({0, 1, S.EVERY - 1, S.EVERY, S.EVERY + 1, T - 1})
     res["before"] = rel(S.before(model, enc, [(e, j) for j in js]), rin[0, js])
     w = S.window(model, enc, [(e, P), (e, T - 1), (e, 3)], P)

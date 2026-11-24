@@ -1,0 +1,36 @@
+{
+ "random_plan_starts": 1000,
+ "hold_pairs": {
+  "tree": {
+   "eligible": 12938,
+   "taken": 150
+  },
+  "stone": {
+   "eligible": 20924,
+   "taken": 150
+  },
+  "coal": {
+   "eligible": 1582,
+   "taken": 150
+  },
+  "iron": {
+   "eligible": 875,
+   "taken": 150
+  },
+  "diamond": {
+   "eligible": 14,
+   "taken": 14
+  },
+  "water": {
+   "eligible": 14297,
+   "taken": 150
+  }
+ },
+ "episodes": 551,
+ "epsilon": {
+  "0.10000000149011612": 1536,
+  "0.25": 618,
+  "0.5": 374
+ },
+ "achievements_at_start_median": 15.0
+}

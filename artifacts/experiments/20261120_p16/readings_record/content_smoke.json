@@ -1,0 +1,259 @@
+{
+ "units": 11,
+ "smoke_checks": {
+  "p16": {
+   "prior_pass_equal_draws": 88,
+   "draws": 88,
+   "one_frame_scan_max_diff": 0.0
+  },
+  "p15": {
+   "prior_pass_equal_draws": 88,
+   "draws": 88,
+   "one_frame_scan_max_diff": 0.0
+  }
+ },
+ "p16": {
+  "classes": {
+   "all": {
+    "units": 11,
+    "deletion_A": 0.3068181818181818,
+    "deletion_B": 0.3068181818181818,
+    "deletion_C": 0.3068181818181818,
+    "deletion_prior": 0.3068181818181818,
+    "B_minus_A": [
+     0.0,
+     0.0
+    ],
+    "C_minus_A": [
+     0.0,
+     0.016854996561581053
+    ],
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   },
+   "both_show": {
+    "units": 11,
+    "deletion_A": 0.3068181818181818,
+    "deletion_B": 0.3068181818181818,
+    "deletion_C": 0.3068181818181818,
+    "deletion_prior": 0.3068181818181818,
+    "B_minus_A": [
+     0.0,
+     0.0
+    ],
+    "C_minus_A": [
+     0.0,
+     0.016854996561581053
+    ],
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   },
+   "edge": {
+    "units": 9,
+    "deletion_A": 0.375,
+    "deletion_B": 0.375,
+    "deletion_C": 0.3611111111111111,
+    "deletion_prior": 0.375,
+    "B_minus_A": [
+     0.0,
+     0.0
+    ],
+    "C_minus_A": [
+     -0.013888888888888888,
+     0.013888888888888888
+    ],
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   },
+   "inner": {
+    "units": 2,
+    "deletion_A": 0.0,
+    "deletion_B": 0.0,
+    "deletion_C": 0.0625,
+    "deletion_prior": 0.0,
+    "B_minus_A": [
+     0.0,
+     0.0
+    ],
+    "C_minus_A": [
+     0.0625,
+     0.0625
+    ],
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   },
+   "still": {
+    "units": 11,
+    "deletion_A": 0.3068181818181818,
+    "deletion_B": 0.3068181818181818,
+    "deletion_C": 0.3068181818181818,
+    "deletion_prior": 0.3068181818181818,
+    "B_minus_A": [
+     0.0,
+     0.0
+    ],
+    "C_minus_A": [
+     0.0,
+     0.016854996561581053
+    ],
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   },
+   "cows": {
+    "units": 5,
+    "deletion_A": 0.5,
+    "deletion_B": 0.5,
+    "deletion_C": 0.5,
+    "deletion_prior": 0.5,
+    "B_minus_A": [
+     0.0,
+     0.0
+    ],
+    "C_minus_A": [
+     0.0,
+     0.0
+    ],
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   },
+   "zombies": {
+    "units": 6,
+    "deletion_A": 0.14583333333333334,
+    "deletion_B": 0.14583333333333334,
+    "deletion_C": 0.14583333333333334,
+    "deletion_prior": 0.14583333333333334,
+    "B_minus_A": [
+     0.0,
+     0.0
+    ],
+    "C_minus_A": [
+     0.0,
+     0.032274861218395144
+    ],
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "coverage": {
+   "deleted_all_8": {
+    "units": 1,
+    "looked_t1": 0,
+    "covered8": 0,
+    "aligned8": 0
+   },
+   "deleted_some": {
+    "units": 6,
+    "looked_t1": 0,
+    "covered8": 5,
+    "aligned8": 4
+   },
+   "deleted_none": {
+    "units": 4,
+    "looked_t1": 1,
+    "covered8": 3,
+    "aligned8": 1
+   }
+  }
+ },
+ "p15": {
+  "classes": {
+   "all": {
+    "units": 11,
+    "deletion_A": 0.3181818181818182,
+    "deletion_prior": 0.3181818181818182,
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   },
+   "both_show": {
+    "units": 11,
+    "deletion_A": 0.3181818181818182,
+    "deletion_prior": 0.3181818181818182,
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   },
+   "edge": {
+    "units": 9,
+    "deletion_A": 0.3888888888888889,
+    "deletion_prior": 0.3888888888888889,
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   },
+   "inner": {
+    "units": 2,
+    "deletion_A": 0.0,
+    "deletion_prior": 0.0,
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   },
+   "still": {
+    "units": 11,
+    "deletion_A": 0.3181818181818182,
+    "deletion_prior": 0.3181818181818182,
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   },
+   "cows": {
+    "units": 5,
+    "deletion_A": 0.55,
+    "deletion_prior": 0.55,
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   },
+   "zombies": {
+    "units": 6,
+    "deletion_A": 0.125,
+    "deletion_prior": 0.125,
+    "A_minus_prior": [
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "coverage": {
+   "deleted_all_8": {
+    "units": 2,
+    "looked_t1": 0,
+    "covered8": 0,
+    "aligned8": 0
+   },
+   "deleted_some": {
+    "units": 5,
+    "looked_t1": 0,
+    "covered8": 5,
+    "aligned8": 4
+   },
+   "deleted_none": {
+    "units": 4,
+    "looked_t1": 1,
+    "covered8": 3,
+    "aligned8": 1
+   }
+  }
+ }
+}

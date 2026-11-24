@@ -1,0 +1,114 @@
+{
+ "0": {
+  "p16_lag16": {
+   "p_drawn_drop": 0.02,
+   "ci95": [
+    0.006,
+    0.038
+   ],
+   "events": 272,
+   "episodes": 55
+  },
+  "p25_lag25": {
+   "p_drawn_drop": 0.112,
+   "ci95": [
+    0.091,
+    0.134
+   ],
+   "events": 205,
+   "episodes": 47
+  },
+  "p25_lag21": {
+   "p_drawn_drop": 0.278,
+   "ci95": [
+    0.238,
+    0.321
+   ],
+   "events": 220,
+   "episodes": 50
+  },
+  "p21_lag21": {
+   "p_drawn_drop": 0.535,
+   "ci95": [
+    0.479,
+    0.603
+   ],
+   "events": 267,
+   "episodes": 53
+  },
+  "p13_lag13": {
+   "p_drawn_drop": 0.011,
+   "ci95": [
+    0.002,
+    0.024
+   ],
+   "events": 265,
+   "episodes": 59
+  },
+  "p29_lag29": {
+   "p_drawn_drop": 0.099,
+   "ci95": [
+    0.067,
+    0.146
+   ],
+   "events": 152,
+   "episodes": 44
+  }
+ },
+ "2000": {
+  "p16_lag16": {
+   "p_drawn_drop": 0.035,
+   "ci95": [
+    0.023,
+    0.05
+   ],
+   "events": 272,
+   "episodes": 55
+  },
+  "p25_lag25": {
+   "p_drawn_drop": 0.076,
+   "ci95": [
+    0.055,
+    0.097
+   ],
+   "events": 205,
+   "episodes": 47
+  },
+  "p25_lag21": {
+   "p_drawn_drop": 0.106,
+   "ci95": [
+    0.075,
+    0.133
+   ],
+   "events": 220,
+   "episodes": 50
+  },
+  "p21_lag21": {
+   "p_drawn_drop": 0.248,
+   "ci95": [
+    0.213,
+    0.294
+   ],
+   "events": 267,
+   "episodes": 53
+  },
+  "p13_lag13": {
+   "p_drawn_drop": 0.018,
+   "ci95": [
+    0.01,
+    0.027
+   ],
+   "events": 265,
+   "episodes": 59
+  },
+  "p29_lag29": {
+   "p_drawn_drop": 0.097,
+   "ci95": [
+    0.065,
+    0.136
+   ],
+   "events": 152,
+   "episodes": 44
+  }
+ }
+}

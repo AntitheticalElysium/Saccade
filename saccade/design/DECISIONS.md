@@ -7,6 +7,15 @@ artifacts/experiments/20261023_system_design/, the S0 results in artifacts/exper
 
 The first build, M0, is defined in STEP_SPEC §7; entries below marked [superseded] are history.
 
+## The agent framing (2026-11-22; picture and open questions in AGENT.md)
+- The whole system is the agent; there is no separate actor (user). The world model is its imagination and its
+  understanding of the rules, and the belief is what matters for its goals.
+- Online learning is cardinal (user: "online training is something that now becomes cardinal in this shift").
+  Pretrain briefly on the corpus, then learn continually by living and dreaming. This supersedes "Offline only" below.
+- Progress is judged by the agent over its lifetime (adaptation speed, accumulation, retention, continued learning),
+  not by world fidelity. World measurements locate failures.
+- The eye is an extension of the system, not a separate claim (user).
+
 ## Canonical recipe (2026-11-07): P1-F4
 User 11-07: "make this canonical" after P1-F4's results (`artifacts/experiments/20261106_p1f4/RESULTS.md`, follow-ups in
 `20261107_f4_followups/RESULTS.md`). `saccade/` was canonicalized to exactly P1-F4's system on 11-07 (the 11-08
@@ -79,7 +88,8 @@ P2 must reconcile detached-outcome credit and terminal-inclusive admission befor
 was not exogenous-filtered. No overnight launch or architecture/loss/corpus change was made by the campaign.
 
 ## Agreed
-- Offline only; the actor trains in imagination. (The point of imagination training.)
+- [superseded 11-22: online learning is cardinal; see "The agent framing" above] Offline only; the actor trains in
+  imagination. (The point of imagination training.)
 - No full-frame pixel reconstruction and no pixel-equivalent persistent state; limited pixel grounding is intended:
   a fixed-budget fovea whose pixels are predicted. (Reason about latents; fidelity where attention goes.)
 - Fovea placement is learned, driven by future consequences (value of information); tests: anticipation vs

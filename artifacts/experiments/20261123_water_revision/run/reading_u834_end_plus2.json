@@ -1,0 +1,116 @@
+{
+ "tag": "u834_end_plus2",
+ "counts": {
+  "updates": 834,
+  "life_steps": 213292,
+  "distinct_plus2": 1554,
+  "replayed_plus2": 1067,
+  "life_episodes_done": 859
+ },
+ "episodes": 150,
+ "groups": {
+  "A": {
+   "events": 2193,
+   "reader_floor": 0.9863201094391245,
+   "reader_correct_events": 2163,
+   "all": {
+    "share_plus2": 0.01293889648882809,
+    "share_plus1": 0.7017213862289101,
+    "share_zero": 0.26356589147286824
+   },
+   "reader_correct": {
+    "share_plus2": 0.013118354137771614,
+    "share_plus1": 0.7111072584373556,
+    "share_zero": 0.26294498381877024
+   }
+  },
+  "B_first": {
+   "events": 150,
+   "reader_floor": 0.9933333333333333,
+   "reader_correct_events": 149,
+   "all": {
+    "share_plus2": 0.0125,
+    "share_plus1": 0.8333333333333334,
+    "share_zero": 0.14416666666666667
+   },
+   "reader_correct": {
+    "share_plus2": 0.012583892617449664,
+    "share_plus1": 0.834731543624161,
+    "share_zero": 0.14345637583892618
+   }
+  },
+  "B_recent_evidence": {
+   "events": 532,
+   "reader_floor": 0.8477443609022557,
+   "reader_correct_events": 451,
+   "all": {
+    "share_plus2": 0.048167293233082706,
+    "share_plus1": 0.6179511278195489,
+    "share_zero": 0.2744360902255639
+   },
+   "reader_correct": {
+    "share_plus2": 0.05543237250554324,
+    "share_plus1": 0.6618625277161863,
+    "share_zero": 0.2397450110864745
+   }
+  },
+  "B_older_evidence": {
+   "events": 573,
+   "reader_floor": 0.900523560209424,
+   "reader_correct_events": 516,
+   "all": {
+    "share_plus2": 0.010907504363001745,
+    "share_plus1": 0.5835514834205934,
+    "share_zero": 0.3806719022687609
+   },
+   "reader_correct": {
+    "share_plus2": 0.011627906976744186,
+    "share_plus1": 0.6114341085271318,
+    "share_zero": 0.3631298449612403
+   }
+  }
+ },
+ "monitor": {
+  "g1": 0.0017838503699749708,
+  "g1_by_level": [
+   0.0011302437633275986,
+   0.0022294858936220407,
+   0.002741543110460043,
+   0.002535442356020212,
+   0.0019322397420182824,
+   0.0015569677343592048,
+   0.0012835307279601693,
+   0.0008613498066551983
+  ],
+  "levels": [
+   0.0,
+   0.125,
+   0.25,
+   0.375,
+   0.5,
+   0.625,
+   0.75,
+   0.875
+  ],
+  "periphery_effective_rank": 4.9055585861206055,
+  "windows": 2000,
+  "raw_token_statistics": {
+   "lighting": {
+    "tokens": 122520,
+    "mean_channel_std": 0.012848380078082542,
+    "rms": 0.10300716038883202
+   },
+   "periphery": {
+    "tokens": 9924120,
+    "mean_channel_std": 0.014212115927333705,
+    "rms": 0.017306837161771685
+   },
+   "fovea": {
+    "tokens": 1102680,
+    "mean_channel_std": 0.015918749833808046,
+    "rms": 0.02654513059464253
+   }
+  }
+ },
+ "seconds": 567.4826829433441
+}

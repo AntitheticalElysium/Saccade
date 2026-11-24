@@ -42,15 +42,18 @@ SIDES = ("top", "bottom", "left", "right")
 # reduce to the calls they replace, bit for bit. ----
 
 @torch.no_grad()
-def history(model, p, first=None, state=None, keep=(), chunk=512):
+def history(model, p, first=None, state=None, keep=(), chunk=512, g=None, fix=None):
     """p [B, T, 81, C] periphery tokens from `state` (None: zero) with resets at `first` [B, T] -> (Mamba's read of the
     record after every frame [B, T, W], for the frames `keep` the record through the frame before each [B, len(keep),
-    81, dim] (the denoiser's), the state after the last frame); (None, None, None) without a record."""
+    81, dim] (the denoiser's), the state after the last frame); (None, None, None) without a record. With the record's
+    fovea group (P1.6), g [B, T, 9, Cg] and fix [B, T, 2] are the glimpses and their fixations (Record.input)."""
     if model.record is None:
         return None, None, None
     if p.dim() == 3:                                                     # one frame [B, 81, C]: reads [B, W]
-        reads, kept, state = history(model, p[:, None], None if first is None else first[:, None], state, keep, chunk)
+        reads, kept, state = history(model, p[:, None], None if first is None else first[:, None], state, keep, chunk,
+                                     None if g is None else g[:, None], None if fix is None else fix[:, None])
         return reads[:, 0], kept, state
+    p = model.record.input(p, g, fix)
     B, T = p.shape[:2]
     state = model.record.zero(B, p.device) if state is None else state
     first = torch.zeros(B, T, dtype=torch.bool, device=p.device) if first is None else first
@@ -58,7 +61,7 @@ def history(model, p, first=None, state=None, keep=(), chunk=512):
     for a in range(0, T, chunk):
         rin, rst = model.record.scan(p[:, a:a + chunk], first[:, a:a + chunk], state)
         reads.append(model.belief.record_in(rst))
-        kept.update({j: rin[:, j - a] for j in keep if a <= j < a + chunk})
+        kept.update({j: rin[:, j - a].clone() for j in keep if a <= j < a + chunk})   # copies: a view keeps its chunk
         state = rst[:, -1]
     return torch.cat(reads, 1), torch.stack([kept[j] for j in keep], 1) if len(keep) else None, state
 
@@ -100,8 +103,8 @@ def before(model, enc, pairs):
     state = torch.stack([enc[e]["record_every"][j // EVERY] for e, j in pairs]).to(DEV)
     left = [j % EVERY for _, j in pairs]
     for k in range(max(left)):                                           # at most 63 frames, rows advanced while they last
-        p = torch.stack([enc[e]["p"][j - n + k] if k < n else enc[e]["p"][0] for (e, j), n in zip(pairs, left)]).to(DEV)
-        nxt = model.record.scan(p[:, None].float(), torch.zeros(len(pairs), 1, dtype=torch.bool, device=DEV), state)[1][:, 0]
+        x = [model.record.input(*(enc[e][key][j - n + k if k < n else 0] for key in ("p", "g", "fix"))) for (e, j), n in zip(pairs, left)]
+        nxt = model.record.scan(torch.stack(x).to(DEV)[:, None].float(), torch.zeros(len(pairs), 1, dtype=torch.bool, device=DEV), state)[1][:, 0]
         state = torch.where(torch.tensor([k < n for n in left], device=DEV)[:, None, None], nxt, state)
     return state
 
@@ -113,7 +116,8 @@ def window(model, enc, pairs, P):
     if model.record is None:
         return None
     pad = [max(0, P - t) for _, t in pairs]
-    p = torch.stack([torch.cat([enc[e]["p"][:1].expand(n, -1, -1) * 0, enc[e]["p"][max(0, t - P):t + 1]])
+    x = lambda e, s: model.record.input(*(enc[e][key][s] for key in ("p", "g", "fix")))     # P1.6: with the glimpse
+    p = torch.stack([torch.cat([x(e, slice(0, 1)).expand(n, -1, -1) * 0, x(e, slice(max(0, t - P), t + 1))])
                      for (e, t), n in zip(pairs, pad)]).to(DEV).float()
     first = torch.tensor([[k < n for k in range(P + 1)] for n in pad], device=DEV)
     return model.record.scan(p, first, before(model, enc, [(e, max(0, t - P)) for e, t in pairs]))[0]
@@ -143,7 +147,7 @@ def encode(model, L, cfg, untrained=None, windows=None):
         with TR.autocast(DEV, cfg):
             parts = [model.perception(c["frames"][:, a:a + 512], c["fixation"][:, a:a + 512]) for a in range(0, ep.T + 1, 512)]
             P = M.Percept(*(torch.cat(z, 1) for z in zip(*[p.parts() for p in parts])), c["fixation"])
-            reads, every, _ = history(model, P.p, keep=range(0, ep.T + 1, EVERY))
+            reads, every, _ = history(model, P.p, keep=range(0, ep.T + 1, EVERY), g=P.g, fix=P.fix)
             emb = embed(model, P, reads)
             y, _ = model.belief(model.belief.tokens(emb, c["reward"], c["terminated"], c["action"]), model.belief.initial(1, DEV))
             b, bp = y[:, 0::2], torch.cat([torch.zeros_like(y[:, :1]), y[:, 1::2][:, :-1]], 1)
@@ -470,7 +474,7 @@ def one_step(model, enc, cfg, n_tuples, rng):
                     a[r] = b.float()
         Pg = M.Percept(x[0][:, 0], x[1][:, 0], x[2][:, 0], fix[:, -1])
         with TR.autocast(DEV, cfg):
-            h = model.outcome.features(bp[:, -1], embed(model, Pg, history(model, Pg.p, state=at(rin, np.s_[:, P]))[0]))
+            h = model.outcome.features(bp[:, -1], embed(model, Pg, history(model, Pg.p, state=at(rin, np.s_[:, P]), g=Pg.g, fix=Pg.fix)[0]))
             r = model.outcome.sample_reward(h.float(), gen)
             term = torch.rand(B, device=DEV, generator=gen) > torch.sigmoid(model.outcome.cont_logit(h, r).float())
         for k, v in zip(("p", "g", "v", "r", "term"), (Pg.p, Pg.g, Pg.v, r, term)):

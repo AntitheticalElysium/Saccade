@@ -1,0 +1,96 @@
+/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/.venv/lib/python3.12/site-packages/mamba_ssm/utils/determinism.py:73: UserWarning: Deterministic mode: set TRITON_CACHE_AUTOTUNING=1 for cached autotuning.
+  warnings.warn(msg)
+40 windows: monitor 24, food_drop 8, energy_drop 8
+P1.5 episode 0 6s
+P1.5 episode 3 11s
+P1.5 episode 17 11s
+P1.5 episode 28 11s
+P1.5 episode 35 11s
+P1.5 episode 68 12s
+P1.5 episode 76 12s
+P1.5 episode 84 12s
+P1.5 episode 85 13s
+P1.5 episode 91 13s
+P1.5 episode 92 15s
+P1.5 episode 106 16s
+P1.5 episode 111 16s
+P1.5 episode 116 17s
+P1.5 episode 145 19s
+P1.5 episode 162 19s
+P1.5 episode 186 21s
+P1.5 episode 195 22s
+P1.5 episode 201 23s
+P1.5 episode 216 24s
+P1.5 episode 217 25s
+P1.5 episode 228 25s
+P1.5 episode 233 26s
+P1.5 episode 235 27s
+P1.5 episode 248 28s
+P1.5 episode 256 28s
+P1.5 episode 263 28s
+P1.5 episode 276 29s
+P1.5 episode 318 29s
+P1.5 episode 319 30s
+P1.5 episode 334 30s
+P1.5 episode 338 31s
+P1.5 episode 369 32s
+P1.5 episode 372 32s
+P1.5 episode 379 34s
+P1.5 episode 383 35s
+smoke check, G1 by level: mine [0.0008849999867379665, 0.0018570000538602471, 0.00241499999538064, 0.001908999984152615, 0.0014019999653100967, 0.0007670000195503235, 0.000666000007186085, 0.0005569999921135604] monitor [0.000885, 0.00186, 0.002416, 0.001914, 0.001401, 0.000767, 0.000666, 0.000556] max rel diff 0.0028752534090726867
+R4k episode 0 0s
+R4k episode 3 2s
+R4k episode 17 2s
+R4k episode 28 2s
+R4k episode 35 2s
+R4k episode 68 3s
+R4k episode 76 3s
+R4k episode 84 3s
+R4k episode 85 4s
+R4k episode 91 4s
+R4k episode 92 6s
+R4k episode 106 7s
+R4k episode 111 7s
+R4k episode 116 8s
+R4k episode 145 10s
+R4k episode 162 10s
+R4k episode 186 11s
+R4k episode 195 13s
+R4k episode 201 14s
+R4k episode 216 15s
+R4k episode 217 15s
+R4k episode 228 16s
+R4k episode 233 17s
+R4k episode 235 17s
+R4k episode 248 18s
+R4k episode 256 19s
+R4k episode 263 19s
+R4k episode 276 19s
+R4k episode 318 20s
+R4k episode 319 20s
+R4k episode 334 21s
+R4k episode 338 21s
+R4k episode 369 23s
+R4k episode 372 23s
+R4k episode 379 24s
+R4k episode 383 25s
+levels 0-3 monitor     mob       n=   18 P1.5: real 0.06844 rel +0.08417 pen +0.00032 | R4k: real 0.06685 rel +0.06198 pen -0.00112 | R4k-P1.5 rel -0.02219±0.00570 pen -0.00144±0.00193
+levels 0-3 monitor     near_mob  n=   18 P1.5: real 0.00256 rel +0.05099 pen +0.00053 | R4k: real 0.00254 rel +0.03338 pen +0.00063 | R4k-P1.5 rel -0.01761±0.00979 pen +0.00010±0.00007
+levels 0-3 monitor     vacated   n=    6 P1.5: real 0.00820 rel +0.02596 pen -0.00112 | R4k: real 0.00741 rel +0.01065 pen -0.00071 | R4k-P1.5 rel -0.01531±0.01375 pen +0.00042±0.00059
+levels 0-3 monitor     map_other n=   24 P1.5: real 0.00129 rel +0.08885 pen +0.00027 | R4k: real 0.00126 rel +0.04517 pen +0.00020 | R4k-P1.5 rel -0.04368±0.01151 pen -0.00007±0.00007
+levels 0-3 monitor     food      n=   24 P1.5: real 0.02232 rel +0.11122 pen -0.00373 | R4k: real 0.02022 rel +0.10788 pen -0.00247 | R4k-P1.5 rel -0.00334±0.00372 pen +0.00126±0.00079
+levels 0-3 monitor     energy    n=   24 P1.5: real 0.00010 rel +0.13757 pen -0.00001 | R4k: real 0.00014 rel +0.13095 pen -0.00002 | R4k-P1.5 rel -0.00662±0.00891 pen -0.00001±0.00001
+levels 0-3 monitor     hud_other n=   24 P1.5: real 0.00041 rel +0.15487 pen +0.00002 | R4k: real 0.00035 rel +0.13524 pen +0.00002 | R4k-P1.5 rel -0.01963±0.00355 pen -0.00001±0.00001
+levels 0-3 food_drop   food      n=    8 P1.5: real 0.04143 rel +0.04513 pen -0.00411 | R4k: real 0.04919 rel +0.02527 pen -0.00262 | R4k-P1.5 rel -0.01986±0.00824 pen +0.00149±0.00112
+levels 0-3 energy_drop energy    n=    8 P1.5: real 0.00283 rel +0.10910 pen -0.00135 | R4k: real 0.00232 rel +0.10661 pen -0.00087 | R4k-P1.5 rel -0.00250±0.01198 pen +0.00047±0.00094
+all levels monitor     mob       n=   18 P1.5: real 0.04327 rel +0.06348 pen +0.00077 | R4k: real 0.04236 rel +0.04717 pen +0.00066 | R4k-P1.5 rel -0.01631±0.00375 pen -0.00011±0.00107
+all levels monitor     near_mob  n=   18 P1.5: real 0.00182 rel +0.03457 pen +0.00030 | R4k: real 0.00181 rel +0.02346 pen +0.00036 | R4k-P1.5 rel -0.01111±0.00645 pen +0.00005±0.00007
+all levels monitor     vacated   n=    6 P1.5: real 0.00455 rel +0.02184 pen -0.00064 | R4k: real 0.00406 rel +0.01288 pen -0.00041 | R4k-P1.5 rel -0.00896±0.00637 pen +0.00024±0.00035
+all levels monitor     map_other n=   24 P1.5: real 0.00097 rel +0.05232 pen +0.00018 | R4k: real 0.00095 rel +0.02743 pen +0.00015 | R4k-P1.5 rel -0.02489±0.00618 pen -0.00003±0.00004
+all levels monitor     food      n=   24 P1.5: real 0.01238 rel +0.09820 pen -0.00197 | R4k: real 0.01120 rel +0.08657 pen -0.00137 | R4k-P1.5 rel -0.01162±0.00325 pen +0.00060±0.00037
+all levels monitor     energy    n=   24 P1.5: real 0.00009 rel +0.10881 pen -0.00000 | R4k: real 0.00011 rel +0.09862 pen -0.00001 | R4k-P1.5 rel -0.01019±0.00696 pen -0.00001±0.00000
+all levels monitor     hud_other n=   24 P1.5: real 0.00028 rel +0.11604 pen +0.00003 | R4k: real 0.00023 rel +0.09044 pen +0.00001 | R4k-P1.5 rel -0.02560±0.00307 pen -0.00002±0.00002
+all levels food_drop   food      n=    8 P1.5: real 0.03044 rel +0.04206 pen -0.00291 | R4k: real 0.03791 rel +0.02619 pen -0.00350 | R4k-P1.5 rel -0.01588±0.00433 pen -0.00058±0.00074
+all levels energy_drop energy    n=    8 P1.5: real 0.00148 rel +0.09800 pen -0.00068 | R4k: real 0.00123 rel +0.09027 pen -0.00044 | R4k-P1.5 rel -0.00773±0.01190 pen +0.00024±0.00046
+P1.5 periphery loss share / switching-penalty share by region: mob 0.353/0.247, near_mob 0.087/0.206, vacated 0.012/-0.033, map_other 0.413/0.727, food 0.098/-0.191, energy 0.001/-0.000, hud_other 0.036/0.044 | total penalty / loss +0.0818
+R4k periphery loss share / switching-penalty share by region: mob 0.356/0.304, near_mob 0.089/0.248, vacated 0.011/-0.018, map_other 0.421/0.575, food 0.092/-0.124, energy 0.001/-0.001, hud_other 0.030/0.016 | total penalty / loss +0.0905

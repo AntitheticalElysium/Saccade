@@ -1,0 +1,231 @@
+{
+  "pose": {
+    "oracle": {
+      "revisits": 25371,
+      "radius": {
+        "0": {
+          "contains_correct_place": 1.0,
+          "contains_wrong_place": 0.0,
+          "gaussian_mass_correct": 1.0,
+          "mean_number_of_candidates": 1.0
+        },
+        "1": {
+          "contains_correct_place": 1.0,
+          "contains_wrong_place": 1.0,
+          "gaussian_mass_correct": 0.2914875904232537,
+          "mean_number_of_candidates": 5.9692562374364435
+        },
+        "3": {
+          "contains_correct_place": 1.0,
+          "contains_wrong_place": 1.0,
+          "gaussian_mass_correct": 0.24196783969627556,
+          "mean_number_of_candidates": 23.616333609238893
+        }
+      }
+    },
+    "unconstrained_visual": {
+      "revisits": 25371,
+      "radius": {
+        "0": {
+          "contains_correct_place": 0.866501123329786,
+          "contains_wrong_place": 0.11974301367703283,
+          "gaussian_mass_correct": 0.866501123329786,
+          "mean_number_of_candidates": 0.9862441370068188
+        },
+        "1": {
+          "contains_correct_place": 0.9309053643924166,
+          "contains_wrong_place": 1.0,
+          "gaussian_mass_correct": 0.26392657474351117,
+          "mean_number_of_candidates": 6.17315044736116
+        },
+        "3": {
+          "contains_correct_place": 0.9636198809664578,
+          "contains_wrong_place": 1.0,
+          "gaussian_mass_correct": 0.21976066244243017,
+          "mean_number_of_candidates": 24.723306136927988
+        }
+      }
+    },
+    "action_constrained_visual": {
+      "revisits": 25371,
+      "radius": {
+        "0": {
+          "contains_correct_place": 0.9720152930511213,
+          "contains_wrong_place": 0.018170351976666273,
+          "gaussian_mass_correct": 0.9720152930511213,
+          "mean_number_of_candidates": 0.9901856450277876
+        },
+        "1": {
+          "contains_correct_place": 0.9781246304836231,
+          "contains_wrong_place": 1.0,
+          "gaussian_mass_correct": 0.2850934485141947,
+          "mean_number_of_candidates": 5.919435576051398
+        },
+        "3": {
+          "contains_correct_place": 0.9781246304836231,
+          "contains_wrong_place": 1.0,
+          "gaussian_mass_correct": 0.23661282034203263,
+          "mean_number_of_candidates": 23.514721532458317
+        }
+      }
+    }
+  },
+  "fourier": {
+    "cosine_by_axial_shift": [
+      1.0,
+      0.9323091183665502,
+      0.7690199328625323,
+      0.5992535371042578,
+      0.4960118205753816,
+      0.4691766406875981,
+      0.4727192851734727,
+      0.454370149511599,
+      0.4013262719561504,
+      0.34343022160370845,
+      0.31644037613523235,
+      0.32387209408506795,
+      0.33417969735979225,
+      0.3141255266581858,
+      0.26392145196810923,
+      0.2184834113459882,
+      0.21262649762535119,
+      0.2439716664024924,
+      0.2710145413163748,
+      0.2509262186851432,
+      0.18279624530093508,
+      0.11431509086323569,
+      0.10205806610758844,
+      0.15893684768615274,
+      0.23679614367806445,
+      0.2628649121165533,
+      0.20096974651113877,
+      0.08493363349838395,
+      -0.005772400648348219,
+      -0.008624392027208744,
+      0.07336622309348123,
+      0.17670329208235852,
+      0.22939434410079784,
+      0.20433205453314385,
+      0.13071306843868855,
+      0.05951542693464812,
+      0.018889902920058765,
+      7.16427590399249e-05,
+      -0.018108859012565537,
+      -0.03576261957866933,
+      -0.026332521772462064,
+      0.033799893212907495,
+      0.1302202156259969,
+      0.20801644179820797,
+      0.21054325414113895,
+      0.12771346445583806,
+      0.009473796818049579,
+      -0.07121916817530127,
+      -0.076424203343683,
+      -0.03223325593203058,
+      -0.0027751967616303636,
+      -0.031333318572236174,
+      -0.1001345730283171,
+      -0.14439430560371058,
+      -0.10863573168632523,
+      0.003690782102252599,
+      0.1300109653750645,
+      0.19712104144037057,
+      0.17597536744850553,
+      0.09707297777916991,
+      0.017318860102626468,
+      -0.028405981670009087,
+      -0.047582342104127345,
+      -0.06839207728951777
+    ],
+    "short_axial_reversals": 1,
+    "reversals": [
+      {
+        "near": 5,
+        "far": 6,
+        "near_cosine": 0.4691766406875981,
+        "far_cosine": 0.4727192851734727
+      },
+      {
+        "near": 10,
+        "far": 11,
+        "near_cosine": 0.31644037613523235,
+        "far_cosine": 0.32387209408506795
+      },
+      {
+        "near": 10,
+        "far": 12,
+        "near_cosine": 0.31644037613523235,
+        "far_cosine": 0.33417969735979225
+      },
+      {
+        "near": 11,
+        "far": 12,
+        "near_cosine": 0.32387209408506795,
+        "far_cosine": 0.33417969735979225
+      },
+      {
+        "near": 14,
+        "far": 18,
+        "near_cosine": 0.26392145196810923,
+        "far_cosine": 0.2710145413163748
+      },
+      {
+        "near": 15,
+        "far": 17,
+        "near_cosine": 0.2184834113459882,
+        "far_cosine": 0.2439716664024924
+      },
+      {
+        "near": 15,
+        "far": 18,
+        "near_cosine": 0.2184834113459882,
+        "far_cosine": 0.2710145413163748
+      },
+      {
+        "near": 15,
+        "far": 19,
+        "near_cosine": 0.2184834113459882,
+        "far_cosine": 0.2509262186851432
+      }
+    ]
+  },
+  "chunks": {
+    "revisits": 84901,
+    "episodes": 120,
+    "median": 22.0,
+    "fraction_gap_le64": 0.7338665033391832,
+    "p90": 186.0,
+    "uniform_phase_same_chunk_fraction": {
+      "64": 0.5245760503409854,
+      "256": 0.7797446621653455
+    }
+  },
+  "fine_write_credit": {
+    "episodes": 118,
+    "coarse_revisits": 62854,
+    "gaze_draws_per_episode": 4,
+    "fraction_with_any_prior_fine_observation": 0.7863143157157858,
+    "same_chunk_fraction_among_all_revisits": {
+      "64": 0.3108789938786712,
+      "256": 0.5683360228913434
+    },
+    "same_chunk_fraction_conditioned_on_fine_write": {
+      "64": 0.39536224594318436,
+      "256": 0.7227847840643526
+    }
+  },
+  "mob_targets": {
+    "zombies": {
+      "probe_targets": 1756,
+      "direction_changed_since_last_sighting": 0.12984054669703873,
+      "location_changed_since_last_sighting": 0.5466970387243736,
+      "median_manhattan_displacement": 1.0
+    },
+    "cows": {
+      "probe_targets": 4824,
+      "direction_changed_since_last_sighting": 0.2126865671641791,
+      "location_changed_since_last_sighting": 0.8843283582089553,
+      "median_manhattan_displacement": 2.0
+    }
+  }
+}

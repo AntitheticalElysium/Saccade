@@ -1,0 +1,146 @@
+{
+ "units": 2079,
+ "table": {
+  "cows|day|free=1": {
+   "units": 43,
+   "deletion": 0.0436046511627907,
+   "se": 0.01307754957619822
+  },
+  "cows|day|free=2": {
+   "units": 117,
+   "deletion": 0.06517094017094018,
+   "se": 0.010899855547556696
+  },
+  "cows|day|free=3": {
+   "units": 310,
+   "deletion": 0.052016129032258066,
+   "se": 0.004767115273369662
+  },
+  "cows|day|free=4": {
+   "units": 459,
+   "deletion": 0.0656318082788671,
+   "se": 0.004834537464725191
+  },
+  "cows|night|free=0": {
+   "units": 1,
+   "deletion": 0.0,
+   "se": null
+  },
+  "cows|night|free=1": {
+   "units": 12,
+   "deletion": 0.14583333333333334,
+   "se": 0.05722706412779594
+  },
+  "cows|night|free=2": {
+   "units": 34,
+   "deletion": 0.21323529411764705,
+   "se": 0.050765478375509744
+  },
+  "cows|night|free=3": {
+   "units": 107,
+   "deletion": 0.21378504672897197,
+   "se": 0.029647077769148433
+  },
+  "cows|night|free=4": {
+   "units": 108,
+   "deletion": 0.2708333333333333,
+   "se": 0.031049242648097268
+  },
+  "zombies|day|free=1": {
+   "units": 20,
+   "deletion": 0.0125,
+   "se": 0.008603090020146066
+  },
+  "zombies|day|free=2": {
+   "units": 78,
+   "deletion": 0.020833333333333332,
+   "se": 0.00621207552593192
+  },
+  "zombies|day|free=3": {
+   "units": 207,
+   "deletion": 0.009057971014492754,
+   "se": 0.0028336263364494617
+  },
+  "zombies|day|free=4": {
+   "units": 67,
+   "deletion": 0.03731343283582089,
+   "se": 0.01128318932548293
+  },
+  "zombies|night|free=1": {
+   "units": 28,
+   "deletion": 0.05803571428571429,
+   "se": 0.02271478797987165
+  },
+  "zombies|night|free=2": {
+   "units": 50,
+   "deletion": 0.1275,
+   "se": 0.03508190125860295
+  },
+  "zombies|night|free=3": {
+   "units": 126,
+   "deletion": 0.07936507936507936,
+   "se": 0.018235843313526942
+  },
+  "zombies|night|free=4": {
+   "units": 31,
+   "deletion": 0.3064516129032258,
+   "se": 0.06976311436753216
+  },
+  "skeletons|day|free=1": {
+   "units": 9,
+   "deletion": 0.18055555555555555,
+   "se": 0.0367465459870082
+  },
+  "skeletons|day|free=2": {
+   "units": 18,
+   "deletion": 0.11805555555555555,
+   "se": 0.025709344734574452
+  },
+  "skeletons|day|free=3": {
+   "units": 39,
+   "deletion": 0.15384615384615385,
+   "se": 0.030619151532478458
+  },
+  "skeletons|day|free=4": {
+   "units": 31,
+   "deletion": 0.14516129032258066,
+   "se": 0.024659491695839773
+  },
+  "skeletons|night|free=1": {
+   "units": 7,
+   "deletion": 0.3392857142857143,
+   "se": 0.09726270618076305
+  },
+  "skeletons|night|free=2": {
+   "units": 6,
+   "deletion": 0.6458333333333334,
+   "se": 0.17800007802744858
+  },
+  "skeletons|night|free=3": {
+   "units": 19,
+   "deletion": 0.506578947368421,
+   "se": 0.08359262523046454
+  },
+  "skeletons|night|free=4": {
+   "units": 6,
+   "deletion": 0.3333333333333333,
+   "se": 0.16351180725290487
+  }
+ },
+ "day_cows_ratio_free4_over_free_le1": {
+  "ratio": 1.5051561365286854,
+  "ci95": [
+   0.9042341574310885,
+   3.225669156551504
+  ],
+  "free4": [
+   0.0656318082788671,
+   459
+  ],
+  "free_le1": [
+   0.0436046511627907,
+   43
+  ]
+ },
+ "day_cows_corr_free_deletion": 0.043234109753352706
+}

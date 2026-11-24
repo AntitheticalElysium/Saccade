@@ -26,6 +26,16 @@ def out_map(x: Tensor, s: float) -> Tensor:
     return s * torch.tanh(F.layer_norm(x.float(), x.shape[-1:]) / s)
 
 
+def widen(layer: nn.Linear, n: int) -> nn.Linear:
+    """Input columns appended at zero up to n (P1.6, Codex's review 11-20): a widened read starts as the narrower one,
+    whose own draws, bias and the module's later draws stay P1.5's; the new columns still receive gradients."""
+    if n > layer.in_features:
+        w = layer.weight.data
+        layer.weight = nn.Parameter(torch.cat([w, w.new_zeros(layer.out_features, n - layer.in_features)], 1))
+        layer.in_features = n
+    return layer
+
+
 def window(fix: Tensor) -> Tensor:
     """Fixation centres [..., 2] (row, col) -> the 9 cell indices of their 3 x 3 window, row-major [..., 9]."""
     d = torch.arange(-1, 2, device=fix.device)
@@ -302,7 +312,8 @@ class Belief(nn.Module):
             with torch.random.fork_rng(devices=[]):                      # user 11-16): per cell to a token's width, then
                 torch.random.default_generator.manual_seed(r["init_seed"])   # beside the flattened percept
                 c = pc["periphery"]["token_dim"]
-                self.record_in = nn.Sequential(nn.Linear(2 * c * r["modes"], c), nn.Flatten(-2), nn.Linear(N * c, W))
+                self.record_in = nn.Sequential(nn.Linear(Record.size(cfg, coarse=True), c), nn.Flatten(-2), nn.Linear(N * c, W))
+            widen(self.record_in[0], Record.size(cfg))                   # P1.6: the fovea group's columns, at zero
 
     def initial(self, batch: int, device=None):
         return tuple(m.initial(batch, device) for m in self.mixers)
@@ -391,13 +402,14 @@ class Block(nn.Module):
         a, b = self.gate_up(h).chunk(2, -1)
         return self.down(F.silu(a) * b)
 
-    def forward(self, x, c, ang, mask=None, cache=None, phys=None, pkv=None):
+    def forward(self, x, c, ang, mask=None, cache=None, phys=None, pkv=None, ctx=None):
         """x [B, T, n, W]. c = the (physical, glimpse) conditionings [B, T, W], applied to their token groups (glimpse
         tokens N:N+G, the rest physical; TEACHING 10 / 10a), or one conditioning in a glimpse-only pass (x = the 9
         glimpse tokens). Spatial: ang [B, T, n, hd/2]; with phys (the physical token indices) the physical queries attend
         only to physical keys, whose keys / values are returned; pkv (glimpse-only pass): those keys / values, around
         which the glimpse's own are placed in the full frame's order. Temporal: dense_time (mask = its window, cache =
-        streaming, pkv = this frame's full keys / values in a glimpse-only pass)."""
+        streaming, pkv = this frame's full keys / values in a glimpse-only pass, ctx = another stream's keys / values
+        for the earlier frames: Denoiser.estimate)."""
         if isinstance(c, tuple):
             (sh1, sc1, g1, sh2, sc2, g2), mg = (self.mod(F.silu(z)).unsqueeze(2).chunk(6, -1) for z in c)
             grp = lambda t, f: torch.cat([f(t[:, :, :N], 0), f(t[:, :, N:N + G], 1), f(t[:, :, N + G:], 0)], 2)
@@ -419,21 +431,22 @@ class Block(nn.Module):
                 ap, ag = self.attn.attend(sel(q), *new), self.attn.attend(q[..., N:N + G, :], k, v)
                 a = torch.cat([ap[:, :, :N], ag, ap[:, :, N:]], 2)
         else:
-            a, new = self.dense_time(h, ang, mask, cache, phys, pkv)
+            a, new = self.dense_time(h, ang, mask, cache, phys, pkv, ctx)
         if isinstance(c, tuple):
             x = x + grp(a, lambda t, j: t * pick(2, j))
             return x + grp(self.mlp(grp(self.n2(x), lambda t, j: t * (1 + pick(4, j)) + pick(3, j))), lambda t, j: t * pick(5, j)), new
         x = x + g1 * a
         return x + g2 * self.mlp(self.n2(x) * (1 + sc2) + sh2), new
 
-    def dense_time(self, h, ang, win=None, cache=None, phys=None, cur=None):
+    def dense_time(self, h, ang, win=None, cache=None, phys=None, cur=None, ctx=None):
         """Dense temporal attention (P1-F4): Dreamer 4's long-context layers before its "time factorized long context"
         step (2509.24527 Table 2, FVD 71 -> 91 when factorised): every token of a frame attends every token of its own
         frame and of the window's earlier frames, with 1D RoPE over frame positions; physical queries read physical keys
         only (decision 1, as in the spatial layers). h [B, T, n, W], ang [B, T, hd/2]. Chunked: win = (frame index
         [T, w + 1] oldest first, allowed [B, T, w + 1]). Streaming (T = 1): cache = this layer's (k, v) of the committed
         frames [B, F, H, n, hd] (or None); this frame's (k, v) is returned to commit. Glimpse-only pass (h = the 9
-        glimpse tokens): cur = this frame's full (k, v) from the full step, its glimpse rows replaced."""
+        glimpse tokens): cur = this frame's full (k, v) from the full step, its glimpse rows replaced. Chunked with ctx
+        (Denoiser.estimate): the window's earlier slots read ctx's (k, v) [B, T, H, n, hd], the frame's own slot its own."""
         q, k, v = self.attn.project(h, ang[:, :, None].expand(-1, -1, h.shape[2], -1))   # [B, T, H, n, hd]
         if cur is not None:
             k, v = (torch.cat([c[..., :N, :], t, c[..., N + G:, :]], -2) for c, t in zip(cur, (k, v)))
@@ -442,7 +455,11 @@ class Block(nn.Module):
             idx, ok = win                                                # the front-padded frames (slot j = frame t - (w - j)):
             w, T = idx.shape[1] - 1, idx.shape[0]                        # an index gather's backward would accumulate the
             pad = lambda t: F.pad(t.transpose(1, 2), (0, 0, 0, 0, w, 0))  # repeated frames with atomics (not bitwise)
-            kw, vw = (torch.stack([p[:, :, j:j + T] for j in range(w + 1)], 3).flatten(3, 4) for p in (pad(k), pad(v)))
+            if ctx is None:
+                kw, vw = (torch.stack([p[:, :, j:j + T] for j in range(w + 1)], 3).flatten(3, 4) for p in (pad(k), pad(v)))
+            else:                                                        # Denoiser.estimate: slot w the frame itself,
+                kw, vw = (torch.stack([(po if j == w else ps)[:, :, j:j + T] for j in range(w + 1)], 3).flatten(3, 4)
+                          for po, ps in ((pad(k), pad(ctx[0])), (pad(v), pad(ctx[1]))))   # earlier slots ctx's frames
             allowed = ok[:, None, :, None].repeat_interleave(n, -1)         # [B, 1, T, 1, (w + 1) n]: broadcast, never expanded
         else:
             if cache is not None and cache[0] is not None:
@@ -511,8 +528,9 @@ class Denoiser(nn.Module):
             assert r["read"] == "mlp", "the MLP read (test 3, 20261116_temporal_memory; the user's choice 11-16)"   # MLP:
             with torch.random.fork_rng(devices=[]):                      # its own draws; the last layer zero-initialised
                 torch.random.default_generator.manual_seed(r["read_init_seed"])   # (inert at the start, as in test 3)
-                self.record_read = nn.Sequential(nn.Linear(2 * dims[0] * r["modes"], W), nn.GELU(), nn.Linear(W, W))
+                self.record_read = nn.Sequential(nn.Linear(Record.size(cfg, coarse=True), W), nn.GELU(), nn.Linear(W, W))
             nn.init.zeros_(self.record_read[2].weight), nn.init.zeros_(self.record_read[2].bias)
+            widen(self.record_read[0], Record.size(cfg))                 # P1.6: the fovea group's columns, at zero
 
     def conds(self, code, prev_action):
         """The (physical, glimpse) conditionings from a pair of codes; one code conditions both groups."""
@@ -555,14 +573,7 @@ class Denoiser(nn.Module):
         sees itself and the previous `window` frames of its own episode (valid ones)."""
         tok, ang = self.embed(x, memory, fix)
         c = self.conds(code, prev_action)
-        T = tok.shape[1]
-        t = torch.arange(T, device=tok.device)
-        lag = t[:, None] - t[None, :]
-        ok = (lag >= 0) & (lag <= self.window) & (episode[:, :, None] == episode[:, None, :]) & valid[:, None, :]
-        allowed = ok | torch.eye(T, dtype=torch.bool, device=tok.device)
-        idx = t[:, None] - torch.arange(self.window, -1, -1, device=tok.device)   # the rule per window slot, oldest first
-        win = (idx.clamp(min=0), (idx >= 0) & allowed.gather(2, idx.clamp(min=0).expand(len(allowed), -1, -1)))
-        ang_t = t.float()[:, None] * self.f_time
+        win, ang_t = self._window(tok.shape[1], episode, valid, tok.device)
         for blk in self.blocks:
             a = (ang_t.expand(tok.shape[0], -1, -1), win, None, self.phys) if blk.temporal else (ang, None, None, self.phys)
             if self.checkpoint and self.training:
@@ -570,6 +581,35 @@ class Denoiser(nn.Module):
             else:
                 tok = blk(tok, c, *a)[0]
         return self.head(tok, c)
+
+    def _window(self, T, episode, valid, device):
+        """The chunked temporal rule: (frame index per window slot [T, w + 1] oldest first, allowed [B, T, w + 1]) and the
+        frames' 1D RoPE angles [T, hd / 2]."""
+        t = torch.arange(T, device=device)
+        lag = t[:, None] - t[None, :]
+        ok = (lag >= 0) & (lag <= self.window) & (episode[:, :, None] == episode[:, None, :]) & valid[:, None, :]
+        allowed = ok | torch.eye(T, dtype=torch.bool, device=device)
+        idx = t[:, None] - torch.arange(self.window, -1, -1, device=device)   # the rule per window slot, oldest first
+        win = (idx.clamp(min=0), (idx >= 0) & allowed.gather(2, idx.clamp(min=0).expand(len(allowed), -1, -1)))
+        return win, t.float()[:, None] * self.f_time
+
+    @torch.no_grad()
+    def estimate(self, xc, xq, code, prev_action, memory, fix, episode, valid):
+        """Every frame's output given its real past in one chunked pass (P1.6's world-eye, C9-C11): stream c is the chunk
+        in its context role, as forward() sees it; stream q holds each frame's own input at code[1], and its temporal
+        window reads stream c's keys / values for the earlier frames and its own for the frame itself. Equal to forward()
+        on each frame's window [xc's earlier frames, xq's frame] (tests); stream q's outputs."""
+        (tc, ang), (tq, _) = self.embed(xc, memory, fix), self.embed(xq, memory, fix)
+        cc, cq = self.conds(code[0], prev_action), self.conds(code[1], prev_action)
+        win, ang_t = self._window(tc.shape[1], episode, valid, tc.device)
+        ang_t = ang_t.expand(tc.shape[0], -1, -1)
+        for blk in self.blocks:
+            if blk.temporal:
+                tc, kv = blk(tc, cc, ang_t, win, None, self.phys)
+                tq = blk(tq, cq, ang_t, win, None, self.phys, ctx=kv)[0]
+            else:
+                tc, tq = blk(tc, cc, ang, None, None, self.phys)[0], blk(tq, cq, ang, None, None, self.phys)[0]
+        return self.head(tq, cq)
 
     def step(self, x, code, prev_action, memory, fix, cache: dict, keep=None):
         """Streaming form for one frame per stream (T = 1) at frame position cache["t"]; cache["kv"] holds, per temporal
@@ -959,33 +999,59 @@ class Record(nn.Module):
     """Spatial history (P1.5, user 11-16; 20261116_temporal_memory, tests 2-3): per periphery cell, a fixed S4D-Lin
     record of every channel of its own coarse token (Gu et al. 2022, S4D: A_n = -1/2 + i pi n for n < modes, B = 1,
     the S4D listing's bilinear step at dt), reset at episode starts; features = real then imaginary parts (channel-major,
-    then mode). Built from stop-gradient tokens: a denoiser input (LOSSES principle 7a). No parameters."""
+    then mode). Built from stop-gradient tokens: a denoiser input (LOSSES principle 7a). No parameters.
+    P1.6 (user 11-20, G1: "write where you look"): with `fovea_modes`, a second group records the glimpse canvas the
+    belief reads (each fixated cell's fine token, zero elsewhere) on the first fovea_modes modes of the same basis; the
+    input is the periphery token and the canvas side by side (`input`), the features the two groups' in turn."""
 
     def __init__(self, cfg):
         super().__init__()
-        r, n = cfg["record"], torch.arange(cfg["record"]["modes"], dtype=torch.float64)
-        A, dt = torch.complex(torch.full_like(n, -0.5), math.pi * n), r["dt"]
-        self.register_buffer("a", ((1 + dt * A / 2) / (1 - dt * A / 2)).to(torch.complex64), persistent=False)
-        self.register_buffer("b", (dt / (1 - dt * A / 2)).to(torch.complex64), persistent=False)
+        r = cfg["record"]
+        for name, m in (("", r["modes"]), ("_f", r.get("fovea_modes", 0))):
+            n = torch.arange(m, dtype=torch.float64)
+            A, dt = torch.complex(torch.full_like(n, -0.5), math.pi * n), r["dt"]
+            self.register_buffer("a" + name, ((1 + dt * A / 2) / (1 - dt * A / 2)).to(torch.complex64), persistent=False)
+            self.register_buffer("b" + name, (dt / (1 - dt * A / 2)).to(torch.complex64), persistent=False)
         self.channels = cfg["perception"]["periphery"]["token_dim"]
-        self.dim = 2 * self.channels * r["modes"]
+        self.fovea = cfg["perception"]["fovea"]["token_dim"] if r.get("fovea_modes") else 0   # the canvas's channels
+        self.dim = self.size(cfg)
+
+    @staticmethod
+    def size(cfg, coarse=False) -> int:
+        """Features per cell: the periphery group's, plus the fovea group's unless `coarse`."""
+        r, pc = cfg["record"], cfg["perception"]
+        return 2 * (pc["periphery"]["token_dim"] * r["modes"] + (0 if coarse else pc["fovea"]["token_dim"] * r.get("fovea_modes", 0)))
 
     def zero(self, batch: int, device=None) -> Tensor:
         return torch.zeros(batch, N, self.dim, device=device or self.a.device)
 
+    def input(self, p: Tensor, g: Tensor | None = None, fix: Tensor | None = None) -> Tensor:
+        """The record's input per cell: the periphery tokens p [.., 81, C]; with the fovea group, the glimpse tokens g
+        [.., 9, Cg] placed at their fixation's window beside them (zero elsewhere) -> [.., 81, C + Cg]."""
+        if not self.fovea:
+            return p
+        assert g is not None and fix is not None, "a record with the fovea group reads the glimpse and its fixation"
+        cells = window(fix)
+        canvas = g.new_zeros(*g.shape[:-2], N, g.shape[-1]).scatter(-2, cells[..., None].expand_as(g), g)
+        return torch.cat([p, canvas.to(p.dtype)], -1)
+
     @torch.no_grad()
     def scan(self, p: Tensor, first: Tensor, state: Tensor):
-        """p [B, L, 81, C] tokens, first [B, L] episode starts, state [B, 81, dim] after the frame before frame 0 ->
-        (the record through the previous frame, for every frame: the denoiser's input; the state after every frame:
-        Mamba's input, the last one carried), both [B, L, 81, dim] fp32."""
-        h = self.dim // 2
-        s = torch.complex(state[..., :h], state[..., h:]).unflatten(-1, (self.channels, -1))
-        feat = lambda z: torch.cat([z.real.flatten(-2), z.imag.flatten(-2)], -1)
+        """p [B, L, 81, C (+ Cg)] the record's input (`input`), first [B, L] episode starts, state [B, 81, dim] after the
+        frame before frame 0 -> (the record through the previous frame, for every frame: the denoiser's input; the state
+        after every frame: Mamba's input, the last one carried), both [B, L, 81, dim] fp32."""
+        C, hp = self.channels, self.channels * len(self.a)
+        assert p.shape[-1] == C + self.fovea, "the record's input is Record.input's"
+        part = lambda z, h, c: torch.complex(z[..., :h], z[..., h:2 * h]).unflatten(-1, (c, -1))
+        s = [part(state[..., :2 * hp], hp, C)] + ([part(state[..., 2 * hp:], self.fovea * len(self.a_f), self.fovea)] if self.fovea else [])
+        ab = [(self.a, self.b, slice(0, C)), (self.a_f, self.b_f, slice(C, None))][:len(s)]
+        feat = lambda zs: torch.cat([torch.cat([z.real.flatten(-2), z.imag.flatten(-2)], -1) for z in zs], -1)
         inp, st = [], []
         for i in range(p.shape[1]):
-            s = torch.where(first[:, i, None, None, None], torch.zeros_like(s), s)
+            s = [torch.where(first[:, i, None, None, None], torch.zeros_like(z), z) for z in s]
             inp.append(feat(s))
-            s = self.a * s + self.b * p[:, i].float()[..., None]
+            x = p[:, i].float()
+            s = [a * z + b * x[..., c, None] for z, (a, b, c) in zip(s, ab)]
             st.append(feat(s))
         return torch.stack(inp, 1), torch.stack(st, 1)
 

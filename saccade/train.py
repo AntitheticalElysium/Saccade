@@ -149,7 +149,8 @@ def p1_losses(model: M.M0, chunk: dict, carry, cache, targets, cfg, bootstrap=No
             Pp = model.perception(t["frames"][:, :P], fix[:, :P])
         rin = rst = new_record = None
         if model.record is not None:
-            rin, rst = model.record.scan(torch.cat([Pp.p, Pc.p.detach()], 1), first, record)
+            rin, rst = model.record.scan(torch.cat([model.record.input(Pp.p, Pp.g, Pp.fix),       # P1.6: with the glimpse
+                                                    model.record.input(Pc.p, Pc.g, Pc.fix).detach()], 1), first, record)
             new_record, rst = rst[:, L - P - 1], rst[:, P:]              # carried; Mamba reads the state after each new frame
         emb = model.belief.percept_embed(Pc, rst)
         x = model.belief.tokens(emb, t["reward"][:, P:], t["terminated"][:, P:], t["action"][:, P:])
@@ -309,11 +310,20 @@ def _monitor(model: M.M0, cfg, episodes, n_windows=None) -> dict:
                 model.perception(c["frames"][:, a:a + 512], c["fixation"][:, a:a + 512]).parts()
                 for a in range(0, ep.T + 1, 512)])), c["fixation"])
             toks.append(Pe.p[0, ::8].reshape(-1, Pe.p.shape[-1]).float())
-            rin = rst = None                                             # P1.5: the spatial history from the episode's start
-            if model.record is not None:
+            rin = None                                                   # P1.5: the spatial history from the episode's start,
+            if model.record is None:                                     # scanned in 256-frame pieces (P1.6's 2,048-dim record
+                emb = model.belief.percept_embed(Pe)                     # over a whole long episode exceeded 6 GB); the
+            else:                                                        # denoiser's read kept for the windows' frames only
                 start = torch.zeros(Pe.p.shape[:2], dtype=torch.bool, device=dev); start[:, 0] = True
-                rin, rst = model.record.scan(Pe.p, start, model.record.zero(1, dev))
-            x = model.belief.tokens(model.belief.percept_embed(Pe, rst), c["reward"], c["terminated"], c["action"])
+                xr, state, embs, rin = model.record.input(Pe.p, Pe.g, Pe.fix), model.record.zero(1, dev), [], {}
+                need = {u for t in (picks[ep_of == i] - off[i] + 1).tolist() for u in range(max(0, t - P), t + 1)}
+                for a in range(0, ep.T + 1, 256):
+                    ri, rs = model.record.scan(xr[:, a:a + 256], start[:, a:a + 256], state)
+                    embs.append(model.belief.percept_embed(M.Percept(*(z[:, a:a + 256] for z in Pe.parts()), Pe.fix[:, a:a + 256]), rs))
+                    rin.update({u: ri[:, u - a].clone() for u in need if a <= u < a + 256})   # copies: a view keeps its chunk (Codex)
+                    state = rs[:, -1]
+                emb = torch.cat(embs, 1)
+            x = model.belief.tokens(emb, c["reward"], c["terminated"], c["action"])
             y, _ = model.belief(x, model.belief.initial(1, dev))
             b_pred = torch.cat([torch.zeros_like(y[:, :1]), y[:, 1::2][:, :-1]], 1)
             for t in (picks[ep_of == i] - off[i] + 1).tolist():                     # target frame t >= 1
@@ -327,7 +337,8 @@ def _monitor(model: M.M0, cfg, episodes, n_windows=None) -> dict:
                 sg[:, -1] = levels
                 lv = [(sg, torch.full_like(sg, k.bit_length() - 1))] * 2
                 mem = model.belief.memory(rep(b_pred))
-                l = M.shortcut_loss(model.denoiser, x0, rep(c["prev_action"]), mem if rin is None else (mem, rep(rin)),
+                rw = None if rin is None else torch.stack([rin[u] for u in range(sl.start, sl.stop)], 1).expand(len(levels), -1, -1, -1)
+                l = M.shortcut_loss(model.denoiser, x0, rep(c["prev_action"]), mem if rin is None else (mem, rw),
                                     rep(c["fixation"]), rep(c["episode"]), rep(c["valid"]), e["shortcut"],
                                     torch.zeros(len(levels), dtype=torch.bool, device=dev), False, lv, noise)
                 losses.append(l[:, -1].float().cpu())
@@ -375,7 +386,19 @@ def p1(cfg, world_seed, out_dir: Path, updates=None, steps=None, n_episodes=None
         controller.load_state(ck["fixation_controller"])
         print(f"resumed at update {st['update']}, frames {st['frames']}", flush=True)
     total, every = cfg["p1"]["frames"], cfg["p1"]["frames"] * cfg["p1"]["checkpoint_every_fraction"]
+    done = {r["checkpoint"] for r in map(json.loads, (out_dir / "log.jsonl").read_text().splitlines()) if "monitor" in r} \
+        if (out_dir / "log.jsonl").exists() else set()
     log = open(out_dir / "log.jsonl", "a")
+    for k in [k for k in range(1, st["next_ckpt"]) if k not in done]:  # a monitor that failed after its checkpoint was
+        ck_k = torch.load(out_dir / f"ckpt_{k:02d}.pt", weights_only=False, map_location="cpu")   # saved (Codex 11-20):
+        keep = {n: v.detach().cpu().clone() for n, v in model.state_dict().items()}   # backfilled from that checkpoint
+        model.load_state_dict(ck_k["model"])
+        mon = monitor(model, cfg, split["monitor"])
+        model.load_state_dict(keep)
+        log.write(json.dumps({"update": ck_k["state"]["update"], "frames": ck_k["state"]["frames"], "checkpoint": k,
+                              "monitor": mon, "encoder_grad_norms": None, "backfilled": True}) + "\n"), log.flush()
+        print("monitor (backfilled)", k, json.dumps(mon), flush=True)
+        del ck_k, keep
     t0, u0 = time.time(), st["update"]
     while st["frames"] < total and (updates is None or st["update"] < updates):
         S = steps or (d["chunk_steps"][0] if st["frames"] < total / 2 else d["chunk_steps"][1])
@@ -430,6 +453,11 @@ def p1(cfg, world_seed, out_dir: Path, updates=None, steps=None, n_episodes=None
             print(json.dumps(rec), flush=True)
             t0, u0 = time.time(), st["update"]
         if checkpoints and st["frames"] >= st["next_ckpt"] * every:
+            if st["next_ckpt"] in (cfg["fixation"].get("world_eye") or {}).get("refresh_after", ()):   # P1.6's world-eye
+                tf = time.time()
+                controller.refresh(eps, offsets, st["next_ckpt"])
+                log.write(json.dumps({"update": st["update"], "world_eye_refresh": st["next_ckpt"], "seconds": time.time() - tf}) + "\n")
+                log.flush(); t0, u0 = time.time(), st["update"]
             ck = {"model": model.state_dict(), "opt": opt.state_dict(), "streams": streams.state(), "carry": carry,
                   "cache": cache, "record": record, "state": dict(st, next_ckpt=st["next_ckpt"] + 1), "cfg": cfg, "world_seed": world_seed,
                   "provenance": provenance,

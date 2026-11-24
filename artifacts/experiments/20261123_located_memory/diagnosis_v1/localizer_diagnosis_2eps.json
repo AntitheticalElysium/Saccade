@@ -1,0 +1,52 @@
+{
+ "moved": {
+  "n": 461,
+  "prior_ok": 0.7158351409978309,
+  "posterior_ok": 0.7006507592190889,
+  "match_alone_ok": 0.7136659436008677,
+  "match_wrong_choice_is_stay": 0.7878787878787878,
+  "match_wrong_more_overlap": 0.6136363636363636,
+  "match_wrong_overlap_true_vs_choice": [
+   51.93939393939394,
+   54.68939393939394
+  ],
+  "match_wrong_true_wins_on_common_cells": 0.15151515151515152,
+  "texture_right_vs_wrong": [
+   3.9283179758529894,
+   3.402902789188154
+  ],
+  "dark_match_alone_ok": 0.4484536082474227,
+  "posterior_choice_counts": {
+   "3": 72,
+   "1": 94,
+   "7": 79,
+   "5": 78,
+   "4": 133,
+   "-1": 5
+  },
+  "prior_mass_on_truth": 0.5963406844616114
+ },
+ "blocked": {
+  "n": 80,
+  "prior_ok": 0.9,
+  "posterior_ok": 0.9875,
+  "match_alone_ok": 0.7,
+  "match_wrong_choice_is_stay": 0.0,
+  "match_wrong_more_overlap": 0.0,
+  "match_wrong_overlap_true_vs_choice": [
+   35.083333333333336,
+   35.083333333333336
+  ],
+  "match_wrong_true_wins_on_common_cells": 0.08333333333333333,
+  "texture_right_vs_wrong": [
+   3.1528475263289044,
+   1.9843874822060268
+  ],
+  "dark_match_alone_ok": 0.5384615384615384,
+  "posterior_choice_counts": {
+   "4": 79,
+   "-1": 1
+  },
+  "prior_mass_on_truth": 0.8314672408625483
+ }
+}

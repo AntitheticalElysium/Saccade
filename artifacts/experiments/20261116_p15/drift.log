@@ -1,0 +1,4 @@
+/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/.venv/lib/python3.12/site-packages/mamba_ssm/utils/determinism.py:73: UserWarning: Deterministic mode: set TRITON_CACHE_AUTOTUNING=1 for cached autotuning.
+  warnings.warn(msg)
+F6.1 {"drift_into_2_to_10": [0.26992, 0.18075, 0.07881, 0.06976, 0.03077, 0.01178, 0.00644, 0.00945, 0.00411], "distance_to_final_1_to_10": [0.6717, 0.33578, 0.18311, 0.10324, 0.04798, 0.02801, 0.02107, 0.01389, 0.00411, 0.0], "early_2_4": 0.17649, "late_8_10": 0.00667, "late_over_early": 0.03779, "token_variance_ckpt10": 0.25995}
+P1.5 {"drift_into_2_to_10": [0.34819, 0.16416, 0.04574, 0.01787, 0.00374, 0.00344, 0.00197, 0.00082, 0.00041], "distance_to_final_1_to_10": [1.11286, 0.55379, 0.21174, 0.07655, 0.03254, 0.01776, 0.00681, 0.00204, 0.00041, 0.0], "early_2_4": 0.18603, "late_8_10": 0.00107, "late_over_early": 0.00573, "token_variance_ckpt10": 0.36087}

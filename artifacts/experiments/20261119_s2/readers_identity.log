@@ -1,0 +1,28 @@
+/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/.venv/lib/python3.12/site-packages/mamba_ssm/utils/determinism.py:73: UserWarning: Deterministic mode: set TRITON_CACHE_AUTOTUNING=1 for cached autotuning.
+  warnings.warn(msg)
+encoded 0/2
+free batch 1/3 5s
+free batch 2/3 7s
+free batch 3/3 11s
+record_real batch 1/3 2s
+record_real batch 2/3 4s
+record_real batch 3/3 7s
+encoded 0/2
+free batch 1/3 2s
+free batch 2/3 4s
+free batch 3/3 7s
+record_real batch 1/3 2s
+record_real batch 2/3 4s
+record_real batch 3/3 7s
+dread_real batch 1/3 2s
+dread_real batch 2/3 4s
+dread_real batch 3/3 7s
+mread_real batch 1/3 2s
+mread_real batch 2/3 4s
+mread_real batch 3/3 7s
+free_m_grid equal
+free_m_done equal
+record_real_m_grid equal
+record_real_m_done equal
+dread_real first frame equal to free: True | differs from free: True | differs from record_real: True
+mread_real first frame equal to free: True | differs from free: True | differs from record_real: True

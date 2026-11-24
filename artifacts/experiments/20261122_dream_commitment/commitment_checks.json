@@ -1,0 +1,825 @@
+{
+ "checkpoint": "/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/artifacts/experiments/20261116_p15/run/ckpt_10.pt",
+ "train_episodes": [
+  1,
+  3,
+  8,
+  10,
+  11,
+  13,
+  14,
+  19,
+  20,
+  22,
+  26,
+  28,
+  30,
+  33,
+  36,
+  37,
+  38,
+  47,
+  50,
+  55,
+  58,
+  59,
+  61,
+  65,
+  67,
+  69,
+  71,
+  72,
+  73,
+  76,
+  81,
+  87,
+  89,
+  91,
+  98,
+  104,
+  107,
+  109,
+  112,
+  114,
+  115,
+  122,
+  127,
+  129,
+  134,
+  137,
+  140,
+  142,
+  150,
+  151,
+  152,
+  154,
+  159,
+  163,
+  167,
+  169,
+  170,
+  171,
+  183,
+  185,
+  189,
+  200,
+  206,
+  208,
+  209,
+  211,
+  212,
+  216,
+  217,
+  227,
+  228,
+  233,
+  235,
+  242,
+  250,
+  253,
+  260,
+  263,
+  264,
+  266,
+  270,
+  272,
+  273,
+  277,
+  279,
+  281,
+  284,
+  289,
+  291,
+  294,
+  296,
+  298,
+  304,
+  306,
+  307,
+  308,
+  312,
+  315,
+  319,
+  322,
+  327,
+  330,
+  338,
+  339,
+  340,
+  343,
+  344,
+  345,
+  346,
+  350,
+  351,
+  352,
+  355,
+  356,
+  361,
+  362,
+  364,
+  366,
+  368,
+  371,
+  373,
+  376,
+  377,
+  380,
+  386,
+  387,
+  396,
+  397
+ ],
+ "dev_episodes": [
+  8,
+  9,
+  10,
+  12,
+  28,
+  29,
+  30,
+  37,
+  48,
+  51,
+  52,
+  53,
+  56,
+  62,
+  67,
+  76,
+  78,
+  80,
+  94,
+  105,
+  112,
+  119,
+  120,
+  135,
+  145,
+  151,
+  153,
+  159,
+  161,
+  163,
+  166,
+  182,
+  189,
+  198,
+  199,
+  201,
+  208,
+  210,
+  221,
+  231,
+  238,
+  241,
+  243,
+  245,
+  247,
+  248,
+  252,
+  256,
+  257,
+  261,
+  265,
+  277,
+  286,
+  288,
+  302,
+  305,
+  326,
+  338,
+  358,
+  364,
+  366,
+  371,
+  376,
+  378,
+  388,
+  408,
+  409,
+  410,
+  413,
+  430,
+  444,
+  446,
+  448,
+  456,
+  459,
+  460,
+  461,
+  484,
+  490,
+  496,
+  502,
+  507,
+  512,
+  514,
+  529,
+  530,
+  551,
+  553,
+  558,
+  565,
+  578,
+  594,
+  596,
+  598,
+  628,
+  637,
+  638,
+  643,
+  654,
+  655,
+  661,
+  685,
+  688,
+  696,
+  711,
+  717,
+  721,
+  723,
+  725,
+  726,
+  733,
+  738,
+  740,
+  749,
+  756,
+  759,
+  769,
+  779,
+  781,
+  784,
+  788,
+  792,
+  795,
+  796,
+  799,
+  801,
+  802,
+  808,
+  812,
+  814,
+  815,
+  819,
+  824,
+  825,
+  828,
+  832,
+  833,
+  869,
+  872,
+  883,
+  884,
+  886,
+  890,
+  892,
+  896,
+  904,
+  907,
+  908,
+  936,
+  941,
+  951,
+  962,
+  984,
+  985,
+  995,
+  998,
+  1002,
+  1003,
+  1004,
+  1007
+ ],
+ "look": [
+  7,
+  1
+ ],
+ "draws": 4,
+ "check1": {
+  "verification": {
+   "before_crop": {
+    "positive_reward": {
+     "positives": 1564,
+     "observed_rate": 0.036410196717495055,
+     "predicted_rate": 0.035656474874301965,
+     "average_precision": 0.9749288249482448,
+     "brier": 0.004569819309438361,
+     "log_loss": 0.025834822409813434
+    },
+    "negative_reward": {
+     "positives": 923,
+     "observed_rate": 0.021487603305785124,
+     "predicted_rate": 0.02145087753323982,
+     "average_precision": 0.9664848139520562,
+     "brier": 0.0025638967405856314,
+     "log_loss": 0.014163583141504784
+    },
+    "termination": {
+     "positives": 160,
+     "observed_rate": 0.003724828308695146,
+     "predicted_rate": 0.003710707041334362,
+     "average_precision": 0.9999228395061728,
+     "brier": 2.7634385998584157e-05,
+     "log_loss": 0.00011328396433419126
+    }
+   },
+   "after_crop": {
+    "positive_reward": {
+     "positives": 1564,
+     "observed_rate": 0.036410196717495055,
+     "predicted_rate": 0.03525259371304557,
+     "average_precision": 0.9743350950476614,
+     "brier": 0.004892993584193346,
+     "log_loss": 0.026999887176301713
+    },
+    "negative_reward": {
+     "positives": 923,
+     "observed_rate": 0.021487603305785124,
+     "predicted_rate": 0.020203251947225134,
+     "average_precision": 0.9608799920750581,
+     "brier": 0.002960679134240224,
+     "log_loss": 0.017315094150361404
+    },
+    "termination": {
+     "positives": 160,
+     "observed_rate": 0.003724828308695146,
+     "predicted_rate": 0.003703527165183051,
+     "average_precision": 0.9999611801242235,
+     "brier": 2.2405094691518606e-05,
+     "log_loss": 9.392915371793111e-05
+    }
+   },
+   "codex_before_crop_ap": {
+    "positive_reward": 0.9749,
+    "negative_reward": 0.9665,
+    "termination": 0.9999
+   }
+  },
+  "calibration_before_crop": {
+   "positive_reward": [
+    {
+     "bin": [
+      0,
+      0.01
+     ],
+     "n": 41191,
+     "predicted": 2.3313574274652638e-05,
+     "observed": 0.0014080745793984123
+    },
+    {
+     "bin": [
+      0.01,
+      0.05
+     ],
+     "n": 102,
+     "predicted": 0.02570490725338459,
+     "observed": 0.20588235294117646
+    },
+    {
+     "bin": [
+      0.05,
+      0.2
+     ],
+     "n": 71,
+     "predicted": 0.10187266767024994,
+     "observed": 0.4084507042253521
+    },
+    {
+     "bin": [
+      0.2,
+      0.5
+     ],
+     "n": 60,
+     "predicted": 0.32133060693740845,
+     "observed": 0.36666666666666664
+    },
+    {
+     "bin": [
+      0.5,
+      0.8
+     ],
+     "n": 52,
+     "predicted": 0.6640713214874268,
+     "observed": 0.5576923076923077
+    },
+    {
+     "bin": [
+      0.8,
+      0.95
+     ],
+     "n": 87,
+     "predicted": 0.8926454782485962,
+     "observed": 0.7011494252873564
+    },
+    {
+     "bin": [
+      0.95,
+      0.99
+     ],
+     "n": 82,
+     "predicted": 0.9737135767936707,
+     "observed": 0.7073170731707317
+    },
+    {
+     "bin": [
+      0.99,
+      1.0
+     ],
+     "n": 1310,
+     "predicted": 0.99961256980896,
+     "observed": 0.981679389312977
+    }
+   ],
+   "negative_reward": [
+    {
+     "bin": [
+      0,
+      0.01
+     ],
+     "n": 41739,
+     "predicted": 5.518256512004882e-05,
+     "observed": 0.0006708354296940511
+    },
+    {
+     "bin": [
+      0.01,
+      0.05
+     ],
+     "n": 158,
+     "predicted": 0.02328677847981453,
+     "observed": 0.08227848101265822
+    },
+    {
+     "bin": [
+      0.05,
+      0.2
+     ],
+     "n": 89,
+     "predicted": 0.101009301841259,
+     "observed": 0.16853932584269662
+    },
+    {
+     "bin": [
+      0.2,
+      0.5
+     ],
+     "n": 63,
+     "predicted": 0.3545122444629669,
+     "observed": 0.30158730158730157
+    },
+    {
+     "bin": [
+      0.5,
+      0.8
+     ],
+     "n": 39,
+     "predicted": 0.6527301669120789,
+     "observed": 0.46153846153846156
+    },
+    {
+     "bin": [
+      0.8,
+      0.95
+     ],
+     "n": 58,
+     "predicted": 0.887451708316803,
+     "observed": 0.7068965517241379
+    },
+    {
+     "bin": [
+      0.95,
+      0.99
+     ],
+     "n": 57,
+     "predicted": 0.9743661880493164,
+     "observed": 0.8947368421052632
+    },
+    {
+     "bin": [
+      0.99,
+      1.0
+     ],
+     "n": 752,
+     "predicted": 0.999532163143158,
+     "observed": 0.9813829787234043
+    }
+   ],
+   "termination": [
+    {
+     "bin": [
+      0,
+      0.01
+     ],
+     "n": 42779,
+     "predicted": 7.344140158238588e-06,
+     "observed": 0.0
+    },
+    {
+     "bin": [
+      0.01,
+      0.05
+     ],
+     "n": 10,
+     "predicted": 0.017856508493423462,
+     "observed": 0.0
+    },
+    {
+     "bin": [
+      0.05,
+      0.2
+     ],
+     "n": 4,
+     "predicted": 0.07882589101791382,
+     "observed": 0.0
+    },
+    {
+     "bin": [
+      0.2,
+      0.5
+     ],
+     "n": 2,
+     "predicted": 0.235781729221344,
+     "observed": 0.5
+    },
+    {
+     "bin": [
+      0.5,
+      0.8
+     ],
+     "n": 3,
+     "predicted": 0.6409990191459656,
+     "observed": 0.6666666666666666
+    },
+    {
+     "bin": [
+      0.8,
+      0.95
+     ],
+     "n": 5,
+     "predicted": 0.9059058427810669,
+     "observed": 1.0
+    },
+    {
+     "bin": [
+      0.95,
+      0.99
+     ],
+     "n": 11,
+     "predicted": 0.9825354218482971,
+     "observed": 1.0
+    },
+    {
+     "bin": [
+      0.99,
+      1.0
+     ],
+     "n": 141,
+     "predicted": 0.9989602565765381,
+     "observed": 1.0
+    }
+   ]
+  },
+  "ideal": {
+   "positive_reward": {
+    "all_full_context": {
+     "before_crop": {
+      "n": 41835,
+      "expected_contradiction": 0.0020827313465548174,
+      "share_of_committed_contradicted": 0.03107418259569752,
+      "committed_rate": 0.033512246704168955
+     },
+     "after_crop": {
+      "n": 41835,
+      "expected_contradiction": 0.002160667159146651,
+      "share_of_committed_contradicted": 0.03263028786476088,
+      "committed_rate": 0.03310830673792593
+     }
+    },
+    "recorded_event": {
+     "before_crop": {
+      "n": 1435,
+      "expected_contradiction": 0.0301549143715536,
+      "share_of_committed_contradicted": 0.01666005809144416,
+      "committed_rate": 0.9050062792710123
+     },
+     "after_crop": {
+      "n": 1435,
+      "expected_contradiction": 0.03212931280220772,
+      "share_of_committed_contradicted": 0.017976235466803978,
+      "committed_rate": 0.8936607684500929
+     }
+    }
+   },
+   "negative_reward": {
+    "all_full_context": {
+     "before_crop": {
+      "n": 41835,
+      "expected_contradiction": 0.0020893797938044615,
+      "share_of_committed_contradicted": 0.04743166795462374,
+      "committed_rate": 0.022025156228991358
+     },
+     "after_crop": {
+      "n": 41835,
+      "expected_contradiction": 0.0018265287152074532,
+      "share_of_committed_contradicted": 0.04402519511024678,
+      "committed_rate": 0.02074412970383784
+     }
+    },
+    "recorded_event": {
+     "before_crop": {
+      "n": 923,
+      "expected_contradiction": 0.034189210807391374,
+      "share_of_committed_contradicted": 0.018666100739113806,
+      "committed_rate": 0.9158101974599795
+     },
+     "after_crop": {
+      "n": 923,
+      "expected_contradiction": 0.04282267663838565,
+      "share_of_committed_contradicted": 0.024316572255532232,
+      "committed_rate": 0.8805245284652141
+     }
+    }
+   },
+   "termination": {
+    "all_full_context": {
+     "before_crop": {
+      "n": 41835,
+      "expected_contradiction": 0.000122421445183492,
+      "share_of_committed_contradicted": 0.016065615857970606,
+      "committed_rate": 0.0038100452004382786
+     },
+     "after_crop": {
+      "n": 41835,
+      "expected_contradiction": 0.00011167147250354631,
+      "share_of_committed_contradicted": 0.014683282788295162,
+      "committed_rate": 0.0038026739017982297
+     }
+    },
+    "recorded_event": {
+     "before_crop": {
+      "n": 160,
+      "expected_contradiction": 0.016865734689343645,
+      "share_of_committed_contradicted": 0.008549204510068197,
+      "committed_rate": 0.9863920479081572
+     },
+     "after_crop": {
+      "n": 160,
+      "expected_contradiction": 0.0175350455574124,
+      "share_of_committed_contradicted": 0.008884504949492684,
+      "committed_rate": 0.98683301191777
+     }
+    }
+   }
+  }
+ },
+ "check2": {
+  "record_state_max_abs_diff": [
+   6.251782178878784e-05,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "instrument": {
+   "fine_reader_exact_on_real": 1.0,
+   "coarse_reader_exact_on_real": 0.9382448537378115,
+   "fine_real_drop_vs_label": 0.0,
+   "coarse_real_drop_vs_label": 0.04929577464788732
+  },
+  "recorded_drop": {
+   "starts": 923,
+   "draws": 3692,
+   "committed_p": {
+    "dream_mean": 0.6534972190856934,
+    "real_mean": 0.9158101677894592,
+    "recorded_rate": 1.0
+   },
+   "ideal_same_starts": {
+    "n": 923,
+    "expected_contradiction": 0.034189210807391374,
+    "share_of_committed_contradicted": 0.018666100739113806,
+    "committed_rate": 0.9158101974599795
+   },
+   "fine_vs_committed": {
+    "expected_disagreement": 0.03580835656664498,
+    "share_of_committed_contradicted": 0.031482452934380095,
+    "share_of_shown_drops_uncommitted": 0.023504542198106278,
+    "shown_drop_rate": 0.6481581798483207
+   },
+   "coarse_vs_committed": {
+    "expected_disagreement": 0.10389270488493613,
+    "share_of_committed_contradicted": 0.13890668664911116,
+    "share_of_shown_drops_uncommitted": 0.022779904268877597,
+    "shown_drop_rate": 0.5758396533044421
+   },
+   "coarse_fine_disagreement": 0.07394366197183098,
+   "native_crop_head_vs_fine": {
+    "expected_disagreement": 0.008671554484910212,
+    "share_of_committed_contradicted": 0.00909306827773032,
+    "share_of_shown_drops_uncommitted": 0.004241170940564702,
+    "shown_drop_rate": 0.6481581798483207
+   },
+   "after_crop_probe_vs_fine": {
+    "expected_disagreement": 0.043239052196687625,
+    "share_of_committed_contradicted": 0.029070984805024278,
+    "share_of_shown_drops_uncommitted": 0.037904140356043683,
+    "shown_drop_rate": 0.6481581798483207
+   },
+   "real_reference": {
+    "fine_real_vs_label": 0.0,
+    "coarse_real_vs_label": 0.09859154929577464
+   }
+  },
+  "no_recorded_drop": {
+   "starts": 923,
+   "draws": 3692,
+   "committed_p": {
+    "dream_mean": 0.006690561771392822,
+    "real_mean": 0.0018290517618879676,
+    "recorded_rate": 0.0
+   },
+   "ideal_same_starts": {
+    "n": 923,
+    "expected_contradiction": 0.0010460315365348899,
+    "share_of_committed_contradicted": 0.28594914959309065,
+    "committed_rate": 0.0018290516653457552
+   },
+   "fine_vs_committed": {
+    "expected_disagreement": 0.005334267019199317,
+    "share_of_committed_contradicted": 0.4330834329430016,
+    "share_of_shown_drops_uncommitted": 0.39114264152238376,
+    "shown_drop_rate": 0.006229685807150596
+   },
+   "coarse_vs_committed": {
+    "expected_disagreement": 0.006142230625641137,
+    "share_of_committed_contradicted": 0.43273935810929787,
+    "share_of_shown_drops_uncommitted": 0.461068522019478,
+    "shown_drop_rate": 0.007042253521126761
+   },
+   "coarse_fine_disagreement": 0.0008125677139761647,
+   "native_crop_head_vs_fine": {
+    "expected_disagreement": 0.0015543157777538517,
+    "share_of_committed_contradicted": 0.109774758258121,
+    "share_of_shown_drops_uncommitted": 0.14393962483198108,
+    "shown_drop_rate": 0.006229685807150596
+   },
+   "after_crop_probe_vs_fine": {
+    "expected_disagreement": 0.004692103162712306,
+    "share_of_committed_contradicted": 0.354642151997962,
+    "share_of_shown_drops_uncommitted": 0.45209603921252184,
+    "shown_drop_rate": 0.006229685807150596
+   },
+   "real_reference": {
+    "fine_real_vs_label": 0.0,
+    "coarse_real_vs_label": 0.0
+   }
+  },
+  "all": {
+   "starts": 1846,
+   "draws": 7384,
+   "committed_p": {
+    "dream_mean": 0.3300938904285431,
+    "real_mean": 0.4588196277618408,
+    "recorded_rate": 0.5
+   },
+   "ideal_same_starts": {
+    "n": 1846,
+    "expected_contradiction": 0.01761762117196313,
+    "share_of_committed_contradicted": 0.01919885313183354,
+    "committed_rate": 0.4588196245626627
+   },
+   "fine_vs_committed": {
+    "expected_disagreement": 0.02057131179292215,
+    "share_of_committed_contradicted": 0.035552410114211896,
+    "share_of_shown_drops_uncommitted": 0.027004408209885408,
+    "shown_drop_rate": 0.3271939328277356
+   },
+   "coarse_vs_committed": {
+    "expected_disagreement": 0.055017467755288624,
+    "share_of_committed_contradicted": 0.1418844841406732,
+    "share_of_shown_drops_uncommitted": 0.02807521284764879,
+    "shown_drop_rate": 0.2914409534127844
+   },
+   "coarse_fine_disagreement": 0.03737811484290358,
+   "native_crop_head_vs_fine": {
+    "expected_disagreement": 0.005112935131332031,
+    "share_of_committed_contradicted": 0.010010645603135571,
+    "share_of_shown_drops_uncommitted": 0.0055710817185045105,
+    "shown_drop_rate": 0.3271939328277356
+   },
+   "after_crop_probe_vs_fine": {
+    "expected_disagreement": 0.023965577679699965,
+    "share_of_committed_contradicted": 0.03173013169038496,
+    "share_of_shown_drops_uncommitted": 0.0418471923733032,
+    "shown_drop_rate": 0.3271939328277356
+   },
+   "real_reference": {
+    "fine_real_vs_label": 0.0,
+    "coarse_real_vs_label": 0.04929577464788732
+   }
+  },
+  "dream_ap_against_recorded": 0.9499291030853132,
+  "real_ap_same_draws": 0.9976505467107393
+ }
+}

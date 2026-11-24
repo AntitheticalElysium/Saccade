@@ -1,0 +1,78 @@
+{
+ "update": 2000,
+ "dream_motion_right": 0.5955078125,
+ "agreement": {
+  "empty/17-64/pose_right": {
+   "agree": 0.5630949475225775,
+   "cells": 4097
+  },
+  "empty/17-64/pose_wrong": {
+   "agree": 0.4894433781190019,
+   "cells": 3647
+  },
+  "empty/65+/pose_right": {
+   "agree": 0.5557056043214045,
+   "cells": 1481
+  },
+  "empty/65+/pose_wrong": {
+   "agree": 0.4841303427845959,
+   "cells": 2363
+  },
+  "empty/le16/pose_right": {
+   "agree": 0.6529530078624978,
+   "cells": 5469
+  },
+  "empty/le16/pose_wrong": {
+   "agree": 0.615328644191123,
+   "cells": 4123
+  },
+  "inferred/17-64/pose_right": {
+   "agree": 0.6643885770075665,
+   "cells": 4097
+  },
+  "inferred/17-64/pose_wrong": {
+   "agree": 0.6062517137373183,
+   "cells": 3647
+  },
+  "inferred/65+/pose_right": {
+   "agree": 0.638082376772451,
+   "cells": 1481
+  },
+  "inferred/65+/pose_wrong": {
+   "agree": 0.5577655522640711,
+   "cells": 2363
+  },
+  "inferred/le16/pose_right": {
+   "agree": 0.7560797220698482,
+   "cells": 5469
+  },
+  "inferred/le16/pose_wrong": {
+   "agree": 0.6844530681542567,
+   "cells": 4123
+  },
+  "oracle/17-64/pose_right": {
+   "agree": 0.6692701977056382,
+   "cells": 4097
+  },
+  "oracle/17-64/pose_wrong": {
+   "agree": 0.6142034548944337,
+   "cells": 3647
+  },
+  "oracle/65+/pose_right": {
+   "agree": 0.6488858879135719,
+   "cells": 1481
+  },
+  "oracle/65+/pose_wrong": {
+   "agree": 0.5679221328819297,
+   "cells": 2363
+  },
+  "oracle/le16/pose_right": {
+   "agree": 0.7507771073322362,
+   "cells": 5469
+  },
+  "oracle/le16/pose_wrong": {
+   "agree": 0.6956099927237448,
+   "cells": 4123
+  }
+ }
+}

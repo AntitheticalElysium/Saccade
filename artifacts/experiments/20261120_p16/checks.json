@@ -1,0 +1,162 @@
+{
+ "units": {
+  "record_dim": 2048,
+  "periphery_group_equals_test2": 0.0,
+  "fovea_zero_where_never_looked": true,
+  "terms_finite": true,
+  "encoder_norms": {
+   "reward_forecast_1": 0.0,
+   "reward_forecast_2": 0.0,
+   "reward_forecast_3": 0.0,
+   "reward_forecast_4": 0.0,
+   "reward_forecast_5": 0.0,
+   "reward_forecast_6": 0.0,
+   "reward_forecast_7": 0.0,
+   "reward_forecast_8": 0.0,
+   "reward_forecast": 0.0,
+   "cont_forecast": 0.0,
+   "gaze_forecast": 0.0,
+   "g1": 0.0023969667963683605,
+   "tsp": 0.01837782748043537,
+   "rec": 0.060457345098257065,
+   "reward": 0.0,
+   "cont": 0.0,
+   "noise": 0.0
+  },
+  "route_by_role_ok": true,
+  "fovea_columns_grad": {
+   "denoiser_read_g1": 0.007080993615090847,
+   "belief_in_g1": 7.24914061720483e-05,
+   "belief_in_reward": 0.01582450605928898
+  },
+  "record_state_shape": [
+   2,
+   81,
+   2048
+  ],
+  "adapter_window_vs_contiguous": 7.413947605527937e-05
+ },
+ "throughput": {
+  "steps_64": {
+   "sec_per_update": 2.1884510219097137,
+   "peak_gib": 3.6594982147216797,
+   "g1": 0.3088221848011017
+  },
+  "steps_256": {
+   "sec_per_update": 8.472019086281458,
+   "peak_gib": 3.5558266639709473,
+   "g1": 0.30869512259960175
+  },
+  "bootstrap_steps_64": {
+   "sec_per_update": 2.4382597307364144,
+   "peak_gib": 3.6594982147216797
+  },
+  "bootstrap_steps_256": {
+   "sec_per_update": 9.214990129073461,
+   "peak_gib": 4.074659824371338
+  },
+  "monitor_seconds": 100.02650427818298
+ },
+ "criteria": {
+  "periphery_group_exact": true,
+  "fovea_writes_only_where_looked": true,
+  "terms_finite": true,
+  "route_by_role_ok": true,
+  "fovea_columns_reached": true,
+  "adapters_match": true,
+  "peak_under_budget": true,
+  "projected_hours": 14.95297150513916,
+  "projected_hours_p15_same_estimate": 13.695700663245386,
+  "projected_hours_scaled_by_p15_ratio": 16.813726208044624,
+  "eye_fill_matches_window_forward": true,
+  "eye_segmentation_invariant": true,
+  "eye_refreshes_at_listed": true,
+  "eye_scores_with_cache": true,
+  "eye_resume_digest": true,
+  "eye_peak_under_budget": true,
+  "projected_hours_with_fills": 17.171558656476552,
+  "eye_time_within_19h": true,
+  "init_shared_bit_equal": true,
+  "init_widened_reads": true,
+  "init_outputs_equal_p15": true,
+  "resume_backfills_failed_monitor": true
+ },
+ "passed": true,
+ "eye": {
+  "episodes_T": [
+   311,
+   441,
+   1487
+  ],
+  "segmentation_rel": 0.0017709563253447413,
+  "fill_vs_window_forward_rel": 0.0017457391368225217,
+  "run_peak_gib_with_fills": 3.6595726013183594,
+  "refreshes_logged": [
+   1,
+   2
+  ],
+  "refresh_seconds_40_episodes": [
+   20.802303075790405,
+   20.787046670913696
+  ],
+  "latest_eye": "eye_cache_02.npy",
+  "trace_S_is_cache_argmax_after_refresh": 1.0,
+  "trace_S_is_cache_argmax_before_refresh": 0.028051181102362203,
+  "resumed_controller_has_eye": true,
+  "changed_cache_refused": true,
+  "fill": {
+   "frames": 21157,
+   "seconds": 24.205151319503784,
+   "ms_per_frame": 1.1440729460464047,
+   "peak_gib": 1.517533302307129,
+   "split_frames": 2439791,
+   "projected_hours_per_fill": 0.7753607991965288
+  }
+ },
+ "throughput_ab": {
+  "note": "same session, alternating, 40 updates at 64 steps, recipe(): the prepared P1.6 (d164dee4, git worktree) vs this code",
+  "prepared_d164dee4": [
+   2.2510824700196586,
+   2.24642542997996
+  ],
+  "this_code": [
+   2.2532379726568856,
+   2.254315276940664
+  ],
+  "morning_check_this_recipe_without_eye": 2.08,
+  "p15_run_mean": 2.284
+ },
+ "init": {
+  "same_names": true,
+  "shared_bit_equal": true,
+  "belief.record_in.0.weight": {
+   "periphery_columns_equal": true,
+   "fovea_columns_zero": true,
+   "fovea_columns": 1024
+  },
+  "denoiser.record_read.0.weight": {
+   "periphery_columns_equal": true,
+   "fovea_columns_zero": true,
+   "fovea_columns": 1024
+  },
+  "fovea_features_nonzero_in_p16": 0.9711831212043762,
+  "belief_rms_vs_p15": 0.0,
+  "belief_rms_scale": 0.9999997615814209,
+  "denoiser_read_rms_vs_p15": 2.4424409161838412e-08,
+  "denoiser_read_rms_scale": 0.06638605892658234
+ },
+ "resume": {
+  "first_run_failed": true,
+  "monitor_checkpoints": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "backfilled": [
+   1
+  ],
+  "selector": 4,
+  "backfill_equals_monitor_of_ckpt1": 0.0
+ }
+}

@@ -1,0 +1,44 @@
+{
+  "16": {
+    "recurrent_eye_graph": {
+      "median_wall_ms": 1.9584982082960778,
+      "median_stream_ms": 1.9559680620829265
+    },
+    "dynamic_sequence_max_abs_deltas": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "readout_params": 103089,
+    "peak_allocated_gib": 0.3604583740234375,
+    "peak_reserved_gib": 0.3984375
+  },
+  "32": {
+    "recurrent_eye_graph": {
+      "median_wall_ms": 2.765698041609236,
+      "median_stream_ms": 2.762709299723307
+    },
+    "dynamic_sequence_max_abs_deltas": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "readout_params": 103089,
+    "peak_allocated_gib": 0.1882176399230957,
+    "peak_reserved_gib": 0.3046875
+  },
+  "64": {
+    "recurrent_eye_graph": {
+      "median_wall_ms": 4.8634821666079615,
+      "median_stream_ms": 4.86024538675944
+    },
+    "dynamic_sequence_max_abs_deltas": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "readout_params": 103089,
+    "peak_allocated_gib": 0.2909708023071289,
+    "peak_reserved_gib": 0.4921875
+  }
+}

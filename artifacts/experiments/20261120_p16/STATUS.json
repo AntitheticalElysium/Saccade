@@ -1,0 +1,70 @@
+{
+  "phase": "complete",
+  "started_at": "2026-11-20T12:16:53.851354+00:00",
+  "source_pins_sha256": "cd83997e5da83178165693d21daeab17ba0cd570e7c7392bdb1adfed3402a04e",
+  "training_completed_at": "2026-11-21T04:52:00.590979+00:00",
+  "selection": {
+    "checkpoint": 10,
+    "monitor_loss": 0.0017708565574139357,
+    "three_increases_triggered": false,
+    "rule": "final unless any three successive strict increases; then global minimum, earliest tie",
+    "monitor_history": [
+      {
+        "checkpoint": 1,
+        "frames": 2560000,
+        "loss": 0.004568468779325485
+      },
+      {
+        "checkpoint": 2,
+        "frames": 5120000,
+        "loss": 0.003032107837498188
+      },
+      {
+        "checkpoint": 3,
+        "frames": 7680000,
+        "loss": 0.002416144823655486
+      },
+      {
+        "checkpoint": 4,
+        "frames": 10240000,
+        "loss": 0.0021978404838591814
+      },
+      {
+        "checkpoint": 5,
+        "frames": 12800000,
+        "loss": 0.0020423419773578644
+      },
+      {
+        "checkpoint": 6,
+        "frames": 15360000,
+        "loss": 0.0018567490624263883
+      },
+      {
+        "checkpoint": 7,
+        "frames": 17920000,
+        "loss": 0.0018435826059430838
+      },
+      {
+        "checkpoint": 8,
+        "frames": 20480000,
+        "loss": 0.0018188569229096174
+      },
+      {
+        "checkpoint": 9,
+        "frames": 23040000,
+        "loss": 0.001781621715053916
+      },
+      {
+        "checkpoint": 10,
+        "frames": 25600000,
+        "loss": 0.0017708565574139357
+      }
+    ],
+    "checkpoint_path": "/home/antithetical/EPITA/PERSO/DynamicHorizons-Mamba-JEPA/artifacts/experiments/20261120_p16/run/ckpt_10.pt",
+    "checkpoint_sha256": "07a5fe4c78650c38755a2fcb9018aa4834f14b2546c624fd8705d24edfa8b88b",
+    "selected_at": "2026-11-21T04:52:04.786949+00:00"
+  },
+  "evaluation_started_at": "2026-11-21T04:52:04.798758+00:00",
+  "evaluation_completed_at": "2026-11-21T10:10:25.779389+00:00",
+  "note": "evaluation completed by hand after the host froze in the worker's queue (PLAN run notes, 11-21); readings/STATUS.json all complete"
+}

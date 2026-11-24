@@ -1,0 +1,4 @@
+smoke_run/
+smoke_mem/
+run/
+*.pt

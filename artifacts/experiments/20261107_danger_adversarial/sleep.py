@@ -100,7 +100,7 @@ def run(smoke=False):
             with TR.autocast(dev,cfg):
                 pp=M.Percept(*(take(p).float() for p in ('p','g','v')),take('fix'))
                 act=take('action').clone();act[:,-1]=0
-                reads,_,last=S.history(model,pp.p)   # P1.5: the record from the episode start, carried with Mamba's
+                reads,_,last=S.history(model,pp.p,g=pp.g,fix=pp.fix)   # P1.5: the record from the episode start, carried with Mamba's
                 yy,cc=model.belief(model.belief.tokens(S.embed(model,pp,reads),take('reward'),take('terminated'),act),model.belief.initial(1,dev))
             err=float((yy[0,-2].float()-en['b'][t].to(dev).float()).square().mean().sqrt())
             assert err<.03,('corrected prefix sham',err)
@@ -128,7 +128,7 @@ def run(smoke=False):
                 p,g,v=tuple(t[:,0].float() for t in M.sample(model.denoiser,dims,action,S.cond(model.belief.memory(bp)[:,None],S.at(rs,np.s_[:,None])),fix[:,None],cache,cfg,gen))
                 ee=energy(torch.cat([p[:,66],v],-1))['y'].softmax(-1)
                 ss=sleep(torch.cat([p[:,31],v,p[:,:63].mean(1)],-1))['y'].softmax(-1)[:,1]
-                reads,_,rs_next=S.history(model,p,state=rs)
+                reads,_,rs_next=S.history(model,p,state=rs,g=g,fix=fix)
                 percept=M.Percept(p,g,v,fix);emb=S.embed(model,percept,reads)
                 feat=model.outcome.features(bp,emb).float();reward=model.outcome.sample_reward(feat,gen)
                 done=torch.rand(B,device=dev,generator=gen)>torch.sigmoid(model.outcome.cont_logit(feat,reward).float())

@@ -26,8 +26,10 @@
   - **The read learned to trust memory little.** A wrong entry's class is drawn 0.481 against 0.347 with no entry
     (+0.134; stage 1: +0.56; `identity_2000.json`). The swap's labels assume the true map, which this localizer
     doesn't give (Codex), so that figure is indicative only.
-  - The localizer's confidence was high on average (0.85) even though only 0.438 of its lookups were right. So the
-    confidence key couldn't tell the read when to trust an entry.
+  - On hard short-gap revisits, cells are right 0.395 with the retrieved entries against 0.346 with them removed (Codex,
+    from `eval_2000.json`). That is a small real gain.
+  - The localizer's mean confidence (0.85) and its lookup accuracy (0.438) describe different events. Whether the
+    confidence predicts which individual reads help was not measured (Codex, 11-24).
 - **Readings 3 and 4** were cut off by a machine restart at 11:50, during reading 3. They are rerunning on the same
   code and checkpoint (`inject_v5.log`, then `dream_v5.log`).
 

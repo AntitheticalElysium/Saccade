@@ -95,8 +95,21 @@ an outage the agent integrates its own predicted motion, as it does in dreams.
     displacement;
   - loop consistency: frames that the integrated motion says are at the same place get the same code (Codex).
 - **A cell's code:** c_k = g_t M(o_k). o_k is screen cell k's offset in motion units, from the camera model.
-- **The camera model (open; the user decides, 11-24).**
-  - **Proposed: learned from the agent's own data.**
+- **The camera model: a running calibration from the agent's own experience** (decided 11-24, the user's option 3,
+  with Codex's safeguard).
+  - **Each entry keeps the offset it was written with.** A later recalibration changes new writes, never where old
+    observations sit (Codex: otherwise lighting or scene content could move stored memories).
+  - **The fit, with no renderer layout anywhere:**
+    - reciprocal best matches between all 81 cells under each sensed displacement;
+    - a robust L1 fit of o_k - o_k' = δ over those links;
+    - cells in the consistent component show the world, and the rest have no world projection.
+    - Codex's independent rerun this way linked all 62 terrain slots and none of the 19 sprite and status slots,
+      admitted 4 inconsistent links, and recovered all 62 offsets exactly, up to a common origin.
+  - **It updates as experience accrues:** refitted every 50 episodes in stage A and every 100 updates in stage B. It
+    is held during the readings, with its versions logged.
+  - Its agreement with the renderer is scored, never used.
+  - In Classic the sensor never changes, so the calibration should converge and stay put. That it does is reported.
+  - **How it was derived (the 11-24 check):**
     - At stage A's start, each screen cell's offset o_k and a world-anchored weight a_k are estimated from token
       correspondences under sensed motion on TRAIN episodes. That is Pierce & Kuipers' (1997) problem of learning an
       uninterpreted sensor's geometry.
@@ -107,9 +120,8 @@ an outage the agent integrates its own predicted motion, as it does in dreams.
       - every map cell matched one move back (212 of 212 pairs, by day and in the dark);
       - the offset table recovered exactly;
       - all 18 sensor-fixed cells flagged. Blank cell 80 ties its blank neighbour 79, which doesn't shift either.
-  - **Alternative (Codex):** declare Classic's top-down projection as the sensor model, with the status rows marked as
-    having no projection. ORB-SLAM3 and DROID-SLAM take calibration as given; MASt3R-SLAM assumes only "a unique
-    camera centre".
+  - **Not chosen:** declaring Classic's projection (ORB-SLAM3 and DROID-SLAM take calibration as given), or learning
+    it once and freezing it (Codex's call). Both stay possible as references.
   - **Either way, there is no mask.** Every token is still written, kept in the source record, and read by the world
     and the belief. Tokens with no world projection carry no evidence of place, and get no same-place supervision
     (Codex: under the first plan, 34.0% of genuine first sightings found an earlier status-row token at their
@@ -145,18 +157,28 @@ an outage the agent integrates its own predicted motion, as it does in dreams.
   - Each match implies a code for the agent: the matched entry's code transported back by the current cell's offset,
     c_entry M(-o_k).
   - The consensus is the code most cells agree on: one mean-shift step from the best-supported candidate.
-- **Correction:** g_t ← g_path + γ (ĝ - g_path), TEM-t's form.
-  - The gate γ is learned. It sees the agreement (how many cells support ĝ, and how strongly), the distance from
-    g_path, the lighting, and whether the sense is present.
+- **Everything is done in displacement form** (amended, Codex: the earlier text mixed code-space interpolation with the
+  rotation representation).
+  - **What each frame keeps:** its path-integrated displacement x, the argument of its code: φ = Ω x mod 2π.
+  - **A proposal** is a displacement Δ = x̂ - x_path, where x̂ is the consensus place.
+  - **Disclosed plainly:** with commuting rotations, the code is a learned embedding of the integrated displacement,
+    the way grid-cell phases encode position. The agent keeps an odometry-like estimate in its own frame.
+  - **What is learned:** the similarity geometry (Ω), the camera model, the motion model, recognition and the gate.
+  - **Memory is read by code similarity,** never by an integer address.
+- **Correction:** x_t ← x_path + γ Δ, TEM-t's gated form, as a displacement.
+  - The gate γ is learned. It sees the agreement (how many cells support x̂, and how strongly), the second-best
+    place's support (lookalikes), |Δ|, the lighting, whether the sense is present, and the motion uncertainty since
+    the last anchor.
 - **Acceptance over frames.** A correction larger than the read's similarity width is applied only after 3
   consecutive frames support the same correction once their own motion is accounted for. ORB-SLAM3 verifies in three
   covisible keyframes, and FAB-MAP needs "two or three".
-- **Repair.**
-  - The frames since the last confident anchor are re-estimated by least squares over the trail:
-    Σ_τ w_τ ||g_τ - g_{τ-1} M(δ_τ)||² + λ ||g_t - ĝ||².
-    - g_anchor is fixed.
-    - The weight w_τ is high where δ_τ was sensed and low where it was predicted.
-  - So the correction is spread back over the uncertain steps.
+- **Repair.** The applied correction γΔ is spread over the frames since the last anchor (the last accepted correction,
+  or the trail's start).
+  - Each frame gets the share s_τ: the cumulative variance of the steps up to it, over the cumulative variance up to
+    t. A sensed step has variance near zero, a predicted one the motion model's variance.
+  - That is the closed-form least-squares solution for a chain with both ends fixed: the anchor, and the corrected
+    x_t.
+  - So the current code is exactly the current-only arm's, and only earlier frames move.
   - This is SLAM's back end on our codes: Cadena et al. describe it as "a nonlinear least squares problem" over
     factors, and ORB-SLAM's pose graph "distributes the loop closing error along the graph". With orthogonal M it is
     linear, a chain solvable in one pass.
@@ -166,8 +188,10 @@ an outage the agent integrates its own predicted motion, as it does in dreams.
     width.
   - From then on, it writes into a fresh trail with no link to the old one.
   - A recognition later joins the two, and the repair re-places the fresh trail (ORB-SLAM3's Atlas).
-- **Choice: the gate is trained on outages,** with the withheld sense's code as the target: the code error after
-  correction, with false corrections on lookalike returns penalised. The causal check is reading 3.
+- **Choice: the gate is trained on outages,** with the withheld sense's displacement as the target: a Huber loss on
+  the error of x_path + γΔ.
+  - It is trained in two rounds: proposals are collected without corrections, then with the first gate.
+  - The causal check is reading 3.
 
 **The world's read.**
 - Each drawn cell's token queries entries at its code before the frame, c_k = g_t M(o_k), with g_t predicted by the
@@ -208,7 +232,7 @@ Panel: stage 1's 120 DEV episodes and starts, 4 draws, S2's readers, episode-boo
 
 | Reading | What it measures | Bar | Competing explanation and its control |
 |---|---|---|---|
-| **1. Revisits, sense present** | Stage 1's class-matched revisit-minus-first gain in the surprising context, with the agent's codes | Within 0.10 of stage 1's +0.570 (2-16) and +0.569 (17-64) | More training, not memory: first sightings; the empty-memory swap |
+| **1. Revisits, sense present** | Stage 1's class-matched revisit-minus-first gain in the surprising context, with the agent's codes. Also, per read: whether the read's confidence predicts which reads help, above all when the correct candidate is absent (Codex) | Within 0.10 of stage 1's +0.570 (2-16) and +0.569 (17-64) | More training, not memory: first sightings; the empty-memory swap |
 | **2a. Codes, sense present** | Right entry among the read's 25 candidates on revisits | ≥ 0.95 | — (a component check) |
 | **2b. Recognition** | On drifted returns: the precision of accepted corrections (the code moves toward the truth) and recall within 16 steps. Missed returns are counted. Split by light change since the entry (< 0.02, 0.02-0.1, ≥ 0.1), by day and dark, and by gap | Precision ≥ 0.95 and recall ≥ 0.35 in every band with at least 30 returns. These are FAB-MAP's and DBoW2's operating points: at 100% precision, 48% / 37% recall (FAB-MAP), 30-40% (DBoW2) | Matches only at steady light: the split. Lookalikes: hard-negative returns counted in precision. A matcher that fixes one easy return: the recall bar (Codex) |
 | **3. The causal chain** (central) | Outages of 8, 16 or 32 steps before returns to old memory, chosen as the baseline's reading 3 chose events. On the same trajectory and weights: no recognition; the current code corrected only; the current code corrected plus repair. Two references: the clean-sense code (the sense never withheld) and true alignment (simulator, scoring only). **The current-only and repair arms share the same accepted match and the same corrected current code;** repair's endpoint is fixed, so only earlier anchors move (Codex). Scored on a later, unseen view's cells first seen during the outage and revisited after the return | Repair beats current-only by ≥ +0.10, and reaches ≥ 0.5 of the clean-sense reference's gain over no recognition | The sense's return fixes it: the "no recognition" arm. Snapping the pose suffices: the current-only arm. Too few cells means the reading is unmeasurable, said so |
